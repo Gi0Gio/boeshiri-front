@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "comment": "Pruebas E2E del front y capturas. Solo en desarrollo."
+    }
+  }
+}

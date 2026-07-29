@@ -1,0 +1,23 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+.vite/
+
+# Entorno / secrets
+.env
+.env.*
+!.env.example
+
+# MCP (puede contener rutas/credenciales locales)
+.mcp.json
+
+# Editor / OS
+.DS_Store
+*.local
+*.log
+npm-debug.log*
+.vscode/*
+!.vscode/extensions.json
