@@ -1,15 +1,40 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
-import { pilares, publicaciones, colaboradores } from '../data/contenido'
+import { pilares, colaboradores } from '../data/contenido'
+import { publicationsApi } from '../api/publications'
+import { useFetch } from '../hooks/useFetch'
+import { useSession } from '../auth/SessionContext'
 
-const chipColor = {
-  Evento: 'bg-caribbean text-jungle',
-  Noticia: 'bg-terracotta text-white',
-  Blog: 'bg-rainforest text-white',
+const TIPO = {
+  News: { label: 'Noticia', clase: 'bg-terracotta text-white' },
+  Article: { label: 'Artículo', clase: 'bg-rainforest text-white' },
+  Photo: { label: 'Foto', clase: 'bg-caribbean text-jungle' },
+  Video: { label: 'Video', clase: 'bg-terracotta text-white' },
+  Music: { label: 'Música', clase: 'bg-candy text-white' },
 }
+const fmtFecha = (iso) => new Date(iso).toLocaleDateString('es-PA', { day: 'numeric', month: 'short', year: 'numeric' })
+
+/** Marca de la última visita al inicio, para resaltar lo publicado desde entonces. */
+const VISTO_KEY = 'boeshiri-inicio-visto'
 
 export default function Home() {
+  const { user, loading: cargandoSesion } = useSession()
+  const { data: pubs } = useFetch(() => publicationsApi.list())
+  const recientes = (pubs ?? []).slice(0, 3)
+
+  // Se lee UNA vez al montar: si se leyera en cada render, al guardar la visita
+  // actual abajo las novedades dejarían de marcarse en el acto.
+  const [ultimaVisita] = useState(() => localStorage.getItem(VISTO_KEY))
+  useEffect(() => {
+    if (user) localStorage.setItem(VISTO_KEY, new Date().toISOString())
+  }, [user])
+
+  // En la primera visita no hay marca: no se inventa que todo es nuevo.
+  const esNueva = (pub) => Boolean(ultimaVisita) && new Date(pub.createdAt) > new Date(ultimaVisita)
+  const nuevas = recientes.filter(esNueva).length
+
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -21,7 +46,7 @@ export default function Home() {
         <div className="relative mx-auto w-full max-w-6xl px-5 py-24">
           <Reveal>
             <p className="font-display text-sm uppercase tracking-[0.35em] text-caribbean">
-              Colectivo cultural · Chiriquí, Panamá
+              {user ? `Hola, ${user.fullName.split(' ')[0]} · Bienvenido de vuelta` : 'Colectivo cultural · Chiriquí, Panamá'}
             </p>
           </Reveal>
           <Reveal delay={140}>
@@ -35,22 +60,82 @@ export default function Home() {
               pasado para crear cultura con intención. No somos un museo frío — somos comunidad.
             </p>
           </Reveal>
+          {/* Acciones: con sesión llevan al panel; sin ella, invitan a entrar (igual que el Navbar). */}
           <Reveal delay={420}>
             <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                to="/explorar"
-                className="rounded-full bg-caribbean px-8 py-3.5 font-display text-sm font-semibold uppercase tracking-[0.18em] text-jungle transition hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,230,188,0.35)]"
-              >
-                Explorar el colectivo
-              </Link>
-              <Link
-                to="/postularme"
-                className="rounded-full border border-tea/40 px-8 py-3.5 font-display text-sm font-semibold uppercase tracking-[0.18em] text-tea transition hover:border-caribbean hover:text-caribbean"
-              >
-                Quiero ser parte
-              </Link>
+              {cargandoSesion ? null : user ? (
+                <>
+                  <Link
+                    to="/panel"
+                    className="rounded-full bg-caribbean px-8 py-3.5 font-display text-sm font-semibold uppercase tracking-[0.18em] text-jungle transition hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,230,188,0.35)]"
+                  >
+                    Ir a mi panel
+                  </Link>
+                  <Link
+                    to="/explorar"
+                    className="rounded-full border border-tea/40 px-8 py-3.5 font-display text-sm font-semibold uppercase tracking-[0.18em] text-tea transition hover:border-caribbean hover:text-caribbean"
+                  >
+                    Explorar el colectivo
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/explorar"
+                    className="rounded-full bg-caribbean px-8 py-3.5 font-display text-sm font-semibold uppercase tracking-[0.18em] text-jungle transition hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,230,188,0.35)]"
+                  >
+                    Explorar el colectivo
+                  </Link>
+                  <Link
+                    to="/postularme"
+                    className="rounded-full border border-tea/40 px-8 py-3.5 font-display text-sm font-semibold uppercase tracking-[0.18em] text-tea transition hover:border-caribbean hover:text-caribbean"
+                  >
+                    Quiero ser parte
+                  </Link>
+                </>
+              )}
             </div>
           </Reveal>
+
+          {/* Alerta de novedades: atajo directo a lo último publicado (solo con sesión). */}
+          {user && recientes.length > 0 && (
+            <Reveal delay={560}>
+              <div className="mt-12 max-w-2xl rounded-2xl border border-caribbean/25 bg-jungle-deep/60 p-6 backdrop-blur-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-caribbean">
+                    {nuevas > 0
+                      ? `${nuevas} ${nuevas === 1 ? 'publicación nueva' : 'publicaciones nuevas'} desde tu última visita`
+                      : 'Lo último publicado'}
+                  </p>
+                  <Link to="/explorar" className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-tea/55 transition hover:text-caribbean">
+                    Ver todo →
+                  </Link>
+                </div>
+
+                <ul className="mt-4 divide-y divide-tea/10">
+                  {recientes.map((pub) => (
+                    <li key={pub.id}>
+                      <Link to={`/publicaciones/${pub.id}`} className="group flex items-center justify-between gap-4 py-3">
+                        <span className="min-w-0">
+                          <span className="block truncate font-display text-sm font-semibold uppercase tracking-wide text-cream transition group-hover:text-caribbean">
+                            {pub.title}
+                          </span>
+                          <span className="mt-0.5 block truncate font-mono text-xs text-tea/45">
+                            {TIPO[pub.type]?.label ?? pub.type} · {pub.authorName} · {fmtFecha(pub.createdAt)}
+                          </span>
+                        </span>
+                        {esNueva(pub) && (
+                          <span className="flex-none rounded-full bg-candy px-2.5 py-0.5 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-white">
+                            Nuevo
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+          )}
         </div>
       </section>
 
@@ -106,42 +191,36 @@ export default function Home() {
             </Link>
           </Reveal>
 
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {publicaciones.map((pub, i) => (
-              <Reveal
-                key={pub.titulo}
-                delay={i * 130}
-                className="flex flex-col rounded-2xl bg-white p-7 shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(0,37,32,0.14)]"
-              >
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`rounded-full px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] ${chipColor[pub.tipo]}`}
-                  >
-                    {pub.tipo}
-                  </span>
-                  <span className="text-xs font-medium uppercase tracking-wide text-jungle/50">
-                    {pub.fecha}
-                  </span>
-                </div>
-                <h3 className="mt-5 font-display text-2xl font-semibold uppercase tracking-wide text-jungle">
-                  {pub.titulo}
-                </h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-jungle/70">{pub.resumen}</p>
-                <Link
-                  to="/explorar"
-                  className="mt-6 font-display text-xs font-semibold uppercase tracking-[0.2em] text-rainforest transition hover:text-caribbean"
+          {recientes.length > 0 ? (
+            <div className="mt-14 grid gap-6 md:grid-cols-3">
+              {recientes.map((pub, i) => (
+                <Reveal
+                  as={Link}
+                  to={`/publicaciones/${pub.id}`}
+                  key={pub.id}
+                  delay={i * 130}
+                  className="flex flex-col rounded-2xl bg-white p-7 shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(0,37,32,0.14)]"
                 >
-                  Leer más →
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-
-          <Reveal delay={200}>
-            <p className="mt-8 text-center text-xs italic text-jungle/40">
-              Contenido de ejemplo — se conectará al gestor de publicaciones del colectivo.
-            </p>
-          </Reveal>
+                  <div className="flex items-center justify-between">
+                    <span className={`rounded-full px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] ${TIPO[pub.type]?.clase ?? 'bg-rainforest text-white'}`}>
+                      {TIPO[pub.type]?.label ?? pub.type}
+                    </span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-jungle/50">{fmtFecha(pub.createdAt)}</span>
+                  </div>
+                  <h3 className="mt-5 font-display text-2xl font-semibold uppercase tracking-wide text-jungle">{pub.title}</h3>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-jungle/60">Por {pub.authorName}</p>
+                  <span className="mt-6 font-display text-xs font-semibold uppercase tracking-[0.2em] text-rainforest transition group-hover:text-caribbean">Leer más →</span>
+                </Reveal>
+              ))}
+            </div>
+          ) : (
+            <Reveal delay={120}>
+              <div className="mt-14 rounded-2xl border border-dashed border-rainforest/25 bg-white/50 py-16 text-center">
+                <FrogIcon className="mx-auto h-14 w-14 text-rainforest/40" />
+                <p className="mt-4 font-display text-sm uppercase tracking-[0.15em] text-jungle/50">Pronto habrá publicaciones aquí</p>
+              </div>
+            </Reveal>
+          )}
         </div>
       </section>
 

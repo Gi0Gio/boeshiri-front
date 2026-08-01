@@ -4,11 +4,14 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { SessionProvider } from './auth/SessionContext'
+import { ToastProvider } from './components/Toast'
+import { ConfirmProvider } from './components/ConfirmDialog'
 
 // Público
 import Home from './pages/Home'
 import Sobre from './pages/Sobre'
 import Explorar from './pages/Explorar'
+import PublicacionDetalle from './pages/PublicacionDetalle'
 import Perfil from './pages/Perfil'
 import Comunidad from './pages/Comunidad'
 import Eventos from './pages/Eventos'
@@ -16,6 +19,7 @@ import Marketplace from './pages/Marketplace'
 import MarketplaceDetalle from './pages/MarketplaceDetalle'
 import Contacto from './pages/Contacto'
 import Postularme from './pages/Postularme'
+import VerificarCorreo from './pages/VerificarCorreo'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 
@@ -37,10 +41,13 @@ import AdminTransparencia from './panel/pages/AdminTransparencia'
 import EspacioJunta from './panel/pages/EspacioJunta'
 import SuperRoles from './panel/pages/SuperRoles'
 import SuperAuditoria from './panel/pages/SuperAuditoria'
+import SuperArchivos from './panel/pages/SuperArchivos'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <SessionProvider>
+      <ToastProvider>
+       <ConfirmProvider>
       <BrowserRouter>
         <Routes>
           {/* Sitio público */}
@@ -48,6 +55,7 @@ createRoot(document.getElementById('root')).render(
             <Route index element={<Home />} />
             <Route path="sobre" element={<Sobre />} />
             <Route path="explorar" element={<Explorar />} />
+            <Route path="publicaciones/:id" element={<PublicacionDetalle />} />
             <Route path="perfil/:slug" element={<Perfil />} />
             <Route path="comunidad" element={<Comunidad />} />
             <Route path="eventos" element={<Eventos />} />
@@ -55,6 +63,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="marketplace/:id" element={<MarketplaceDetalle />} />
             <Route path="contacto" element={<Contacto />} />
             <Route path="postularme" element={<Postularme />} />
+            <Route path="verificar" element={<VerificarCorreo />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
@@ -79,9 +88,12 @@ createRoot(document.getElementById('root')).render(
             <Route path="admin/junta" element={<EspacioJunta />} />
             <Route path="super/roles" element={<SuperRoles />} />
             <Route path="super/auditoria" element={<SuperAuditoria />} />
+            <Route path="super/archivos" element={<SuperArchivos />} />
           </Route>
         </Routes>
       </BrowserRouter>
+       </ConfirmProvider>
+      </ToastProvider>
     </SessionProvider>
   </StrictMode>,
 )

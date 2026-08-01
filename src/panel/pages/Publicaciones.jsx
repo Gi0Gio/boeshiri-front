@@ -1,12 +1,114 @@
 import { useState } from 'react'
-import { PageHeader, Card, Chip, Btn, Reveal, DemoNote, RowActions, inputCls } from '../ui'
-import { misPublicaciones, tiposPublicacion } from '../../data/panel'
+import { Link } from 'react-router-dom'
+import { PageHeader, Card, Chip, Btn, Reveal, inputCls, labelCls } from '../ui'
+import { publicationsApi } from '../../api/publications'
+import { useFetch } from '../../hooks/useFetch'
+import { useSession } from '../../auth/SessionContext'
+import ImageUpload from '../../components/ImageUpload'
+import { useToast } from '../../components/Toast'
+import { useConfirm } from '../../components/ConfirmDialog'
 
-const estadoTono = { Pública: 'caribbean', Oculta: 'gris' }
+const TIPOS = [
+  { api: 'Article', label: 'Artículo', desc: 'Texto largo, con imagen de portada y etiquetas.' },
+  { api: 'Photo', label: 'Foto', desc: 'Una imagen. Por ahora se pega la URL (subida real con el storage).' },
+  { api: 'Video', label: 'Video', desc: 'Enlace de YouTube; se incrusta en el detalle.' },
+  { api: 'Music', label: 'Música', desc: 'Enlace de Spotify, SoundCloud o YouTube.' },
+  { api: 'News', label: 'Noticia', desc: 'Aviso oficial del colectivo.', perm: 'noticias.publicar' },
+]
+const label = (api) => TIPOS.find((t) => t.api === api)?.label ?? api
+
+const BLANK = { type: 'Article', title: '', body: '', externalUrl: '', coverImage: '', tags: '', visibility: 'Public' }
 
 export default function Publicaciones() {
-  const [creando, setCreando] = useState(false)
-  const [tipo, setTipo] = useState('Artículo')
+  const { hasPermission } = useSession()
+  const puedeCrear = hasPermission('publicaciones.crear')
+  const tiposDisponibles = TIPOS.filter((t) => !t.perm || hasPermission(t.perm))
+
+  const [version, setVersion] = useState(0)
+  const { data, loading, error } = useFetch(() => publicationsApi.mine(), [version])
+  const reload = () => setVersion((v) => v + 1)
+
+  const [abierto, setAbierto] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [form, setForm] = useState(BLANK)
+  const [saving, setSaving] = useState(false)
+  const toast = useToast()
+  const confirm = useConfirm()
+  const setMsg = (m) => { if (m) m.ok ? toast.success(m.text) : toast.error(m.text) }
+
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+  const tipoMeta = TIPOS.find((t) => t.api === form.type)
+  const esTexto = form.type === 'Article' || form.type === 'News'
+  const esEnlace = form.type === 'Video' || form.type === 'Music'
+
+  const nuevo = () => { setEditId(null); setForm(BLANK); setMsg(null); setAbierto(true) }
+  const cerrar = () => { setAbierto(false); setEditId(null); setForm(BLANK) }
+
+  async function editar(id) {
+    setMsg(null)
+    try {
+      const p = await publicationsApi.get(id)
+      setForm({
+        type: p.type,
+        title: p.title ?? '',
+        body: p.body ?? '',
+        externalUrl: p.externalUrl ?? '',
+        coverImage: p.images?.[0] ?? '',
+        tags: (p.tags ?? []).join(', '),
+        visibility: p.visibility ?? 'Public',
+      })
+      setEditId(id)
+      setAbierto(true)
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || 'No se pudo abrir la publicación.' })
+    }
+  }
+
+  async function guardar() {
+    if (!form.title.trim()) { setMsg({ ok: false, text: 'El título es obligatorio.' }); return }
+    setSaving(true); setMsg(null)
+    const tags = form.tags.split(',').map((t) => t.trim()).filter(Boolean)
+    try {
+      if (editId) {
+        await publicationsApi.update(editId, {
+          title: form.title.trim(),
+          body: form.body || null,
+          externalUrl: form.externalUrl || null,
+          visibility: form.visibility,
+          tags,
+        })
+      } else {
+        await publicationsApi.create({
+          type: form.type,
+          title: form.title.trim(),
+          body: form.body || null,
+          externalUrl: form.externalUrl || null,
+          visibility: form.visibility,
+          images: form.coverImage.trim() ? [form.coverImage.trim()] : [],
+          tags,
+        })
+      }
+      setMsg({ ok: true, text: editId ? 'Publicación actualizada.' : 'Publicación creada.' })
+      cerrar()
+      reload()
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || 'No se pudo guardar.' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function cambiarEstado(id, action) {
+    if (action === 'Delete' && !(await confirm({ message: '¿Eliminar esta publicación? No se puede deshacer.', danger: true, confirmLabel: 'Eliminar' }))) return
+    try {
+      await publicationsApi.changeStatus(id, action)
+      reload()
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || 'No se pudo cambiar el estado.' })
+    }
+  }
+
+  const pubs = (data ?? []).filter((p) => p.status !== 'Deleted')
 
   return (
     <>
@@ -14,72 +116,114 @@ export default function Publicaciones() {
         eyebrow="Miembro"
         title="Mis publicaciones"
         description="Publicas sin aprobación previa; la administración puede moderar."
-        actions={<Btn tone="candy" onClick={() => setCreando((v) => !v)}>{creando ? 'Cerrar' : '+ Nueva publicación'}</Btn>}
+        actions={puedeCrear && <Btn tone="candy" onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : '+ Nueva publicación'}</Btn>}
       />
 
-      {creando && (
+
+      {!puedeCrear && (
+        <Card className="mb-6"><p className="text-sm text-tea/60">Tu rol aún no tiene permiso para publicar. Pídeselo a la administración.</p></Card>
+      )}
+
+      {abierto && (
         <Reveal className="mb-8">
           <Card>
-            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Nueva publicación</h2>
-            <p className="mt-1 font-mono text-xs uppercase tracking-wide text-tea/45">Elige el tipo</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {tiposPublicacion.map((t) => (
-                <button key={t.tipo} type="button" onClick={() => setTipo(t.tipo)} className={`rounded-full px-4 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${tipo === t.tipo ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/55 hover:bg-tea/15'}`}>
-                  {t.tipo}
-                </button>
-              ))}
-            </div>
-            <p className="mt-3 rounded-lg border border-tea/10 bg-black/20 px-4 py-2 text-xs text-tea/60">{tiposPublicacion.find((t) => t.tipo === tipo)?.desc}</p>
+            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">{editId ? 'Editar publicación' : 'Nueva publicación'}</h2>
+
+            {!editId && (
+              <>
+                <p className="mt-3 font-mono text-xs uppercase tracking-wide text-tea/45">Tipo</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {tiposDisponibles.map((t) => (
+                    <button key={t.api} type="button" onClick={() => set({ type: t.api })}
+                      className={`rounded-full px-4 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${form.type === t.api ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/55 hover:bg-tea/15'}`}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 rounded-lg border border-tea/10 bg-black/20 px-4 py-2 text-xs text-tea/60">{tipoMeta?.desc}</p>
+              </>
+            )}
 
             <div className="mt-5 space-y-4">
-              <input className={inputCls} placeholder="Título" />
-              {tipo === 'Artículo' || tipo === 'Noticia' ? (
+              <div>
+                <label className={labelCls}>Título</label>
+                <input className={`${inputCls} mt-1.5`} value={form.title} onChange={(e) => set({ title: e.target.value })} placeholder="Título de la publicación" />
+              </div>
+
+              {esTexto && (
+                <div>
+                  <label className={labelCls}>Cuerpo</label>
+                  <textarea rows={6} className={`${inputCls} mt-1.5 resize-none`} value={form.body} onChange={(e) => set({ body: e.target.value })} placeholder="Escribe el contenido…" />
+                </div>
+              )}
+
+              {esEnlace && (
                 <>
-                  <input className={inputCls} placeholder="Tags separados por coma" />
-                  <textarea rows={4} className={`${inputCls} resize-none`} placeholder="Cuerpo del texto…" />
-                  <input className={inputCls} placeholder="Links de referencia (hasta 3)" />
-                  <div className="rounded-xl border border-dashed border-tea/20 p-6 text-center font-mono text-xs text-tea/45">Arrastra hasta 3 imágenes · JPG/PNG/WebP · máx 5 MB</div>
-                </>
-              ) : tipo === 'Foto' ? (
-                <>
-                  <input className={inputCls} placeholder="Descripción corta" />
-                  <div className="rounded-xl border border-dashed border-tea/20 p-6 text-center font-mono text-xs text-tea/45">Sube tu imagen · JPG/PNG/WebP · máx 5 MB (sin YouTube)</div>
-                </>
-              ) : (
-                <>
-                  <input className={inputCls} placeholder="Descripción corta" />
-                  <input className={inputCls} placeholder={tipo === 'Video' ? 'Enlace de YouTube' : 'Enlace externo (Spotify, YouTube, SoundCloud)'} />
+                  <div>
+                    <label className={labelCls}>{form.type === 'Video' ? 'Enlace de YouTube' : 'Enlace (Spotify / SoundCloud / YouTube)'}</label>
+                    <input className={`${inputCls} mt-1.5`} value={form.externalUrl} onChange={(e) => set({ externalUrl: e.target.value })} placeholder="https://…" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Descripción (opcional)</label>
+                    <textarea rows={3} className={`${inputCls} mt-1.5 resize-none`} value={form.body} onChange={(e) => set({ body: e.target.value })} placeholder="Contexto de la pieza…" />
+                  </div>
                 </>
               )}
+
+              {!editId && (form.type === 'Photo' || esTexto) && (
+                <ImageUpload value={form.coverImage} onChange={(url) => set({ coverImage: url })} folder="publicaciones" label={form.type === 'Photo' ? 'Imagen' : 'Imagen de portada (opcional)'} />
+              )}
+
+              <div>
+                <label className={labelCls}>Etiquetas</label>
+                <input className={`${inputCls} mt-1.5`} value={form.tags} onChange={(e) => set({ tags: e.target.value })} placeholder="Separadas por coma: mural, chiriquí, colectivo" />
+              </div>
             </div>
+
             <div className="mt-6 flex items-center justify-between">
               <label className="flex items-center gap-2 text-sm text-tea/70">
-                <input type="checkbox" defaultChecked className="h-4 w-4 accent-[#00e6bc]" /> Publicar de forma pública
+                <input type="checkbox" checked={form.visibility === 'Public'} onChange={(e) => set({ visibility: e.target.checked ? 'Public' : 'Members' })} className="h-4 w-4 accent-[#00e6bc]" />
+                Pública (si la desmarcas, solo la ven miembros)
               </label>
-              <Btn>Publicar</Btn>
+              <Btn onClick={guardar} disabled={saving}>{saving ? 'Guardando…' : editId ? 'Guardar cambios' : 'Publicar'}</Btn>
             </div>
           </Card>
         </Reveal>
       )}
 
+      {loading && <p className="text-tea/50">Cargando publicaciones…</p>}
+      {error && <p className="text-candy">No se pudieron cargar tus publicaciones.</p>}
+      {!loading && !error && pubs.length === 0 && (
+        <Card><p className="text-sm text-tea/55">Aún no has publicado nada. {puedeCrear && 'Usa «+ Nueva publicación» para empezar.'}</p></Card>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
-        {misPublicaciones.map((p, i) => (
-          <Reveal key={p.titulo} delay={(i % 2) * 90}>
+        {pubs.map((p, i) => (
+          <Reveal key={p.id} delay={(i % 2) * 80}>
             <Card>
               <div className="flex items-center justify-between">
-                <Chip tone="tea">{p.tipo}</Chip>
-                <Chip tone={estadoTono[p.estado]}>{p.estado}</Chip>
+                <div className="flex items-center gap-2">
+                  <Chip tone="tea">{label(p.type)}</Chip>
+                  {p.visibility === 'Members' && <Chip tone="terracotta">Solo miembros</Chip>}
+                </div>
+                <Chip tone={p.status === 'Published' ? 'caribbean' : 'gris'}>{p.status === 'Published' ? 'Pública' : 'Oculta'}</Chip>
               </div>
-              <h3 className="mt-3 font-display text-lg font-semibold uppercase tracking-wide text-cream">{p.titulo}</h3>
-              <p className="mt-2 font-mono text-xs text-tea/40">Creada {p.fecha}{p.edit !== '—' && ` · editada ${p.edit}`}</p>
-              <div className="mt-4 border-t border-tea/8 pt-4">
-                <RowActions items={['Editar', p.estado === 'Pública' ? 'Ocultar' : 'Mostrar', 'Compartir', 'Eliminar']} />
+              <h3 className="mt-3 font-display text-lg font-semibold uppercase tracking-wide text-cream">{p.title}</h3>
+              <p className="mt-2 font-mono text-xs text-tea/40">
+                Creada {new Date(p.createdAt).toLocaleDateString('es-PA')}{p.editedAt && ` · editada ${new Date(p.editedAt).toLocaleDateString('es-PA')}`}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3 border-t border-tea/8 pt-4 text-xs font-semibold uppercase tracking-wide">
+                <Link to={`/publicaciones/${p.id}`} target="_blank" className="text-caribbean/80 hover:text-caribbean">Ver</Link>
+                <button onClick={() => editar(p.id)} className="text-caribbean/80 hover:text-caribbean">Editar</button>
+                {p.status === 'Published'
+                  ? <button onClick={() => cambiarEstado(p.id, 'Hide')} className="text-caribbean/80 hover:text-caribbean">Ocultar</button>
+                  : <button onClick={() => cambiarEstado(p.id, 'Show')} className="text-caribbean/80 hover:text-caribbean">Mostrar</button>}
+                <button onClick={() => cambiarEstado(p.id, 'Delete')} className="text-candy hover:underline">Eliminar</button>
               </div>
             </Card>
           </Reveal>
         ))}
       </div>
-      <DemoNote />
     </>
   )
 }

@@ -1,59 +1,208 @@
-import { useState } from 'react'
-import { PageHeader, Chip, Btn, Reveal, DemoNote, PillTabs, Table, Th, Td, Tr } from '../ui'
-import { documentos } from '../../data/panel'
+import { useState, useRef } from 'react'
+import { PageHeader, Card, Chip, Btn, Reveal, PillTabs, Table, Th, Td, Tr, inputCls, labelCls } from '../ui'
+import { documentsApi } from '../../api/documents'
+import { uploadFile } from '../../api/uploads'
+import { useFetch } from '../../hooks/useFetch'
+import { useSession } from '../../auth/SessionContext'
+import { useToast } from '../../components/Toast'
+import { useConfirm } from '../../components/ConfirmDialog'
 
-const accesoTono = { Miembros: 'caribbean', Administración: 'terracotta' }
+const accesoTono = { Members: 'caribbean', Administration: 'terracotta' }
+const accesoLabel = { Members: 'Miembros', Administration: 'Administración' }
+
+const fmtSize = (b) => {
+  if (!b) return '—'
+  if (b < 1024) return `${b} B`
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`
+  return `${(b / 1024 / 1024).toFixed(1)} MB`
+}
 
 export default function Documentos() {
-  const [tab, setTab] = useState('Comunidad')
-  const lista = documentos.filter((d) => d.biblioteca === tab)
+  const { hasPermission } = useSession()
+  const verAdmin = hasPermission('documentos.ver_admin')
+  const subirComunidad = hasPermission('documentos.subir_comunidad')
+
+  const [tab, setTab] = useState('Community')
+  const [version, setVersion] = useState(0)
+  const { data, loading, error } = useFetch(() => documentsApi.list(tab), [tab, version])
+  const reload = () => setVersion((v) => v + 1)
+
+  const puedeSubir = tab === 'Community' ? subirComunidad : verAdmin
+  const tabs = [{ id: 'Community', label: 'Comunidad' }, ...(verAdmin ? [{ id: 'Administration', label: 'Administración' }] : [])]
+
+  const [abierto, setAbierto] = useState(false)
+  const [form, setForm] = useState({ name: '', category: '', accessLevel: 'Members' })
+  const [file, setFile] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const toast = useToast()
+  const confirm = useConfirm()
+  const setMsg = (m) => { if (m) m.ok ? toast.success(m.text) : toast.error(m.text) }
+  const replaceRef = useRef(null)
+  const [replacing, setReplacing] = useState(null)
+
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+  const cerrar = () => { setAbierto(false); setForm({ name: '', category: '', accessLevel: 'Members' }); setFile(null) }
+
+  const onFile = (e) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setFile(f)
+    if (!form.name) set({ name: f.name.replace(/\.[^.]+$/, '') })
+  }
+
+  async function subir() {
+    if (!file) { setMsg({ ok: false, text: 'Elige un archivo.' }); return }
+    if (!form.name.trim() || !form.category.trim()) { setMsg({ ok: false, text: 'Nombre y categoría son obligatorios.' }); return }
+    setSaving(true); setMsg(null)
+    try {
+      const url = await uploadFile(file, 'documentos')
+      await documentsApi.create({
+        name: form.name.trim(),
+        category: form.category.trim(),
+        library: tab,
+        accessLevel: tab === 'Administration' ? form.accessLevel : 'Members',
+        fileUrl: url,
+        fileName: file.name,
+        contentType: file.type || null,
+        sizeBytes: file.size,
+      })
+      setMsg({ ok: true, text: 'Documento subido.' })
+      cerrar()
+      reload()
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || 'No se pudo subir el documento.' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function onReplaceFile(e) {
+    const f = e.target.files?.[0]
+    const doc = replacing
+    e.target.value = ''
+    if (!f || !doc) return
+    setMsg(null)
+    try {
+      const url = await uploadFile(f, 'documentos')
+      await documentsApi.replace(doc.id, {
+        name: doc.name, category: doc.category,
+        fileUrl: url, fileName: f.name, contentType: f.type || null, sizeBytes: f.size,
+      })
+      setMsg({ ok: true, text: 'Archivo reemplazado.' })
+      reload()
+    } catch (err) {
+      setMsg({ ok: false, text: err.message || 'No se pudo reemplazar.' })
+    } finally {
+      setReplacing(null)
+    }
+  }
+
+  async function eliminar(id) {
+    if (!(await confirm({ message: '¿Eliminar este documento?', danger: true, confirmLabel: 'Eliminar' }))) return
+    try { await documentsApi.remove(id); reload() }
+    catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo eliminar.' }) }
+  }
+
+  const noAutorizado = error?.status === 401 || error?.status === 403
+  const lista = data ?? []
 
   return (
     <>
       <PageHeader
         eyebrow="Miembro"
         title="Documentos y biblioteca"
-        description="Repositorio interno, exclusivo para miembros. Sube archivos directamente o adjúntalos desde un artículo."
-        actions={<Btn tone="candy">+ Subir documento</Btn>}
+        description="Repositorio interno, exclusivo para miembros. Sube archivos directamente desde tu equipo."
+        actions={puedeSubir && <Btn tone="candy" onClick={() => (abierto ? cerrar() : setAbierto(true))}>{abierto ? 'Cerrar' : '+ Subir documento'}</Btn>}
       />
 
-      <PillTabs tabs={['Comunidad', 'Administración']} active={tab} onChange={setTab} />
+      <PillTabs tabs={tabs} active={tab} onChange={(t) => { setTab(t); cerrar() }} />
+
 
       <p className="mb-4 rounded-xl border border-tea/10 bg-black/20 px-4 py-3 text-xs leading-relaxed text-tea/60">
-        {tab === 'Comunidad'
-          ? 'Material aportado por los miembros (anteproyectos, tesis, ensayos). Subida libre, sin curaduría. Para publicar de cara al público se usan los artículos.'
-          : 'Plantillas y cartas membretadas de la Junta, de fácil acceso para todos los miembros. La documentación de nivel Administración queda restringida por permisos.'}
+        {tab === 'Community'
+          ? 'Material aportado por los miembros (anteproyectos, tesis, ensayos). Subida libre, sin curaduría.'
+          : 'Plantillas y cartas membretadas de la Junta. La documentación de nivel Administración queda restringida por permisos.'}
       </p>
 
-      <Reveal>
-        <Table minW="640px">
-          <thead>
-            <Tr className="hover:bg-transparent">
-              <Th>Nombre</Th><Th className="hidden sm:table-cell">Categoría</Th><Th className="hidden md:table-cell">Autor</Th><Th className="hidden md:table-cell">Fecha</Th><Th>Acceso</Th><Th> </Th>
-            </Tr>
-          </thead>
-          <tbody>
-            {lista.map((d) => (
-              <Tr key={d.nombre}>
-                <Td className="font-medium text-tea">📄 {d.nombre}</Td>
-                <Td className="hidden sm:table-cell text-tea/55">{d.categoria}</Td>
-                <Td className="hidden md:table-cell text-tea/55">{d.autor}</Td>
-                <Td className="hidden md:table-cell font-mono text-xs text-tea/40">{d.fecha}</Td>
-                <Td><Chip tone={accesoTono[d.acceso]}>{d.acceso}</Chip></Td>
-                <Td className="text-right">
-                  <div className="flex justify-end gap-3 text-xs font-semibold uppercase tracking-wide">
-                    <button className="text-caribbean/80 hover:text-caribbean">Descargar</button>
-                    <button className="text-caribbean/80 hover:text-caribbean">Reemplazar</button>
-                    <button className="text-candy hover:underline">Eliminar</button>
-                  </div>
-                </Td>
+      {abierto && (
+        <Reveal className="mb-6">
+          <Card>
+            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Subir a {tab === 'Community' ? 'Comunidad' : 'Administración'}</h2>
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className={labelCls}>Archivo</label>
+                <input type="file" onChange={onFile} className="mt-1.5 block w-full text-sm text-tea/70 file:mr-4 file:rounded-full file:border-0 file:bg-caribbean file:px-4 file:py-2 file:font-mono file:text-xs file:font-semibold file:uppercase file:tracking-wide file:text-jungle hover:file:bg-caribbean/80" />
+                {file && <p className="mt-1.5 font-mono text-[0.65rem] text-tea/40">{file.name} · {fmtSize(file.size)}</p>}
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelCls}>Nombre visible</label>
+                  <input className={`${inputCls} mt-1.5`} value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="Ej. Estatutos del colectivo" />
+                </div>
+                <div>
+                  <label className={labelCls}>Categoría</label>
+                  <input className={`${inputCls} mt-1.5`} value={form.category} onChange={(e) => set({ category: e.target.value })} placeholder="Legal, Plantillas, Tesis…" />
+                </div>
+              </div>
+              {tab === 'Administration' && (
+                <div>
+                  <label className={labelCls}>Nivel de acceso</label>
+                  <select className={`${inputCls} mt-1.5`} value={form.accessLevel} onChange={(e) => set({ accessLevel: e.target.value })}>
+                    <option value="Members">Miembros (cualquier miembro)</option>
+                    <option value="Administration">Administración (Junta / Super)</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Btn onClick={subir} disabled={saving}>{saving ? 'Subiendo…' : 'Subir documento'}</Btn>
+            </div>
+          </Card>
+        </Reveal>
+      )}
+
+      <input ref={replaceRef} type="file" className="hidden" onChange={onReplaceFile} />
+
+      {loading && <p className="text-tea/50">Cargando documentos…</p>}
+      {error && (noAutorizado
+        ? <Card><p className="text-sm text-tea/60">Tu rol no tiene acceso a esta biblioteca.</p></Card>
+        : <p className="text-candy">No se pudieron cargar los documentos.</p>)}
+
+      {!loading && !error && lista.length === 0 && (
+        <Card><p className="text-sm text-tea/55">Aún no hay documentos en esta biblioteca.{puedeSubir && ' Usa «+ Subir documento».'}</p></Card>
+      )}
+
+      {!loading && !error && lista.length > 0 && (
+        <Reveal>
+          <Table minW="680px">
+            <thead>
+              <Tr className="hover:bg-transparent">
+                <Th>Nombre</Th><Th className="hidden sm:table-cell">Categoría</Th><Th className="hidden md:table-cell">Autor</Th><Th className="hidden lg:table-cell">Tamaño</Th><Th>Acceso</Th><Th> </Th>
               </Tr>
-            ))}
-          </tbody>
-        </Table>
-      </Reveal>
-      <p className="mt-4 font-mono text-xs text-tea/40">v1: solo se conserva la última versión al reemplazar (sin versionado).</p>
-      <DemoNote />
+            </thead>
+            <tbody>
+              {lista.map((d) => (
+                <Tr key={d.id}>
+                  <Td className="font-medium text-tea">📄 {d.name}</Td>
+                  <Td className="hidden sm:table-cell text-tea/55">{d.category}</Td>
+                  <Td className="hidden md:table-cell text-tea/55">{d.authorName}</Td>
+                  <Td className="hidden lg:table-cell font-mono text-xs text-tea/40">{fmtSize(d.sizeBytes)}</Td>
+                  <Td><Chip tone={accesoTono[d.accessLevel]}>{accesoLabel[d.accessLevel] ?? d.accessLevel}</Chip></Td>
+                  <Td className="text-right">
+                    <div className="flex justify-end gap-3 text-xs font-semibold uppercase tracking-wide">
+                      <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="text-caribbean/80 hover:text-caribbean">Descargar</a>
+                      {puedeSubir && <button onClick={() => { setReplacing(d); replaceRef.current?.click() }} className="text-caribbean/80 hover:text-caribbean">Reemplazar</button>}
+                      {puedeSubir && <button onClick={() => eliminar(d.id)} className="text-candy hover:underline">Eliminar</button>}
+                    </div>
+                  </Td>
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
+        </Reveal>
+      )}
+
+      <p className="mt-4 font-mono text-xs text-tea/40">v1: al reemplazar solo se conserva la última versión (sin versionado).</p>
     </>
   )
 }

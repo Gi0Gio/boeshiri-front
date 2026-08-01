@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
+import { authApi } from '../api/auth'
+import { useToast } from '../components/Toast'
+import { useSession } from '../auth/SessionContext'
 
 const pasos = [
   { id: 1, titulo: 'Tu cuenta', desc: 'Cómo entrarás al colectivo' },
@@ -10,27 +13,100 @@ const pasos = [
 ]
 
 const disciplinas = [
-  'Música',
-  'Muralismo',
-  'Fotografía',
-  'Danza',
-  'Diseño gráfico',
-  'Poesía / escritura',
-  'Otra',
+  'Música', 'Muralismo', 'Fotografía', 'Danza', 'Diseño gráfico', 'Poesía / escritura', 'Otra',
 ]
 
 const inputBase =
-  'w-full rounded-xl border border-rainforest/20 bg-white px-4 py-3 text-jungle placeholder:text-jungle/40 transition focus:border-caribbean focus:outline-none focus:ring-2 focus:ring-caribbean/30'
+  'w-full rounded-xl border border-rainforest/20 bg-white px-4 py-3 text-base text-jungle placeholder:text-jungle/40 transition focus:border-caribbean focus:outline-none focus:ring-2 focus:ring-caribbean/30'
+const inputError = 'border-candy focus:border-candy focus:ring-candy/30'
 const labelBase = 'font-display text-xs font-semibold uppercase tracking-[0.2em] text-rainforest'
 
+const BLANK = { nombre: '', correo: '', clave: '', clave2: '', disciplina: '', telefono: '', motivacion: '' }
+
 export default function Postularme() {
+  const toast = useToast()
+  const { user, loading: cargandoSesion } = useSession()
   const [paso, setPaso] = useState(1)
   const [listo, setListo] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [form, setForm] = useState(BLANK)
+  // Campo señalado tras un error del servidor (p. ej. correo ya registrado).
+  const [campoError, setCampoError] = useState(null)
+  const correoRef = useRef(null)
 
-  const avanzar = (e) => {
+  const set = (parcial) => setForm((f) => ({ ...f, ...parcial }))
+
+  /** Devuelve al paso donde vive un campo y lo señala, para poder corregirlo. */
+  function señalar(campo, pasoDestino, foco) {
+    setCampoError(campo)
+    setPaso(pasoDestino)
+    // El campo aún no está montado al cambiar de paso: se enfoca tras el repintado.
+    requestAnimationFrame(() => foco?.current?.focus())
+  }
+
+  const avanzar = async (e) => {
     e.preventDefault()
-    if (paso < 3) setPaso((p) => p + 1)
-    else setListo(true)
+
+    // El HTML ya valida requeridos y longitud; aquí va lo que no puede expresar.
+    if (paso === 1 && form.clave !== form.clave2) {
+      setCampoError('clave2')
+      toast.error('Las contraseñas no coinciden.')
+      return
+    }
+
+    if (paso < 3) {
+      setCampoError(null)
+      setPaso((p) => p + 1)
+      return
+    }
+
+    setBusy(true)
+    try {
+      await authApi.register({
+        email: form.correo.trim(),
+        password: form.clave,
+        fullName: form.nombre.trim(),
+        phone: form.telefono.trim() || null,
+        discipline: form.disciplina || null,
+        applicationReason: form.motivacion.trim() || null,
+      })
+      setListo(true)
+    } catch (err) {
+      // El correo duplicado (409) se detecta al enviar, pero el campo vive en el
+      // paso 1: sin devolver al usuario allí, el aviso no es accionable.
+      if (err.status === 409) {
+        toast.error('Ya existe una cuenta con ese correo. Revísalo o inicia sesión.')
+        señalar('correo', 1, correoRef)
+      } else {
+        toast.error(err.message || 'No se pudo enviar la postulación.')
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const cls = (campo) => `${inputBase} ${campoError === campo ? inputError : ''}`
+
+  // Con sesión abierta el formulario no aplica: crearía una segunda cuenta.
+  if (!cargandoSesion && user) {
+    return (
+      <section className="bg-dorace-pattern relative min-h-screen overflow-hidden bg-jungle pt-16">
+        <div className="relative mx-auto max-w-2xl px-5 py-20 text-center">
+          <Reveal>
+            <FrogIcon className="mx-auto h-16 w-16 text-caribbean" />
+            <h1 className="mt-6 font-display text-3xl font-semibold uppercase tracking-wide text-cream">
+              Ya tienes una cuenta
+            </h1>
+            <p className="mx-auto mt-4 max-w-md leading-relaxed text-tea/80">
+              Iniciaste sesión como <strong className="text-cream">{user.fullName}</strong>. Puedes ver el estado de tu solicitud desde tu panel.
+            </p>
+            <Link to="/panel" className="mt-8 inline-block rounded-full bg-caribbean px-7 py-3 font-display text-sm font-semibold uppercase tracking-[0.18em] text-jungle transition hover:-translate-y-0.5">
+              Ir a mi panel
+            </Link>
+          </Reveal>
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -38,201 +114,154 @@ export default function Postularme() {
       <div className="pointer-events-none absolute -right-32 top-10 h-[38rem] w-[38rem] bg-[radial-gradient(closest-side,rgba(0,230,188,0.14),transparent_70%)]" />
       <div className="pointer-events-none absolute -left-40 bottom-0 h-[34rem] w-[34rem] bg-[radial-gradient(closest-side,rgba(0,115,94,0.4),transparent_70%)]" />
 
-      <div className="relative mx-auto max-w-2xl px-5 py-16 md:py-24">
+      <div className="relative mx-auto max-w-2xl px-4 py-12 sm:px-5 md:py-24">
         <Reveal className="text-center">
-          <p className="font-display text-sm uppercase tracking-[0.35em] text-caribbean">
-            Únete al colectivo
-          </p>
-          <h1 className="mt-4 font-display text-4xl font-semibold uppercase leading-tight tracking-wide text-cream md:text-5xl">
+          <p className="font-display text-xs uppercase tracking-[0.3em] text-caribbean sm:text-sm sm:tracking-[0.35em]">Únete al colectivo</p>
+          <h1 className="mt-4 font-display text-3xl font-semibold uppercase leading-tight tracking-wide text-cream sm:text-4xl md:text-5xl">
             Crea tu cuenta y postúlate
           </h1>
         </Reveal>
 
         {listo ? (
-          <Reveal className="mt-12 rounded-3xl border border-caribbean/40 bg-jungle-deep/60 p-12 text-center backdrop-blur">
-            <FrogIcon className="mx-auto h-20 w-20 text-caribbean" />
-            <h2 className="mt-6 font-display text-3xl font-semibold uppercase tracking-wide text-cream">
-              ¡Postulación recibida!
+          <Reveal className="mt-10 rounded-3xl border border-caribbean/40 bg-jungle-deep/60 p-7 text-center backdrop-blur sm:p-10 md:p-12">
+            <FrogIcon className="mx-auto h-16 w-16 text-caribbean sm:h-20 sm:w-20" />
+            <h2 className="mt-6 font-display text-2xl font-semibold uppercase tracking-wide text-cream sm:text-3xl">
+              ¡Cuenta creada!
             </h2>
             <p className="mx-auto mt-4 max-w-md leading-relaxed text-tea/80">
-              Gracias por querer ser parte de Boesh Irí. El equipo revisará tu solicitud y te
-              escribirá pronto. (Demo — aún no se guarda nada de verdad.)
+              Te enviamos un correo de verificación a <strong className="break-all text-cream">{form.correo}</strong>.
+              Confírmalo para completar tu postulación; luego la Junta la revisará.
             </p>
             <Link
-              to="/"
+              to="/login"
               className="mt-8 inline-block rounded-full bg-caribbean px-7 py-3 font-display text-sm font-semibold uppercase tracking-[0.18em] text-jungle transition hover:-translate-y-0.5"
             >
-              Volver al inicio
+              Ir a iniciar sesión
             </Link>
           </Reveal>
         ) : (
-          <Reveal delay={140} className="mt-12">
-            {/* Indicador de pasos */}
-            <ol className="mb-8 flex items-center justify-between gap-2">
+          <Reveal delay={140} className="mt-10 md:mt-12">
+            <ol className="mb-6 flex items-center justify-between gap-1.5 sm:mb-8 sm:gap-2">
               {pasos.map((p, i) => {
                 const activo = paso === p.id
                 const hecho = paso > p.id
                 return (
-                  <li key={p.id} className="flex flex-1 items-center gap-2 last:flex-none">
+                  <li key={p.id} className="flex flex-1 items-center gap-1.5 last:flex-none sm:gap-2">
                     <div className="flex items-center gap-3">
                       <span
+                        aria-current={activo ? 'step' : undefined}
                         className={`flex h-9 w-9 flex-none items-center justify-center rounded-full font-display text-sm font-semibold transition ${
-                          activo
-                            ? 'bg-caribbean text-jungle'
-                            : hecho
-                              ? 'bg-rainforest text-cream'
-                              : 'bg-jungle-deep/60 text-tea/50'
+                          activo ? 'bg-caribbean text-jungle' : hecho ? 'bg-rainforest text-cream' : 'bg-jungle-deep/60 text-tea/50'
                         }`}
                       >
                         {hecho ? '✓' : p.id}
                       </span>
                       <span className="hidden sm:block">
-                        <span
-                          className={`block font-display text-xs font-semibold uppercase tracking-[0.15em] ${activo || hecho ? 'text-cream' : 'text-tea/45'}`}
-                        >
+                        <span className={`block font-display text-xs font-semibold uppercase tracking-[0.15em] ${activo || hecho ? 'text-cream' : 'text-tea/45'}`}>
                           {p.titulo}
                         </span>
                       </span>
                     </div>
-                    {i < pasos.length - 1 && (
-                      <span
-                        className={`h-px flex-1 ${paso > p.id ? 'bg-rainforest' : 'bg-tea/15'}`}
-                      />
-                    )}
+                    {i < pasos.length - 1 && <span className={`h-px flex-1 ${paso > p.id ? 'bg-rainforest' : 'bg-tea/15'}`} />}
                   </li>
                 )
               })}
             </ol>
 
-            <form
-              onSubmit={avanzar}
-              className="rounded-3xl border border-tea/10 bg-cream p-8 md:p-10"
-            >
-              {/* Paso 1 — cuenta */}
+            {/* Título del paso: en móvil sustituye a las etiquetas ocultas del stepper. */}
+            <p className="mb-4 text-center font-display text-sm font-semibold uppercase tracking-[0.15em] text-cream sm:hidden">
+              {pasos[paso - 1].titulo}
+              <span className="mt-0.5 block font-sans text-xs font-normal normal-case tracking-normal text-tea/50">{pasos[paso - 1].desc}</span>
+            </p>
+
+            <form onSubmit={avanzar} noValidate={false} className="rounded-3xl border border-tea/10 bg-cream p-6 sm:p-8 md:p-10">
               {paso === 1 && (
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="nombre" className={labelBase}>
-                      Nombre completo
-                    </label>
-                    <input id="nombre" required placeholder="Tu nombre" className={inputBase} />
+                    <label htmlFor="nombre" className={labelBase}>Nombre completo</label>
+                    <input id="nombre" name="nombre" required autoComplete="name" value={form.nombre} onChange={(e) => set({ nombre: e.target.value })} placeholder="Tu nombre" className={inputBase} />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="correo" className={labelBase}>
-                      Correo
-                    </label>
+                    <label htmlFor="correo" className={labelBase}>Correo</label>
                     <input
-                      id="correo"
-                      type="email"
-                      required
-                      placeholder="tu@correo.com"
-                      className={inputBase}
+                      id="correo" name="email" type="email" required autoComplete="email"
+                      inputMode="email" autoCapitalize="none" spellCheck={false}
+                      ref={correoRef}
+                      value={form.correo}
+                      onChange={(e) => { set({ correo: e.target.value }); if (campoError === 'correo') setCampoError(null) }}
+                      placeholder="tu@correo.com" className={cls('correo')}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="clave" className={labelBase}>
-                      Contraseña
-                    </label>
-                    <input
-                      id="clave"
-                      type="password"
-                      required
-                      placeholder="Crea una contraseña"
-                      className={inputBase}
-                    />
+                    <label htmlFor="clave" className={labelBase}>Contraseña</label>
+                    <input id="clave" name="new-password" type="password" required minLength={8} autoComplete="new-password" value={form.clave} onChange={(e) => set({ clave: e.target.value })} placeholder="Crea una contraseña" className={inputBase} />
                     <p className="text-xs text-jungle/50">Mínimo 8 caracteres.</p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="clave2" className={labelBase}>Repetir contraseña</label>
+                    <input
+                      id="clave2" name="confirm-password" type="password" required autoComplete="new-password"
+                      value={form.clave2}
+                      onChange={(e) => { set({ clave2: e.target.value }); if (campoError === 'clave2') setCampoError(null) }}
+                      placeholder="Escríbela otra vez" className={cls('clave2')}
+                    />
+                    <p className="text-xs text-jungle/50">Aún no hay recuperación de contraseña: si la olvidas, tendrás que pedir ayuda a la Junta.</p>
                   </div>
                 </div>
               )}
 
-              {/* Paso 2 — arte */}
               {paso === 2 && (
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="disciplina" className={labelBase}>
-                      Disciplina principal
-                    </label>
-                    <select id="disciplina" className={inputBase} defaultValue="">
-                      <option value="" disabled>
-                        ¿Qué creas?
-                      </option>
-                      {disciplinas.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
+                    <label htmlFor="disciplina" className={labelBase}>Disciplina principal</label>
+                    <select id="disciplina" name="disciplina" className={inputBase} value={form.disciplina} onChange={(e) => set({ disciplina: e.target.value })}>
+                      <option value="">¿Qué creas?</option>
+                      {disciplinas.map((d) => (<option key={d} value={d}>{d}</option>))}
                     </select>
+                    <p className="text-xs text-jungle/50">Podrás afinarla —junto a redes y etiquetas— en tu perfil al ingresar.</p>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="instagram" className={labelBase}>
-                      Instagram / redes
-                    </label>
-                    <input id="instagram" placeholder="@tuusuario" className={inputBase} />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="portafolio" className={labelBase}>
-                      Portafolio o enlace (opcional)
-                    </label>
-                    <input id="portafolio" placeholder="https://…" className={inputBase} />
+                    <label htmlFor="telefono" className={labelBase}>Celular (opcional)</label>
+                    <input id="telefono" name="tel" type="tel" inputMode="tel" autoComplete="tel" value={form.telefono} onChange={(e) => set({ telefono: e.target.value })} placeholder="+507 6000-0000" className={inputBase} />
                   </div>
                 </div>
               )}
 
-              {/* Paso 3 — porqué */}
               {paso === 3 && (
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="motivacion" className={labelBase}>
-                      ¿Por qué quieres unirte?
-                    </label>
-                    <textarea
-                      id="motivacion"
-                      required
-                      rows={5}
-                      placeholder="Cuéntanos qué te mueve del arte, la cultura y la comunidad…"
-                      className={`${inputBase} resize-none`}
-                    />
+                    <label htmlFor="motivacion" className={labelBase}>¿Por qué quieres unirte?</label>
+                    <textarea id="motivacion" name="motivacion" required rows={5} maxLength={1000} value={form.motivacion} onChange={(e) => set({ motivacion: e.target.value })} placeholder="Cuéntanos qué te mueve del arte, la cultura y la comunidad…" className={`${inputBase} resize-none`} />
+                    <p className="text-right text-xs text-jungle/40">{form.motivacion.length}/1000</p>
                   </div>
                   <label className="flex items-start gap-3 text-sm text-jungle/70">
-                    <input
-                      type="checkbox"
-                      required
-                      className="mt-1 h-4 w-4 flex-none accent-[#00735e]"
-                    />
-                    <span>
-                      Acepto que Boesh Irí guarde estos datos para revisar mi postulación.
-                    </span>
+                    <input type="checkbox" required className="mt-1 h-4 w-4 flex-none accent-[#00735e]" />
+                    <span>Acepto que Boesh Irí guarde estos datos para revisar mi postulación.</span>
                   </label>
                 </div>
               )}
 
-              {/* Navegación */}
-              <div className="mt-8 flex items-center justify-between gap-4">
+              {/* En móvil el botón principal ocupa el ancho y "Atrás" queda debajo:
+                  juntos en una fila no caben en pantallas de 320–360 px. */}
+              <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 {paso > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => setPaso((p) => p - 1)}
-                    className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-rainforest transition hover:text-jungle"
-                  >
+                  <button type="button" onClick={() => { setCampoError(null); setPaso((p) => p - 1) }} className="py-2 font-display text-sm font-semibold uppercase tracking-[0.18em] text-rainforest transition hover:text-jungle">
                     ← Atrás
                   </button>
-                ) : (
-                  <span />
-                )}
+                ) : (<span className="hidden sm:block" />)}
                 <button
                   type="submit"
-                  className="rounded-full bg-candy px-8 py-3 font-display text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:-translate-y-0.5 hover:bg-terracotta hover:shadow-[0_8px_30px_rgba(229,0,49,0.3)]"
+                  disabled={busy}
+                  className="w-full rounded-full bg-candy px-8 py-3.5 font-display text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:-translate-y-0.5 hover:bg-terracotta hover:shadow-[0_8px_30px_rgba(229,0,49,0.3)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-3"
                 >
-                  {paso < 3 ? 'Continuar' : 'Enviar postulación'}
+                  {paso < 3 ? 'Continuar' : busy ? 'Enviando…' : 'Enviar postulación'}
                 </button>
               </div>
             </form>
 
             <p className="mt-6 text-center text-sm text-tea/60">
               ¿Ya tienes cuenta?{' '}
-              <span className="cursor-pointer font-semibold text-caribbean underline-offset-4 hover:underline">
-                Inicia sesión
-              </span>
+              <Link to="/login" className="font-semibold text-caribbean underline-offset-4 hover:underline">Inicia sesión</Link>
             </p>
           </Reveal>
         )}

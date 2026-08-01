@@ -90,8 +90,8 @@ export function Table({ children, minW = '560px', className = '' }) {
 export function Th({ children, className = '' }) {
   return <th className={`border-b border-tea/10 bg-black/20 px-5 py-3 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-tea/45 ${className}`}>{children}</th>
 }
-export function Td({ children, className = '' }) {
-  return <td className={`px-5 py-3 text-tea/80 ${className}`}>{children}</td>
+export function Td({ children, className = '', ...props }) {
+  return <td className={`px-5 py-3 text-tea/80 ${className}`} {...props}>{children}</td>
 }
 export function Tr({ children, className = '' }) {
   return <tr className={`border-b border-tea/5 transition-colors last:border-0 hover:bg-tea/[0.04] ${className}`}>{children}</tr>

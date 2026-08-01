@@ -1,10 +1,82 @@
-import { PageHeader, Card, Chip, Btn, Reveal, DemoNote, RowActions } from '../ui'
-import { productos, usuarioActual } from '../../data/panel'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { PageHeader, Card, Chip, Btn, Reveal, inputCls, labelCls } from '../ui'
+import { marketplaceApi } from '../../api/marketplace'
+import { profileApi } from '../../api/profile'
+import { useFetch } from '../../hooks/useFetch'
+import { useSession } from '../../auth/SessionContext'
+import ImageUpload from '../../components/ImageUpload'
+import { useToast } from '../../components/Toast'
+import { useConfirm } from '../../components/ConfirmDialog'
 
-const estadoTono = { Publicado: 'caribbean', Vendido: 'gris', Oculto: 'terracotta' }
+const estadoTono = { Published: 'caribbean', Sold: 'gris', Hidden: 'terracotta' }
+const estadoLabel = { Published: 'Publicado', Sold: 'Vendido', Hidden: 'Oculto' }
+const BLANK = { kind: 'Product', name: '', category: '', price: '', description: '', deliveryLocation: '', images: [] }
 
 export default function MiMarketplace() {
-  const mios = productos.filter((p) => p.miembro === usuarioActual.nombre)
+  const { hasPermission } = useSession()
+  const puede = hasPermission('marketplace.gestionar_propio')
+
+  const [version, setVersion] = useState(0)
+  const { data: perfil } = useFetch(() => profileApi.me(), [version])
+  const { data: prods, loading, error } = useFetch(() => marketplaceApi.mine(), [version])
+  const reload = () => setVersion((v) => v + 1)
+  const activo = perfil?.marketplaceActive
+
+  const [abierto, setAbierto] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [form, setForm] = useState(BLANK)
+  const [saving, setSaving] = useState(false)
+  const toast = useToast()
+  const confirm = useConfirm()
+  const setMsg = (m) => { if (m) m.ok ? toast.success(m.text) : toast.error(m.text) }
+
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+  const nuevo = () => { setEditId(null); setForm(BLANK); setMsg(null); setAbierto(true) }
+  const cerrar = () => { setAbierto(false); setEditId(null); setForm(BLANK) }
+
+  const setImageAt = (i, url) => setForm((f) => {
+    const imgs = [...f.images]
+    if (url) imgs[i] = url; else imgs.splice(i, 1)
+    return { ...f, images: imgs }
+  })
+
+  async function darDeAlta() {
+    setMsg(null)
+    try { await marketplaceApi.enroll(); reload() }
+    catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo dar de alta.' }) }
+  }
+
+  async function editar(id) {
+    setMsg(null)
+    try {
+      const p = await marketplaceApi.get(id)
+      setForm({ kind: p.kind ?? 'Product', name: p.name ?? '', category: p.category ?? '', price: String(p.price ?? ''), description: p.description ?? '', deliveryLocation: p.deliveryLocation ?? '', images: p.images ?? [] })
+      setEditId(id); setAbierto(true)
+    } catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo abrir el producto.' }) }
+  }
+
+  async function guardar() {
+    if (!form.name.trim() || !form.category.trim()) { setMsg({ ok: false, text: 'Nombre y categoría son obligatorios.' }); return }
+    setSaving(true); setMsg(null)
+    const base = { name: form.name.trim(), category: form.category.trim(), price: Number(form.price) || 0, description: form.description || null, deliveryLocation: form.deliveryLocation || null }
+    try {
+      if (editId) await marketplaceApi.update(editId, base)
+      else await marketplaceApi.create({ ...base, kind: form.kind, images: form.images.filter(Boolean) })
+      setMsg({ ok: true, text: editId ? 'Producto actualizado.' : 'Producto publicado.' })
+      cerrar(); reload()
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || 'No se pudo guardar.' })
+    } finally { setSaving(false) }
+  }
+
+  async function cambiarEstado(id, action) {
+    if (action === 'Delete' && !(await confirm({ message: '¿Eliminar este anuncio?', danger: true, confirmLabel: 'Eliminar' }))) return
+    try { await marketplaceApi.changeStatus(id, action); reload() }
+    catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo cambiar el estado.' }) }
+  }
+
+  const mios = prods ?? []
 
   return (
     <>
@@ -12,44 +84,138 @@ export default function MiMarketplace() {
         eyebrow="Miembro"
         title="Mi marketplace"
         description="Publica tus productos. Boesh Irí no gestiona pagos: el visitante te contacta con los datos de tu perfil."
-        actions={<Btn tone="candy">+ Nuevo producto</Btn>}
+        actions={puede && activo && <Btn tone="candy" onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : '+ Nuevo producto'}</Btn>}
       />
 
-      <Reveal className="mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-caribbean/25 bg-caribbean/[0.06] p-5">
-          <div>
-            <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">Estás dado de alta en el marketplace</p>
-            <p className="mt-1 font-mono text-xs text-tea/55">Tu contacto se toma del perfil: {usuarioActual.correo}</p>
+
+      {!puede && <Card className="mb-6"><p className="text-sm text-tea/60">Tu rol aún no puede vender en el marketplace.</p></Card>}
+
+      {puede && (
+        <Reveal className="mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-caribbean/25 bg-caribbean/[0.06] p-5">
+            {activo ? (
+              <>
+                <div>
+                  <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">Estás dado de alta en el marketplace</p>
+                  <p className="mt-1 font-mono text-xs text-tea/55">Tu contacto se toma del perfil{perfil?.email ? `: ${perfil.email}` : ''}</p>
+                </div>
+                <Chip tone="caribbean">Vendedor activo</Chip>
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">Aún no vendes en el marketplace</p>
+                  <p className="mt-1 font-mono text-xs text-tea/55">Date de alta para poder publicar productos.</p>
+                </div>
+                <Btn onClick={darDeAlta}>Darme de alta</Btn>
+              </>
+            )}
           </div>
-          <Chip tone="caribbean">Vendedor activo</Chip>
-        </div>
-      </Reveal>
+        </Reveal>
+      )}
+
+      {abierto && activo && (
+        <Reveal className="mb-8">
+          <Card>
+            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">{editId ? 'Editar anuncio' : 'Nuevo anuncio'}</h2>
+            <div className="mt-5 space-y-4">
+              {!editId ? (
+                <div>
+                  <label className={labelCls}>Tipo</label>
+                  <div className="mt-1.5 inline-flex rounded-full bg-tea/8 p-1">
+                    {[{ id: 'Product', label: 'Producto' }, { id: 'Service', label: 'Servicio' }].map((k) => (
+                      <button key={k.id} type="button" onClick={() => set({ kind: k.id })}
+                        className={`rounded-full px-5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wide transition ${form.kind === k.id ? 'bg-caribbean text-jungle' : 'text-tea/55 hover:text-tea'}`}>
+                        {k.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 font-mono text-[0.65rem] text-tea/40">{form.kind === 'Service' ? 'Un servicio: tutorías, asesorías, encargos…' : 'Un bien físico que entregas.'}</p>
+                </div>
+              ) : (
+                <Chip tone={form.kind === 'Service' ? 'rainforest' : 'tea'}>{form.kind === 'Service' ? 'Servicio' : 'Producto'}</Chip>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelCls}>Nombre</label>
+                  <input className={`${inputCls} mt-1.5`} value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder={form.kind === 'Service' ? 'Ej. Tutorías de guitarra' : 'Nombre del producto'} />
+                </div>
+                <div>
+                  <label className={labelCls}>Categoría</label>
+                  <input className={`${inputCls} mt-1.5`} value={form.category} onChange={(e) => set({ category: e.target.value })} placeholder={form.kind === 'Service' ? 'Educación, Diseño, Asesoría…' : 'Arte, Música, Textil…'} />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelCls}>Precio (USD)</label>
+                  <input type="number" min="0" step="0.01" className={`${inputCls} mt-1.5`} value={form.price} onChange={(e) => set({ price: e.target.value })} placeholder="0 = a convenir" />
+                </div>
+                <div>
+                  <label className={labelCls}>{form.kind === 'Service' ? 'Modalidad / lugar' : 'Lugar de entrega'}</label>
+                  <input className={`${inputCls} mt-1.5`} value={form.deliveryLocation} onChange={(e) => set({ deliveryLocation: e.target.value })} placeholder={form.kind === 'Service' ? 'En línea, David, a domicilio…' : 'David, Boquete…'} />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Descripción</label>
+                <textarea rows={3} className={`${inputCls} mt-1.5 resize-none`} value={form.description} onChange={(e) => set({ description: e.target.value })} placeholder="Detalles, materiales, medidas…" />
+              </div>
+              {!editId ? (
+                <div className="space-y-3">
+                  {form.images.map((url, i) => (
+                    <ImageUpload key={i} value={url} onChange={(u) => setImageAt(i, u)} folder="productos" label={`Imagen ${i + 1}`} />
+                  ))}
+                  {form.images.length < 5 && (
+                    <ImageUpload key={`new-${form.images.length}`} value="" onChange={(u) => u && set({ images: [...form.images, u] })} folder="productos" label="Añadir imagen (hasta 5)" />
+                  )}
+                </div>
+              ) : (
+                <p className="font-mono text-[0.65rem] text-tea/40">Las imágenes no se editan aquí; para cambiarlas, elimina y vuelve a publicar el producto.</p>
+              )}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Btn onClick={guardar} disabled={saving}>{saving ? 'Guardando…' : editId ? 'Guardar cambios' : 'Publicar'}</Btn>
+            </div>
+          </Card>
+        </Reveal>
+      )}
+
+      {loading && <p className="text-tea/50">Cargando productos…</p>}
+      {error && <p className="text-candy">No se pudieron cargar tus productos.</p>}
+      {!loading && !error && activo && mios.length === 0 && (
+        <Card><p className="text-sm text-tea/55">Aún no has publicado productos. Usa «+ Nuevo producto».</p></Card>
+      )}
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {mios.map((p, i) => (
           <Reveal key={p.id} delay={(i % 3) * 90}>
             <Card className="overflow-hidden p-0">
-              <div className="relative flex aspect-[4/3] items-end justify-between p-4" style={{ background: `linear-gradient(150deg, ${p.colores[0]}, ${p.colores[1]})` }}>
-                <Chip tone="tea">{p.categoria}</Chip>
-                <span className="font-display text-2xl font-semibold text-white">${p.precio}</span>
+              <div className="relative flex aspect-[4/3] items-end justify-between overflow-hidden p-4" style={p.coverImage ? undefined : { background: 'linear-gradient(150deg,#00735e,#002420)' }}>
+                {p.coverImage && <img src={p.coverImage} alt={p.name} className="absolute inset-0 h-full w-full object-cover" />}
+                <span className="relative flex items-center gap-1.5">
+                  <Chip tone="tea">{p.category}</Chip>
+                  {p.kind === 'Service' && <Chip tone="rainforest">Servicio</Chip>}
+                </span>
+                <span className="relative font-display text-xl font-semibold text-white">{p.price > 0 ? `$${p.price}` : 'A convenir'}</span>
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-display text-base font-semibold uppercase leading-tight tracking-wide text-cream">{p.nombre}</h3>
-                  <Chip tone={estadoTono[p.estado]}>{p.estado}</Chip>
+                  <h3 className="font-display text-base font-semibold uppercase leading-tight tracking-wide text-cream">{p.name}</h3>
+                  <Chip tone={estadoTono[p.status]}>{estadoLabel[p.status] ?? p.status}</Chip>
                 </div>
-                <p className="mt-2 font-mono text-xs text-tea/45">📍 {p.ubicacion}</p>
-                <div className="mt-4 border-t border-tea/8 pt-3">
-                  <RowActions items={['Editar', p.estado === 'Publicado' ? 'Ocultar' : 'Mostrar', 'Compartir', 'Eliminar']} />
+                <div className="mt-4 flex flex-wrap gap-3 border-t border-tea/8 pt-3 text-xs font-semibold uppercase tracking-wide">
+                  <Link to={`/marketplace/${p.id}`} target="_blank" className="text-caribbean/80 hover:text-caribbean">Ver</Link>
+                  <button onClick={() => editar(p.id)} className="text-caribbean/80 hover:text-caribbean">Editar</button>
+                  {p.status === 'Published'
+                    ? <button onClick={() => cambiarEstado(p.id, 'Hide')} className="text-caribbean/80 hover:text-caribbean">Ocultar</button>
+                    : p.status === 'Hidden' && <button onClick={() => cambiarEstado(p.id, 'Show')} className="text-caribbean/80 hover:text-caribbean">Mostrar</button>}
+                  {p.status !== 'Sold' && <button onClick={() => cambiarEstado(p.id, 'Sold')} className="text-caribbean/80 hover:text-caribbean">Vendido</button>}
+                  <button onClick={() => cambiarEstado(p.id, 'Delete')} className="text-candy hover:underline">Eliminar</button>
                 </div>
               </div>
             </Card>
           </Reveal>
         ))}
       </div>
-
-      <p className="mt-6 text-xs text-tea/45">Al <strong className="text-tea/70">compartir</strong>, se genera un enlace + imagen para redes con un clic. Boesh Irí también puede republicar tu enlace.</p>
-      <DemoNote />
     </>
   )
 }

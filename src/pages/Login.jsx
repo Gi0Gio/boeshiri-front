@@ -1,28 +1,41 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
-import { useSession, ROLES } from '../auth/SessionContext'
+import { useSession } from '../auth/SessionContext'
+import { useToast } from '../components/Toast'
 
-const orden = ['miembro', 'junta', 'superadmin']
-const acento = {
-  miembro: 'group-hover:border-caribbean',
-  junta: 'group-hover:border-terracotta',
-  superadmin: 'group-hover:border-candy',
-}
+const inputBase =
+  'w-full rounded-xl border border-tea/15 bg-jungle-deep/50 px-4 py-3 text-cream placeholder:text-tea/40 backdrop-blur transition focus:border-caribbean focus:outline-none focus:ring-2 focus:ring-caribbean/30'
+const labelBase = 'font-display text-xs font-semibold uppercase tracking-[0.2em] text-caribbean'
 
 export default function Login() {
-  const { setRol } = useSession()
+  const { login } = useSession()
   const navigate = useNavigate()
+  const toast = useToast()
 
-  const entrar = (rol) => {
-    setRol(rol)
-    navigate('/panel')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    setBusy(true)
+    try {
+      await login(email.trim(), password)
+      toast.success('¡Bienvenido de vuelta!')
+      navigate('/panel')
+    } catch (err) {
+      toast.error(err.message || 'No se pudo iniciar sesión.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
     <section className="bg-dorace-pattern relative flex min-h-screen items-center overflow-hidden bg-jungle pt-16">
       <div className="pointer-events-none absolute -left-40 top-1/4 h-[40rem] w-[40rem] bg-[radial-gradient(closest-side,rgba(0,115,94,0.4),transparent_70%)]" />
-      <div className="relative mx-auto w-full max-w-3xl px-5 py-20">
+      <div className="relative mx-auto w-full max-w-md px-5 py-20">
         <Reveal className="text-center">
           <FrogIcon className="mx-auto h-16 w-16 text-caribbean" />
           <p className="mt-6 font-display text-sm uppercase tracking-[0.3em] text-caribbean">
@@ -31,37 +44,51 @@ export default function Login() {
           <h1 className="mt-3 font-display text-4xl font-semibold uppercase tracking-wide text-cream md:text-5xl">
             Iniciar sesión
           </h1>
-          <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-tea/70">
-            Demo sin backend: elige con qué rol quieres entrar para explorar cada vista del sistema.
-          </p>
         </Reveal>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-3">
-          {orden.map((rol, i) => (
-            <Reveal
-              as="button"
-              key={rol}
-              delay={i * 120}
-              onClick={() => entrar(rol)}
-              className={`group rounded-2xl border border-tea/15 bg-jungle-deep/50 p-6 text-left backdrop-blur transition hover:-translate-y-1 ${acento[rol]}`}
-            >
-              <FrogIcon className="h-9 w-9 text-tea/40 transition-colors group-hover:text-caribbean" />
-              <h2 className="mt-4 font-display text-lg font-semibold uppercase tracking-wide text-cream">
-                {ROLES[rol].label}
-              </h2>
-              <p className="mt-2 text-xs leading-relaxed text-tea/60">{ROLES[rol].desc}</p>
-              <span className="mt-4 inline-block font-display text-xs font-semibold uppercase tracking-[0.18em] text-caribbean">
-                Entrar →
-              </span>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal delay={120} as="form" onSubmit={submit} className="mt-10 space-y-5">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="email" className={labelBase}>Correo</label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@correo.com"
+              className={inputBase}
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="password" className={labelBase}>Contraseña</label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Tu contraseña"
+              className={inputBase}
+            />
+          </div>
 
-        <p className="mt-10 text-center text-sm text-tea/50">
-          ¿Solo mirando?{' '}
-          <Link to="/" className="font-semibold text-caribbean underline-offset-4 hover:underline">
-            Volver al sitio público
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-full bg-caribbean px-7 py-3 font-display text-sm font-semibold uppercase tracking-[0.18em] text-jungle transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {busy ? 'Entrando…' : 'Entrar'}
+          </button>
+        </Reveal>
+
+        <p className="mt-8 text-center text-sm text-tea/60">
+          ¿No tienes cuenta?{' '}
+          <Link to="/postularme" className="font-semibold text-caribbean underline-offset-4 hover:underline">
+            Postúlate aquí
           </Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-tea/50">
+          <Link to="/" className="underline-offset-4 hover:underline">Volver al sitio público</Link>
         </p>
       </div>
     </section>

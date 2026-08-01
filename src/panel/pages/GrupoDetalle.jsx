@@ -1,101 +1,159 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Card, Chip, Btn, DemoNote } from '../ui'
-import { misGrupos, kanbanColumnas, kanbanTareas } from '../../data/panel'
+import { Card, Chip, Btn, Reveal, inputCls, labelCls } from '../ui'
+import KanbanBoard from '../KanbanBoard'
+import { groupsApi } from '../../api/groups'
+import { useFetch } from '../../hooks/useFetch'
+import { useSession } from '../../auth/SessionContext'
+import { useToast } from '../../components/Toast'
 
-const colAcento = { Pendiente: '#9fb3ad', 'En proceso': '#00e6bc', 'En revisión': '#d67a63', Completado: '#00735e' }
+const rolLabel = { Coordinator: 'Coordinador', Leader: 'Líder', Member: 'Miembro' }
+const rolTono = { Coordinator: 'caribbean', Leader: 'terracotta', Member: 'gris' }
 
 export default function GrupoDetalle() {
   const { id } = useParams()
-  const grupo = misGrupos.find((g) => g.id === id) || { nombre: 'Equipo', tipo: 'Equipo', rol: 'Integrante' }
-  const [tareas, setTareas] = useState(kanbanTareas)
-  const [sel, setSel] = useState(null)
-  const mover = (tid, estado) => setTareas((ts) => ts.map((t) => (t.id === tid ? { ...t, estado } : t)))
-  const seleccionada = tareas.find((t) => t.id === sel)
+  const { user, hasPermission } = useSession()
+  const [version, setVersion] = useState(0)
+  const reload = () => setVersion((v) => v + 1)
+
+  const { data: com, loading, error } = useFetch(() => groupsApi.commission(id), [id, version])
+  const toast = useToast()
+  const setMsg = (m) => { if (m) m.ok ? toast.success(m.text) : toast.error(m.text) }
+  const [nuevoEquipo, setNuevoEquipo] = useState({ name: '', leaderUserId: '' })
+  const [coordSel, setCoordSel] = useState('')
+
+  const miembros = com?.members ?? []
+  const esCoordinador = miembros.some((m) => m.userId === user?.id && m.role === 'Coordinator')
+  const puedeGestionar = hasPermission('comisiones.ver_todas') || esCoordinador
+
+  const { data: solicitudes } = useFetch(
+    () => (puedeGestionar && com ? groupsApi.joinRequests(id) : Promise.resolve([])),
+    [id, version, puedeGestionar, !!com],
+  )
+
+  async function decidir(reqId, decision) {
+    setMsg(null)
+    try { await groupsApi.decideJoin(reqId, decision); reload() }
+    catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo procesar.' }) }
+  }
+
+  async function crearEquipo() {
+    if (!nuevoEquipo.name.trim() || !nuevoEquipo.leaderUserId) { setMsg({ ok: false, text: 'Nombre y líder del equipo son obligatorios.' }); return }
+    try {
+      await groupsApi.createTeam(id, { name: nuevoEquipo.name.trim(), leaderUserId: nuevoEquipo.leaderUserId })
+      setMsg({ ok: true, text: 'Equipo creado.' }); setNuevoEquipo({ name: '', leaderUserId: '' }); reload()
+    } catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo crear el equipo.' }) }
+  }
+
+  async function asignarCoordinador() {
+    if (!coordSel) return
+    try { await groupsApi.assignCoordinator(id, coordSel); setMsg({ ok: true, text: 'Coordinador designado.' }); setCoordSel(''); reload() }
+    catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo designar.' }) }
+  }
+
+  if (loading) return <p className="text-tea/50">Cargando comisión…</p>
+  if (error || !com) return (
+    <>
+      <Link to="/panel/grupos" className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-caribbean">← Mis grupos</Link>
+      <p className="mt-4 text-candy">No se pudo cargar la comisión.</p>
+    </>
+  )
+
+  const pendientes = solicitudes ?? []
 
   return (
     <>
       <Link to="/panel/grupos" className="font-mono text-xs font-semibold uppercase tracking-[0.12em] text-caribbean">← Mis grupos</Link>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-cream">{grupo.nombre}</h1>
-        <Chip tone={grupo.tipo === 'Comisión' ? 'caribbean' : 'terracotta'}>{grupo.tipo}</Chip>
-        <Chip tone="gris">Tu rol: {grupo.rol}</Chip>
+        <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-cream">{com.name}</h1>
+        <Chip tone="caribbean">Comisión</Chip>
+        {com.permanent && <Chip tone="gris">Permanente</Chip>}
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-4">
-        {[{ k: 'Integrantes', v: '5' }, { k: 'Biblioteca de enlaces', v: '7', s: 'enlaces con título' }, { k: 'Documentos', v: '3', s: 'archivos del grupo' }].map((x) => (
-          <Card key={x.k}>
-            <p className="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-caribbean">{x.k}</p>
-            <p className="mt-2 font-display text-3xl font-semibold text-cream">{x.v}</p>
-            {x.s && <p className="font-mono text-xs text-tea/40">{x.s}</p>}
-          </Card>
-        ))}
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+        {/* Integrantes */}
         <Card>
-          <p className="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-caribbean">Instructivo</p>
-          <p className="mt-2 text-sm text-tea/70">instructivo-evento.pdf</p>
-          <button className="mt-1 font-mono text-xs font-semibold uppercase tracking-wide text-caribbean">Descargar</button>
+          <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Integrantes ({miembros.length})</h2>
+          <div className="mt-3 divide-y divide-tea/8">
+            {miembros.length === 0 && <p className="py-2 text-sm text-tea/45">Aún no hay integrantes.</p>}
+            {miembros.map((m) => (
+              <div key={m.userId} className="flex items-center justify-between py-2.5">
+                <Link to={`/perfil/${m.userId}`} target="_blank" className="text-sm text-tea hover:text-caribbean">{m.name}</Link>
+                <Chip tone={rolTono[m.role]}>{rolLabel[m.role] ?? m.role}</Chip>
+              </div>
+            ))}
+          </div>
+
+          {puedeGestionar && miembros.length > 0 && (
+            <div className="mt-5 border-t border-tea/10 pt-4">
+              <label className={labelCls}>Designar coordinador</label>
+              <div className="mt-1.5 flex gap-2">
+                <select value={coordSel} onChange={(e) => setCoordSel(e.target.value)} className={`${inputCls} flex-1`}>
+                  <option value="">Elige un integrante…</option>
+                  {miembros.map((m) => <option key={m.userId} value={m.userId}>{m.name}</option>)}
+                </select>
+                <Btn onClick={asignarCoordinador} disabled={!coordSel}>Designar</Btn>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Equipos */}
+        <Card>
+          <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Equipos ({com.teams.length})</h2>
+          <div className="mt-3 space-y-2">
+            {com.teams.length === 0 && <p className="text-sm text-tea/45">Sin equipos todavía.</p>}
+            {com.teams.map((t) => (
+              <div key={t.id} className="rounded-xl border border-tea/10 bg-jungle-deep/40 p-3">
+                <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">{t.name}</p>
+                <p className="mt-0.5 font-mono text-xs text-tea/45">Líder: {t.leaderName || '—'} · {t.memberCount} integrantes</p>
+              </div>
+            ))}
+          </div>
+
+          {puedeGestionar && (
+            <div className="mt-5 border-t border-tea/10 pt-4">
+              <label className={labelCls}>Nuevo equipo</label>
+              <input className={`${inputCls} mt-1.5`} value={nuevoEquipo.name} onChange={(e) => setNuevoEquipo((f) => ({ ...f, name: e.target.value }))} placeholder="Nombre del equipo" />
+              <select className={`${inputCls} mt-2`} value={nuevoEquipo.leaderUserId} onChange={(e) => setNuevoEquipo((f) => ({ ...f, leaderUserId: e.target.value }))}>
+                <option value="">Líder del equipo…</option>
+                {miembros.map((m) => <option key={m.userId} value={m.userId}>{m.name}</option>)}
+              </select>
+              <Btn className="mt-3" onClick={crearEquipo}>+ Crear equipo</Btn>
+            </div>
+          )}
         </Card>
       </div>
 
-      <div className="mt-8 flex items-center justify-between">
-        <h2 className="font-display text-xl font-semibold uppercase tracking-wide text-cream">Tablero</h2>
-        {grupo.rol === 'Líder' && <Btn>+ Nueva tarea</Btn>}
-      </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-4">
-        {kanbanColumnas.map((col) => {
-          const items = tareas.filter((t) => t.estado === col)
-          return (
-            <div key={col} className="rounded-2xl border border-tea/10 bg-black/15 p-3" style={{ borderTop: `3px solid ${colAcento[col]}` }}>
-              <div className="mb-3 flex items-center justify-between px-1">
-                <span className="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-tea/70">{col}</span>
-                <span className="rounded-full bg-tea/10 px-2 font-mono text-xs text-tea/60">{items.length}</span>
-              </div>
-              <div className="space-y-2">
-                {items.map((t) => (
-                  <button key={t.id} onClick={() => setSel(t.id)} className="w-full rounded-xl border border-tea/10 bg-jungle p-3 text-left transition hover:-translate-y-0.5 hover:border-caribbean/40">
-                    <p className="text-sm font-medium leading-snug text-tea">{t.titulo}</p>
-                    <div className="mt-2 flex items-center justify-between font-mono text-[0.7rem] text-tea/45">
-                      <span>{t.responsables.join(', ')}</span>{t.enlaces > 0 && <span>🔗 {t.enlaces}</span>}
+      {/* Solicitudes de ingreso (gestión) */}
+      {puedeGestionar && (
+        <Reveal className="mt-6">
+          <Card>
+            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Solicitudes de ingreso ({pendientes.length})</h2>
+            {pendientes.length === 0 ? (
+              <p className="mt-2 text-sm text-tea/45">No hay solicitudes pendientes.</p>
+            ) : (
+              <div className="mt-3 divide-y divide-tea/8">
+                {pendientes.map((s) => (
+                  <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-tea">{s.userName}</p>
+                      <p className="font-mono text-xs text-tea/45">{s.userEmail}</p>
                     </div>
-                  </button>
+                    <div className="flex gap-2">
+                      <Btn onClick={() => decidir(s.id, 'Accept')}>Aceptar</Btn>
+                      <Btn tone="ghost" onClick={() => decidir(s.id, 'Reject')}>Rechazar</Btn>
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
-          )
-        })}
-      </div>
-      <p className="mt-4 text-xs text-tea/45">Solo el <strong className="text-tea/70">líder</strong> mueve tareas y edita el tablero. El responsable actualiza descripción, enlaces y marca como lista.</p>
-
-      {seleccionada && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-jungle-deep/70 backdrop-blur-sm" onClick={() => setSel(null)} />
-          <div className="relative w-full max-w-lg rounded-2xl border border-tea/10 bg-jungle p-7 shadow-2xl">
-            <div className="flex items-start justify-between">
-              <Chip tone="tea">{seleccionada.estado}</Chip>
-              <button onClick={() => setSel(null)} className="text-2xl leading-none text-tea/40 hover:text-tea">×</button>
-            </div>
-            <h3 className="mt-3 font-display text-2xl font-semibold uppercase tracking-wide text-cream">{seleccionada.titulo}</h3>
-            <p className="mt-3 text-sm leading-relaxed text-tea/60">Descripción de la tarea con los detalles que el responsable necesita para ejecutarla.</p>
-            <div className="mt-4 space-y-2 text-sm text-tea/70">
-              <p><span className="text-tea/45">Responsables:</span> {seleccionada.responsables.join(', ')}</p>
-              <p><span className="text-tea/45">Enlaces:</span> {seleccionada.enlaces} adjuntos</p>
-            </div>
-            <div className="mt-5">
-              <p className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-caribbean">Mover a (líder)</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {kanbanColumnas.map((col) => (
-                  <button key={col} onClick={() => mover(seleccionada.id, col)} className={`rounded-full px-3 py-1 font-mono text-xs font-semibold transition ${seleccionada.estado === col ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/60 hover:bg-tea/15'}`}>{col}</button>
-                ))}
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end gap-2">
-              <Btn tone="ghost" onClick={() => setSel(null)}>Cerrar</Btn>
-              <Btn onClick={() => { mover(seleccionada.id, 'Completado'); setSel(null) }}>Marcar como lista</Btn>
-            </div>
-          </div>
-        </div>
+            )}
+          </Card>
+        </Reveal>
       )}
-      <DemoNote />
+
+      <KanbanBoard groupId={id} members={miembros} currentUserId={user?.id} />
     </>
   )
 }

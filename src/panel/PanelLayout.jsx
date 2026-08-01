@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet, Link, useNavigate, Navigate } from 'react-router-dom'
 import { useSession, ROLES, alcanza } from '../auth/SessionContext'
-import { usuarioActual } from '../data/panel'
+import { iniciales, gradientFor } from '../utils/gradient'
 import ranaUrl from '../assets/SVG/ranita_patas_espatulares.svg'
 
 /* Íconos de navegación (line-art) */
@@ -21,6 +21,7 @@ function Ico({ name }) {
     briefcase: (<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18" /></>),
     key: (<><circle cx="8" cy="8" r="4" /><path d="M11 11l8 8M16 16l2-2M18 18l2-2" /></>),
     list: (<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />),
+    cloud: (<path d="M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 9.5a3.5 3.5 0 0 1 .5 6.96" />),
   }
   return (
     <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] flex-none" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -49,6 +50,7 @@ const seccionAdmin = [
 const seccionSuper = [
   { to: '/panel/super/roles', label: 'Roles y permisos', ico: 'key' },
   { to: '/panel/super/auditoria', label: 'Auditoría', ico: 'list' },
+  { to: '/panel/super/archivos', label: 'Gestor de archivos', ico: 'cloud' },
 ]
 
 function NavSeccion({ titulo, items, onNavigate }) {
@@ -90,24 +92,25 @@ function SidebarFooter({ rol, onSalir }) {
   return (
     <div className="relative mt-6 border-t border-tea/10 pt-4">
       <div className="mb-3 rounded-xl border border-tea/10 bg-black/20 px-3 py-2.5">
-        <p className="font-mono text-[0.6rem] uppercase tracking-[0.15em] text-tea/40">Sesión demo</p>
+        <p className="font-mono text-[0.6rem] uppercase tracking-[0.15em] text-tea/40">Sesión activa</p>
         <p className="mt-0.5 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-wide text-caribbean">
           <span className="h-1.5 w-1.5 rounded-full bg-caribbean" />{ROLES[rol].label}
         </p>
       </div>
       <button type="button" onClick={onSalir} className="w-full rounded-lg border border-tea/15 px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] text-tea/70 transition hover:border-candy hover:text-candy">
-        Cambiar rol / salir
+        Cerrar sesión
       </button>
     </div>
   )
 }
 
 export default function PanelLayout() {
-  const { rol, logout } = useSession()
+  const { rol, user, logout, loading } = useSession()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
 
-  if (!rol) return <Navigate to="/login" replace />
+  if (loading) return <div className="flex min-h-screen items-center justify-center bg-jungle-deep text-tea/60">Cargando…</div>
+  if (!user) return <Navigate to="/login" replace />
 
   const salir = () => { logout(); navigate('/login') }
   const closeMobile = () => setOpen(false)
@@ -136,11 +139,11 @@ export default function PanelLayout() {
           <Link to="/" className="hidden font-mono text-xs uppercase tracking-[0.15em] text-tea/45 transition hover:text-caribbean lg:block">← Ver sitio público</Link>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">{usuarioActual.nombre}</p>
+              <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">{user.fullName}</p>
               <p className="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-caribbean">{ROLES[rol].label}</p>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full font-display text-sm font-semibold text-jungle" style={{ background: `linear-gradient(150deg, ${usuarioActual.colores[0]}, ${usuarioActual.colores[1]})` }}>
-              {usuarioActual.iniciales}
+            <div className="flex h-10 w-10 items-center justify-center rounded-full font-display text-sm font-semibold text-jungle" style={{ background: gradientFor(user.id) }}>
+              {iniciales(user.fullName)}
             </div>
           </div>
         </header>
