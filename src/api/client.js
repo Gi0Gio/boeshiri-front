@@ -2,7 +2,10 @@
  * Cliente HTTP mínimo para la API de Boesh Irí.
  * Base URL desde VITE_API_URL; adjunta el JWT y normaliza errores (problem+json).
  */
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+// El build de producción exige VITE_API_URL (ver vite.config.js), así que este
+// respaldo solo actúa en `npm run dev`. La barra final se recorta porque las rutas
+// ya empiezan por "/": pegar la URL con barra en el hosting daría "//auth/login".
+const BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/+$/, '')
 const TOKEN_KEY = 'boeshiri-token'
 
 export const API_BASE = BASE
