@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
+import ReenviarVerificacion from '../components/ReenviarVerificacion'
 import { useSession } from '../auth/SessionContext'
 import { useToast } from '../components/Toast'
 
@@ -17,16 +18,21 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
+  // La API responde 403 con este motivo cuando la cuenta existe pero el correo
+  // sigue sin confirmar: es el único caso en que ofrecer el reenvío tiene sentido.
+  const [sinVerificar, setSinVerificar] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
     setBusy(true)
+    setSinVerificar(false)
     try {
       await login(email.trim(), password)
       toast.success('¡Bienvenido de vuelta!')
       navigate('/panel')
     } catch (err) {
       toast.error(err.message || 'No se pudo iniciar sesión.')
+      if (err.status === 403 && /verificar tu correo/i.test(err.message || '')) setSinVerificar(true)
     } finally {
       setBusy(false)
     }
@@ -80,6 +86,17 @@ export default function Login() {
             {busy ? 'Entrando…' : 'Entrar'}
           </button>
         </Reveal>
+
+        {sinVerificar && (
+          <div className="mt-6 rounded-2xl border border-terracotta/30 bg-terracotta/10 p-5 text-center">
+            <p className="text-sm leading-relaxed text-tea/80">
+              Tu cuenta existe, pero el correo sigue sin confirmar. Sin eso no puedes entrar.
+            </p>
+            <div className="mt-3">
+              <ReenviarVerificacion email={email} compacto />
+            </div>
+          </div>
+        )}
 
         <p className="mt-8 text-center text-sm text-tea/60">
           ¿No tienes cuenta?{' '}

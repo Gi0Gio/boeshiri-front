@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
+import ReenviarVerificacion from '../components/ReenviarVerificacion'
 import { authApi } from '../api/auth'
 
 const btnPrimario =
@@ -90,7 +91,18 @@ export default function VerificarCorreo() {
                 Los enlaces caducan a las 24 horas y solo sirven una vez. Si ya lo habías
                 abierto antes, tu correo puede estar confirmado: prueba a iniciar sesión.
               </p>
-              <div className="mt-9 flex flex-wrap justify-center gap-3">
+
+              <div className="mx-auto mt-7 max-w-md rounded-2xl border border-tea/10 bg-jungle/60 p-5 text-left">
+                <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-caribbean">
+                  ¿Caducó tu enlace?
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-tea/60">
+                  Escribe tu correo y te mandamos uno nuevo.
+                </p>
+                <ReenviarVerificacion />
+              </div>
+
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Link to="/login" className={btnPrimario}>Iniciar sesión</Link>
                 <Link to="/contacto" className={btnGhost}>Escríbenos</Link>
               </div>
