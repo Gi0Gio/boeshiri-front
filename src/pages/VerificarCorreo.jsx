@@ -18,14 +18,25 @@ const btnGhost =
 export default function VerificarCorreo() {
   const [params] = useSearchParams()
   const token = params.get('token')
-  const [estado, setEstado] = useState(token ? 'verificando' : 'sin-token')
-  const [error, setError] = useState(null)
+  // La API redirige aquí con ?estado= cuando el enlace se abrió contra ella
+  // directamente: en ese caso ya verificó y el token está consumido, así que
+  // volver a llamarla daría "inválido" sobre un éxito.
+  const yaResuelto = params.get('estado')
+
+  const [estado, setEstado] = useState(
+    yaResuelto === 'ok' ? 'ok'
+      : yaResuelto === 'invalido' ? 'error'
+        : token ? 'verificando' : 'sin-token',
+  )
+  const [error, setError] = useState(
+    yaResuelto === 'invalido' ? 'El enlace no es válido o ya se usó.' : null,
+  )
   // StrictMode monta dos veces en desarrollo; sin esto el token se consume dos
   // veces y la segunda llamada responde "inválido o expirado" sobre un éxito.
   const yaEnviado = useRef(false)
 
   useEffect(() => {
-    if (!token || yaEnviado.current) return
+    if (!token || yaResuelto || yaEnviado.current) return
     yaEnviado.current = true
 
     let activo = true
@@ -38,7 +49,7 @@ export default function VerificarCorreo() {
         setEstado('error')
       })
     return () => { activo = false }
-  }, [token])
+  }, [token, yaResuelto])
 
   return (
     <section className="bg-dorace-pattern relative flex min-h-screen items-center overflow-hidden bg-jungle pt-16">

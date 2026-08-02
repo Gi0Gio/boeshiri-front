@@ -197,6 +197,10 @@ export default function Postularme() {
             </p>
 
             <form onSubmit={avanzar} noValidate={false} className="rounded-3xl border border-tea/10 bg-cream p-6 sm:p-8 md:p-10">
+              {/* Altura mínima común a los tres pasos: cada uno tiene distinto número
+                  de campos y, sin esto, la tarjeta encoge o crece al avanzar y
+                  arrastra consigo el fondo y los degradados de la sección. */}
+              <div className="min-h-[27rem] sm:min-h-[25rem]">
               {paso === 1 && (
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2">
@@ -276,6 +280,7 @@ export default function Postularme() {
                   </label>
                 </div>
               )}
+              </div>
 
               {/* En móvil el botón principal ocupa el ancho y "Atrás" queda debajo:
                   juntos en una fila no caben en pantallas de 320–360 px. */}
