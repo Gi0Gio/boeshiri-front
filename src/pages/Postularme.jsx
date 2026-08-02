@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
+import ReenviarVerificacion from '../components/ReenviarVerificacion'
 import { authApi } from '../api/auth'
 import { useToast } from '../components/Toast'
 import { useSession } from '../auth/SessionContext'
@@ -138,6 +139,18 @@ export default function Postularme() {
             >
               Ir a iniciar sesión
             </Link>
+
+            {/* Aquí es donde uno nota que el correo no llegó, así que el reenvío
+                debe estar a mano y con la dirección ya puesta. */}
+            <div className="mt-8 border-t border-tea/10 pt-6">
+              <p className="text-sm leading-relaxed text-tea/55">
+                ¿No te llegó? Revisa la carpeta de spam. Si pasados un par de minutos sigue
+                sin aparecer, pide otro enlace.
+              </p>
+              <div className="mt-2">
+                <ReenviarVerificacion email={form.correo} compacto />
+              </div>
+            </div>
           </Reveal>
         ) : (
           <Reveal delay={140} className="mt-10 md:mt-12">

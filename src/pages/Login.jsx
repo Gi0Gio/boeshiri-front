@@ -21,6 +21,9 @@ export default function Login() {
   // La API responde 403 con este motivo cuando la cuenta existe pero el correo
   // sigue sin confirmar: es el único caso en que ofrecer el reenvío tiene sentido.
   const [sinVerificar, setSinVerificar] = useState(false)
+  // Acceso manual al reenvío: sin esto solo aparecía tras fallar el login, y quien
+  // sabe que no le llegó el correo no debería tener que provocar un error primero.
+  const [mostrarReenvio, setMostrarReenvio] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
@@ -95,6 +98,34 @@ export default function Login() {
             <div className="mt-3">
               <ReenviarVerificacion email={email} compacto />
             </div>
+          </div>
+        )}
+
+        {/* Si el login ya delató la falta de verificación, el aviso de arriba
+            cubre el caso y este atajo sobra. */}
+        {!sinVerificar && (
+          <div className="mt-6">
+            {mostrarReenvio ? (
+              <div className="rounded-2xl border border-tea/10 bg-jungle-deep/40 p-5">
+                <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-caribbean">
+                  Reenviar verificación
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-tea/60">
+                  Te mandamos un enlace nuevo para confirmar tu correo.
+                </p>
+                <ReenviarVerificacion email={email} />
+              </div>
+            ) : (
+              <p className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setMostrarReenvio(true)}
+                  className="text-sm text-tea/50 underline-offset-4 transition hover:text-caribbean hover:underline"
+                >
+                  ¿No te llegó el correo de verificación?
+                </button>
+              </p>
+            )}
           </div>
         )}
 
