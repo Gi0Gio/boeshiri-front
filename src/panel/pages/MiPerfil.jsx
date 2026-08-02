@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader, Card, Toggle, Btn, Chip, Reveal, inputCls, labelCls } from '../ui'
 import { profileApi } from '../../api/profile'
 import { useFetch } from '../../hooks/useFetch'
 import ImageUpload from '../../components/ImageUpload'
 import { useToast } from '../../components/Toast'
+import { useConfirm } from '../../components/ConfirmDialog'
+import { useSession } from '../../auth/SessionContext'
 
 /** Redes editables; el orden y prefijo son cosméticos. type = enum de la API. */
 const REDES = [
@@ -43,6 +46,9 @@ export default function MiPerfil() {
   const [nuevaTag, setNuevaTag] = useState('')
   const [saving, setSaving] = useState(false)
   const toast = useToast()
+  const confirm = useConfirm()
+  const { logout } = useSession()
+  const navigate = useNavigate()
   const setMsg = (m) => { if (m) m.ok ? toast.success(m.text) : toast.error(m.text) }
 
   useEffect(() => { if (data) setForm(toForm(data)) }, [data])
@@ -51,6 +57,18 @@ export default function MiPerfil() {
   if (error || !form) return <p className="text-candy">No se pudo cargar tu perfil.</p>
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+
+  async function cerrarSesion() {
+    const ok = await confirm({
+      title: '¿Cerrar sesión?',
+      message: 'Saldrás del panel en este dispositivo. Tendrás que volver a entrar con tu correo y contraseña.',
+      danger: true,
+      confirmLabel: 'Cerrar sesión',
+    })
+    if (!ok) return
+    logout()
+    navigate('/')
+  }
   const setRed = (type, patch) => setForm((f) => ({ ...f, redes: { ...f.redes, [type]: { ...f.redes[type], ...patch } } }))
 
   const faltantes = [
@@ -236,6 +254,24 @@ export default function MiPerfil() {
           </Reveal>
         </div>
       </div>
+
+      {/* Zona de peligro: el cierre de sesión salió del menú lateral, donde se
+          pulsaba por error al buscar la salida al sitio público. Aquí hay que
+          bajar a propósito, y además se confirma. */}
+      <Reveal className="mt-10">
+        <div className="rounded-2xl border border-candy/30 bg-candy/5 p-6">
+          <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-candy">Zona de peligro</h2>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-candy/15 pt-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-tea">Cerrar sesión</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-tea/50">
+                Saldrás del panel en este dispositivo. Tus datos no se pierden.
+              </p>
+            </div>
+            <Btn tone="candy" onClick={cerrarSesion}>Cerrar sesión</Btn>
+          </div>
+        </div>
+      </Reveal>
     </>
   )
 }

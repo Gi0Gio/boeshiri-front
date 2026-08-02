@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, Link, useNavigate, Navigate } from 'react-router-dom'
+import { NavLink, Outlet, Link, Navigate } from 'react-router-dom'
 import { useSession, ROLES, alcanza } from '../auth/SessionContext'
 import { iniciales, gradientFor } from '../utils/gradient'
 import ranaUrl from '../assets/SVG/ranita_patas_espatulares.svg'
@@ -88,7 +88,7 @@ function SidebarBody({ rol, onNavigate }) {
   )
 }
 
-function SidebarFooter({ rol, onSalir }) {
+function SidebarFooter({ rol, onNavigate }) {
   return (
     <div className="relative mt-6 border-t border-tea/10 pt-4">
       <div className="mb-3 rounded-xl border border-tea/10 bg-black/20 px-3 py-2.5">
@@ -97,22 +97,28 @@ function SidebarFooter({ rol, onSalir }) {
           <span className="h-1.5 w-1.5 rounded-full bg-caribbean" />{ROLES[rol].label}
         </p>
       </div>
-      <button type="button" onClick={onSalir} className="w-full rounded-lg border border-tea/15 px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] text-tea/70 transition hover:border-candy hover:text-candy">
-        Cerrar sesión
-      </button>
+      {/* Volver al sitio sin perder la sesión. En móvil no había forma de salir
+          del panel: el enlace de la cabecera solo aparece en escritorio, y aquí
+          estaba "Cerrar sesión", que es lo contrario de lo que se busca.
+          El cierre de sesión vive ahora en Mi perfil, con confirmación. */}
+      <Link
+        to="/"
+        onClick={onNavigate}
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-tea/15 px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] text-tea/70 transition hover:border-caribbean hover:text-caribbean"
+      >
+        ← Volver al sitio
+      </Link>
     </div>
   )
 }
 
 export default function PanelLayout() {
-  const { rol, user, logout, loading } = useSession()
-  const navigate = useNavigate()
+  const { rol, user, loading } = useSession()
   const [open, setOpen] = useState(false)
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-jungle-deep text-tea/60">Cargando…</div>
   if (!user) return <Navigate to="/login" replace />
 
-  const salir = () => { logout(); navigate('/login') }
   const closeMobile = () => setOpen(false)
 
   return (
@@ -127,7 +133,7 @@ export default function PanelLayout() {
         <nav className="relative flex-1 overflow-y-auto">
           <SidebarBody rol={rol} onNavigate={closeMobile} />
         </nav>
-        <SidebarFooter rol={rol} onSalir={salir} />
+        <SidebarFooter rol={rol} onNavigate={closeMobile} />
       </aside>
 
       {/* Contenido */}
@@ -168,7 +174,7 @@ export default function PanelLayout() {
             <nav className="relative flex-1 overflow-y-auto">
               <SidebarBody rol={rol} onNavigate={closeMobile} />
             </nav>
-            <SidebarFooter rol={rol} onSalir={salir} />
+            <SidebarFooter rol={rol} onNavigate={closeMobile} />
           </aside>
         </div>
       )}
