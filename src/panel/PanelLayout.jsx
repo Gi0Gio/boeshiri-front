@@ -126,9 +126,11 @@ export default function PanelLayout() {
       {/* Sidebar desktop */}
       <aside className="sticky top-0 hidden h-screen w-64 flex-none flex-col overflow-hidden border-r border-tea/10 bg-jungle px-4 py-6 lg:flex">
         <img src={ranaUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-8 h-56 w-auto opacity-[0.05]" />
-        <Link to="/panel" className="relative mb-8 flex items-center gap-2 px-2">
+        {/* El logo lleva al sitio público, no al inicio del panel: para eso está
+            "Inicio" en la navegación de abajo. */}
+        <Link to="/" className="group relative mb-8 flex items-center gap-2 px-2" title="Ir al sitio de Boesh Irí">
           <img src={ranaUrl} alt="" className="h-7 w-auto" />
-          <span className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Boesh Irí</span>
+          <span className="font-display text-lg font-semibold uppercase tracking-wide text-cream transition-colors group-hover:text-caribbean">Boesh Irí</span>
         </Link>
         <nav className="relative flex-1 overflow-y-auto">
           <SidebarBody rol={rol} onNavigate={closeMobile} />
@@ -139,8 +141,20 @@ export default function PanelLayout() {
       {/* Contenido */}
       <div className="flex-1">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-tea/10 bg-jungle-deep/90 px-5 py-3 backdrop-blur">
-          <button type="button" onClick={() => setOpen(true)} className="flex items-center gap-2 rounded-lg border border-tea/15 px-3 py-2 font-mono text-xs font-semibold uppercase tracking-wide text-tea lg:hidden">
-            <span className="text-base leading-none">≡</span> Menú
+          {/* El glifo "≡" se apoyaba en la métrica de la fuente y quedaba descentrado
+              respecto al texto; además "tracking-wide" añade espacio DESPUÉS de la
+              última letra, así que el contenido se veía corrido a la izquierda dentro
+              del botón. Con un SVG y compensando ese espacio sobrante queda centrado. */}
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Abrir el menú"
+            className="flex items-center justify-center gap-2 rounded-lg border border-tea/15 py-2 pl-3 pr-[calc(0.75rem-0.08em)] font-mono text-xs font-semibold uppercase tracking-wide text-tea transition hover:border-caribbean hover:text-caribbean lg:hidden"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4 flex-none" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+            <span className="-mr-[0.08em]">Menú</span>
           </button>
           <Link to="/" className="hidden font-mono text-xs uppercase tracking-[0.15em] text-tea/45 transition hover:text-caribbean lg:block">← Ver sitio público</Link>
           <div className="flex items-center gap-3">
@@ -166,9 +180,9 @@ export default function PanelLayout() {
           <aside className="absolute inset-y-0 left-0 flex w-72 flex-col overflow-hidden border-r border-tea/10 bg-jungle px-4 py-6">
             <img src={ranaUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-8 h-64 w-auto opacity-[0.06]" />
             <div className="relative mb-8 flex items-center justify-between px-2">
-              <span className="flex items-center gap-2 font-display text-lg font-semibold uppercase tracking-wide text-cream">
+              <Link to="/" onClick={closeMobile} className="flex items-center gap-2 font-display text-lg font-semibold uppercase tracking-wide text-cream transition-colors hover:text-caribbean" title="Ir al sitio de Boesh Irí">
                 <img src={ranaUrl} alt="" className="h-7 w-auto" /> Boesh Irí
-              </span>
+              </Link>
               <button type="button" onClick={closeMobile} className="text-2xl text-tea/60">×</button>
             </div>
             <nav className="relative flex-1 overflow-y-auto">
