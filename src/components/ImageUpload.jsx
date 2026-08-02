@@ -48,13 +48,13 @@ export default function ImageUpload({ value, onChange, folder = 'misc', label = 
             )}
           </div>
           <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={elegir} />
-          <input
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="…o pega una URL de imagen"
-            className="mt-2 w-full rounded-lg border border-tea/12 bg-jungle-deep/40 px-3 py-1.5 font-mono text-[0.7rem] text-tea/70 placeholder:text-tea/30 focus:border-caribbean focus:outline-none"
-          />
-          <p className="mt-1 font-mono text-[0.62rem] text-tea/40">Se optimiza a WebP automáticamente antes de subir.</p>
+          {/* Antes había un campo con la URL a la vista. Se quitó por dos razones:
+              exponía la ruta del objeto en el bucket, y permitía pegar enlaces
+              externos que esquivan la política de subida (conversión a WebP,
+              límites de tamaño y tipo) y dependen de un servidor ajeno. */}
+          <p className="mt-2 font-mono text-[0.62rem] text-tea/40">
+            JPG, PNG o WebP · máx. 5 MB · se optimiza a WebP automáticamente.
+          </p>
           {estado && estado !== 'subiendo' && <p className="mt-1 text-xs text-candy">{estado}</p>}
         </div>
       </div>

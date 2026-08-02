@@ -51,12 +51,29 @@ export default function MiPerfil() {
   const navigate = useNavigate()
   const setMsg = (m) => { if (m) m.ok ? toast.success(m.text) : toast.error(m.text) }
 
-  useEffect(() => { if (data) setForm(toForm(data)) }, [data])
+  // Copia de lo guardado, para saber si queda algo sin aplicar.
+  const [original, setOriginal] = useState(null)
+  const [avisoOculto, setAvisoOculto] = useState(false)
+
+  useEffect(() => {
+    if (!data) return
+    const inicial = toForm(data)
+    setForm(inicial)
+    setOriginal(inicial)
+  }, [data])
+
+  // Cualquier edición posterior vuelve a mostrar el aviso: la «✕» lo aparta de la
+  // vista, no da los cambios por descartados.
+  useEffect(() => { setAvisoOculto(false) }, [form])
 
   if (loading) return <p className="text-tea/50">Cargando perfil…</p>
   if (error || !form) return <p className="text-candy">No se pudo cargar tu perfil.</p>
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+
+  // Comparación por serialización: el formulario es plano (texto, booleanos,
+  // arrays de objetos simples) y así se detecta también el reordenado.
+  const hayCambios = original !== null && JSON.stringify(form) !== JSON.stringify(original)
 
   async function cerrarSesion() {
     const ok = await confirm({
@@ -102,6 +119,9 @@ export default function MiPerfil() {
         .map((r) => ({ type: r.type, value: (form.redes[r.type]?.value || '').trim(), visible: !!form.redes[r.type]?.visible }))
         .filter((l) => l.value)
       await profileApi.updateSocialLinks(links)
+      // Lo guardado pasa a ser la nueva referencia: sin esto el aviso seguiría
+      // ahí después de guardar, comparando contra un estado ya viejo.
+      setOriginal(form)
       setMsg({ ok: true, text: 'Perfil guardado.' })
     } catch (e) {
       setMsg({ ok: false, text: e.message || 'No se pudo guardar.' })
@@ -272,6 +292,32 @@ export default function MiPerfil() {
           </div>
         </div>
       </Reveal>
+
+      {/* Aviso de cambios sin aplicar. Fijo al pie porque la página es larga y el
+          botón de guardar vive arriba del todo: al editar habilidades o redes
+          queda fuera de pantalla y no hay señal de que falta guardar. */}
+      {hayCambios && !avisoOculto && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4">
+          <div className="pointer-events-auto flex w-full max-w-xl items-center gap-3 rounded-2xl border border-caribbean/40 bg-jungle px-4 py-3 shadow-[0_12px_40px_rgba(0,17,14,0.6)]">
+            <span className="h-2 w-2 flex-none rounded-full bg-caribbean" />
+            <p className="min-w-0 flex-1 text-sm text-tea">
+              Tienes cambios sin guardar.
+            </p>
+            <Btn onClick={guardar} disabled={saving} className="flex-none px-5 py-2">
+              {saving ? 'Guardando…' : 'Guardar'}
+            </Btn>
+            <button
+              type="button"
+              onClick={() => setAvisoOculto(true)}
+              aria-label="Ocultar el aviso (los cambios no se pierden)"
+              title="Ocultar aviso"
+              className="flex-none px-1 text-lg leading-none text-tea/40 transition hover:text-tea"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
