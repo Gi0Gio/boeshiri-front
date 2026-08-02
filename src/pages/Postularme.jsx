@@ -24,6 +24,13 @@ const labelBase = 'font-display text-xs font-semibold uppercase tracking-[0.2em]
 
 const BLANK = { nombre: '', correo: '', clave: '', clave2: '', disciplina: '', telefono: '', motivacion: '' }
 
+/** Panamá. El colectivo es de Chiriquí; el prefijo se da por hecho. */
+const COD_PANAMA = '507'
+/** Los celulares panameños son de 8 dígitos. */
+const LARGO_MAX = 8
+
+const soloDigitos = (v) => (v || '').replace(/\D/g, '')
+
 export default function Postularme() {
   const toast = useToast()
   const { user, loading: cargandoSesion } = useSession()
@@ -67,7 +74,9 @@ export default function Postularme() {
         email: form.correo.trim(),
         password: form.clave,
         fullName: form.nombre.trim(),
-        phone: form.telefono.trim() || null,
+        // Se guarda en formato internacional completo: es lo que necesita wa.me
+        // para abrir el chat sin que nadie tenga que anteponer el país a mano.
+        phone: form.telefono ? `+${COD_PANAMA}${form.telefono}` : null,
         discipline: form.disciplina || null,
         applicationReason: form.motivacion.trim() || null,
       })
@@ -235,7 +244,21 @@ export default function Postularme() {
                   </div>
                   <div className="flex flex-col gap-2">
                     <label htmlFor="telefono" className={labelBase}>Celular (opcional)</label>
-                    <input id="telefono" name="tel" type="tel" inputMode="tel" autoComplete="tel" value={form.telefono} onChange={(e) => set({ telefono: e.target.value })} placeholder="+507 6000-0000" className={inputBase} />
+                    {/* El prefijo es fijo y va fuera del campo: así lo que se teclea
+                        son solo dígitos y el número queda listo para armar un enlace
+                        de WhatsApp sin limpiar guiones, espacios ni paréntesis. */}
+                    <div className="flex items-stretch gap-2">
+                      <span className={`${inputBase} flex w-auto flex-none items-center gap-1.5 font-mono text-jungle/70`}>
+                        <span aria-hidden="true">🇵🇦</span>+{COD_PANAMA}
+                      </span>
+                      <input
+                        id="telefono" name="tel" type="tel" inputMode="numeric" autoComplete="tel-national"
+                        value={form.telefono}
+                        onChange={(e) => set({ telefono: soloDigitos(e.target.value).slice(0, LARGO_MAX) })}
+                        placeholder="60001234" className={inputBase}
+                      />
+                    </div>
+                    <p className="text-xs text-jungle/50">Solo números, sin guiones. Lo usamos para contactarte por WhatsApp.</p>
                   </div>
                 </div>
               )}

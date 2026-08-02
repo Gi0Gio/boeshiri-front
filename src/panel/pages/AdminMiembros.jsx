@@ -45,6 +45,48 @@ export default function AdminMiembros() {
     } finally { setBusy(null) }
   }
 
+  /** Pide un enlace nuevo al servidor. Devuelve null si algo falla (ya avisado). */
+  async function pedirEnlace(p) {
+    setBusy(p.id); setMsg(null)
+    try {
+      return await postulantesApi.verificationLink(p.id)
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || 'No se pudo generar el enlace.' })
+      return null
+    } finally { setBusy(null) }
+  }
+
+  async function enviarPorWhatsapp(p) {
+    const datos = await pedirEnlace(p)
+    if (!datos) return
+
+    if (!datos.phone) {
+      setMsg({ ok: false, text: 'No dejó teléfono al postularse. Usa «Copiar enlace».' })
+      return
+    }
+
+    const texto =
+      `Hola ${datos.fullName.split(' ')[0]}, soy de Boesh Irí. ` +
+      `Para completar tu postulación confirma tu correo aquí: ${datos.link}\n\n` +
+      `El enlace vence en 24 horas.`
+
+    // wa.me exige el número sin "+" ni separadores.
+    const numero = datos.phone.replace(/\D/g, '')
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener')
+  }
+
+  async function copiarEnlace(p) {
+    const datos = await pedirEnlace(p)
+    if (!datos) return
+    try {
+      await navigator.clipboard.writeText(datos.link)
+      setMsg({ ok: true, text: 'Enlace copiado. Vence en 24 horas.' })
+    } catch {
+      // Sin permiso de portapapeles no queda otra que mostrarlo para copiar a mano.
+      setMsg({ ok: false, text: datos.link })
+    }
+  }
+
   async function cambiarEstado(m, status) {
     if (!status || status === m.status) return
     const meta = estadoMeta(status)
@@ -195,9 +237,20 @@ export default function AdminMiembros() {
                           </div>
                         ) : (
                           // RF-PUB-13b: sin correo verificado la solicitud no puede decidirse.
-                          <p className="mt-4 rounded-lg border border-terracotta/25 bg-terracotta/10 px-4 py-2.5 text-xs leading-relaxed text-tea/70">
-                            Aún no confirma su correo, así que su postulación todavía no puede decidirse. Aparece aquí para que sepas que ya se registró.
-                          </p>
+                          <div className="mt-4 rounded-lg border border-terracotta/25 bg-terracotta/10 px-4 py-3">
+                            <p className="text-xs leading-relaxed text-tea/70">
+                              Aún no confirma su correo, así que su postulación todavía no puede decidirse.
+                              Si el correo no le llegó, pásale el enlace por WhatsApp.
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <Btn className="px-4 py-1.5" onClick={() => enviarPorWhatsapp(p)} disabled={busy === p.id}>
+                                {busy === p.id ? '…' : 'Enviar por WhatsApp'}
+                              </Btn>
+                              <Btn tone="ghost" className="px-4 py-1.5" onClick={() => copiarEnlace(p)} disabled={busy === p.id}>
+                                Copiar enlace
+                              </Btn>
+                            </div>
+                          </div>
                         )}
                       </Card>
                     </Reveal>
