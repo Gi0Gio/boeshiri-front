@@ -55,7 +55,9 @@ export function ToastProvider({ children }) {
           )
         })}
       </div>
-      <style>{`@keyframes toastIn{from{opacity:0;transform:translateX(1rem)}to{opacity:1;transform:none}}.toast-in{animation:toastIn .22s ease-out}`}</style>
+      {/* Entra desde arriba, no desde el lado: en móvil la pila ocupa casi todo
+          el ancho y un desplazamiento lateral se sale de la pantalla. */}
+      <style>{`@keyframes toastIn{from{opacity:0;transform:translateY(-0.75rem) scale(.98)}to{opacity:1;transform:none}}.toast-in{animation:toastIn .24s cubic-bezier(.16,1,.3,1)}`}</style>
     </ToastCtx.Provider>
   )
 }

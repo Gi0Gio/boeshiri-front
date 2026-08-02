@@ -132,6 +132,30 @@ export default function MiPerfil() {
 
   return (
     <>
+      {/* Aviso de cambios sin aplicar, pegado bajo la cabecera del panel.
+          Arriba y no abajo a propósito: en móvil el teclado ocupa la mitad
+          inferior y taparía justo el botón de guardar mientras escribes. */}
+      {hayCambios && !avisoOculto && (
+        <div className="sticky top-16 z-20 -mx-5 mb-6 px-5">
+          <div className="aviso-cambios flex items-center gap-3 rounded-2xl border border-caribbean/40 bg-jungle px-4 py-3 shadow-[0_12px_40px_rgba(0,17,14,0.6)]">
+            <span className="h-2 w-2 flex-none rounded-full bg-caribbean" />
+            <p className="min-w-0 flex-1 text-sm text-tea">Tienes cambios sin guardar.</p>
+            <Btn onClick={guardar} disabled={saving} className="flex-none px-5 py-2">
+              {saving ? 'Guardando…' : 'Guardar'}
+            </Btn>
+            <button
+              type="button"
+              onClick={() => setAvisoOculto(true)}
+              aria-label="Ocultar el aviso (los cambios no se pierden)"
+              title="Ocultar aviso"
+              className="flex-none px-1 text-lg leading-none text-tea/40 transition hover:text-tea"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         eyebrow="Miembro"
         title="Mi perfil"
@@ -293,31 +317,6 @@ export default function MiPerfil() {
         </div>
       </Reveal>
 
-      {/* Aviso de cambios sin aplicar. Fijo al pie porque la página es larga y el
-          botón de guardar vive arriba del todo: al editar habilidades o redes
-          queda fuera de pantalla y no hay señal de que falta guardar. */}
-      {hayCambios && !avisoOculto && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4">
-          <div className="pointer-events-auto flex w-full max-w-xl items-center gap-3 rounded-2xl border border-caribbean/40 bg-jungle px-4 py-3 shadow-[0_12px_40px_rgba(0,17,14,0.6)]">
-            <span className="h-2 w-2 flex-none rounded-full bg-caribbean" />
-            <p className="min-w-0 flex-1 text-sm text-tea">
-              Tienes cambios sin guardar.
-            </p>
-            <Btn onClick={guardar} disabled={saving} className="flex-none px-5 py-2">
-              {saving ? 'Guardando…' : 'Guardar'}
-            </Btn>
-            <button
-              type="button"
-              onClick={() => setAvisoOculto(true)}
-              aria-label="Ocultar el aviso (los cambios no se pierden)"
-              title="Ocultar aviso"
-              className="flex-none px-1 text-lg leading-none text-tea/40 transition hover:text-tea"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
     </>
   )
 }

@@ -106,3 +106,28 @@ body {
     box-shadow 0.3s ease,
     opacity 0.3s ease;
 }
+
+/* Aviso de cambios sin guardar: entra deslizándose desde arriba, igual que los
+ * toasts, para que se lea como parte del mismo sistema de avisos. */
+@keyframes avisoBaja {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.aviso-cambios {
+  animation: avisoBaja 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Quien pide menos movimiento no debería recibir deslizamientos. */
+@media (prefers-reduced-motion: reduce) {
+  .aviso-cambios,
+  .toast-in {
+    animation: none;
+  }
+}
