@@ -22,7 +22,9 @@ const inputBase =
 const inputError = 'border-candy focus:border-candy focus:ring-candy/30'
 const labelBase = 'font-display text-xs font-semibold uppercase tracking-[0.2em] text-rainforest'
 
-const BLANK = { nombre: '', correo: '', clave: '', clave2: '', disciplina: '', telefono: '', motivacion: '' }
+const OTRA = 'Otra'
+
+const BLANK = { nombre: '', correo: '', clave: '', clave2: '', disciplina: '', disciplinaOtra: '', telefono: '', motivacion: '' }
 
 /** Panamá. El colectivo es de Chiriquí; el prefijo se da por hecho. */
 const COD_PANAMA = '507'
@@ -62,6 +64,13 @@ export default function Postularme() {
       return
     }
 
+    // Elegir "Otra" y dejarlo en blanco guardaría una disciplina vacía sin que
+    // la persona note que su elección se perdió.
+    if (paso === 2 && form.disciplina === OTRA && !form.disciplinaOtra.trim()) {
+      toast.error('Escribe cuál es tu disciplina.')
+      return
+    }
+
     if (paso < 3) {
       setCampoError(null)
       setPaso((p) => p + 1)
@@ -77,7 +86,8 @@ export default function Postularme() {
         // Se guarda en formato internacional completo: es lo que necesita wa.me
         // para abrir el chat sin que nadie tenga que anteponer el país a mano.
         phone: form.telefono ? `+${COD_PANAMA}${form.telefono}` : null,
-        discipline: form.disciplina || null,
+        // Si eligió "Otra", se guarda lo que escribió; "Otra" a secas no dice nada.
+        discipline: (form.disciplina === OTRA ? form.disciplinaOtra.trim() : form.disciplina) || null,
         applicationReason: form.motivacion.trim() || null,
       })
       setListo(true)
@@ -240,10 +250,30 @@ export default function Postularme() {
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2">
                     <label htmlFor="disciplina" className={labelBase}>Disciplina principal</label>
-                    <select id="disciplina" name="disciplina" className={inputBase} value={form.disciplina} onChange={(e) => set({ disciplina: e.target.value })}>
+                    <select
+                      id="disciplina" name="disciplina" className={inputBase}
+                      value={form.disciplina}
+                      onChange={(e) => set({ disciplina: e.target.value, disciplinaOtra: '' })}
+                    >
                       <option value="">¿Qué creas?</option>
                       {disciplinas.map((d) => (<option key={d} value={d}>{d}</option>))}
                     </select>
+
+                    {/* La lista no puede abarcar todas las disciplinas de un colectivo
+                        cultural: quien elige "Otra" escribe la suya y es la que se
+                        guarda, en vez de quedar registrado con la etiqueta genérica. */}
+                    {form.disciplina === OTRA && (
+                      <input
+                        aria-label="¿Cuál es tu disciplina?"
+                        value={form.disciplinaOtra}
+                        onChange={(e) => set({ disciplinaOtra: e.target.value })}
+                        placeholder="Escribe tu disciplina"
+                        maxLength={80}
+                        autoFocus
+                        className={inputBase}
+                      />
+                    )}
+
                     <p className="text-xs text-jungle/50">Podrás afinarla —junto a redes y etiquetas— en tu perfil al ingresar.</p>
                   </div>
                   <div className="flex flex-col gap-2">
@@ -251,15 +281,19 @@ export default function Postularme() {
                     {/* El prefijo es fijo y va fuera del campo: así lo que se teclea
                         son solo dígitos y el número queda listo para armar un enlace
                         de WhatsApp sin limpiar guiones, espacios ni paréntesis. */}
-                    <div className="flex items-stretch gap-2">
-                      <span className={`${inputBase} flex w-auto flex-none items-center gap-1.5 font-mono text-jungle/70`}>
+                    {/* El prefijo va DENTRO del marco del campo, no como caja aparte:
+                        dos cajas en fila no caben en pantallas estrechas. El borde lo
+                        pinta el contenedor y el input va desnudo encima. */}
+                    <div className="flex items-center rounded-xl border border-rainforest/20 bg-white transition focus-within:border-caribbean focus-within:ring-2 focus-within:ring-caribbean/30">
+                      <span className="flex flex-none items-center gap-1.5 border-r border-rainforest/15 py-3 pl-4 pr-3 font-mono text-base text-jungle/60">
                         <span aria-hidden="true">🇵🇦</span>+{COD_PANAMA}
                       </span>
                       <input
                         id="telefono" name="tel" type="tel" inputMode="numeric" autoComplete="tel-national"
                         value={form.telefono}
                         onChange={(e) => set({ telefono: soloDigitos(e.target.value).slice(0, LARGO_MAX) })}
-                        placeholder="60001234" className={inputBase}
+                        placeholder="60001234"
+                        className="w-full min-w-0 bg-transparent px-4 py-3 text-base text-jungle placeholder:text-jungle/40 focus:outline-none"
                       />
                     </div>
                     <p className="text-xs text-jungle/50">Solo números, sin guiones. Lo usamos para contactarte por WhatsApp.</p>
