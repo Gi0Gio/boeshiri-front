@@ -17,7 +17,9 @@ const TIPOS = [
 ]
 const label = (api) => TIPOS.find((t) => t.api === api)?.label ?? api
 
-const BLANK = { type: 'Article', title: '', body: '', externalUrl: '', coverImage: '', tags: '', visibility: 'Public' }
+const MAX_IMAGENES = 3
+
+const BLANK = { type: 'Article', title: '', body: '', externalUrl: '', images: [], tags: '', visibility: 'Public' }
 
 export default function Publicaciones() {
   const { hasPermission } = useSession()
@@ -53,7 +55,7 @@ export default function Publicaciones() {
         title: p.title ?? '',
         body: p.body ?? '',
         externalUrl: p.externalUrl ?? '',
-        coverImage: p.images?.[0] ?? '',
+        images: p.images ?? [],
         tags: (p.tags ?? []).join(', '),
         visibility: p.visibility ?? 'Public',
       })
@@ -75,6 +77,8 @@ export default function Publicaciones() {
           body: form.body || null,
           externalUrl: form.externalUrl || null,
           visibility: form.visibility,
+          // Lista final: lo que no venga aquí se elimina, también del bucket.
+          images: form.images,
           tags,
         })
       } else {
@@ -84,7 +88,7 @@ export default function Publicaciones() {
           body: form.body || null,
           externalUrl: form.externalUrl || null,
           visibility: form.visibility,
-          images: form.coverImage.trim() ? [form.coverImage.trim()] : [],
+          images: form.images,
           tags,
         })
       }
@@ -170,8 +174,45 @@ export default function Publicaciones() {
                 </>
               )}
 
-              {!editId && (form.type === 'Photo' || esTexto) && (
-                <ImageUpload value={form.coverImage} onChange={(url) => set({ coverImage: url })} folder="publicaciones" label={form.type === 'Photo' ? 'Imagen' : 'Imagen de portada (opcional)'} />
+              {/* Galería: hasta 3 imágenes, y ahora también al EDITAR. Antes la
+                  imagen solo se podía elegir al crear, así que una portada mal
+                  puesta obligaba a borrar la publicación y rehacerla. */}
+              {(form.type === 'Photo' || esTexto) && (
+                <div>
+                  <label className={labelCls}>
+                    {form.type === 'Photo' ? 'Imágenes' : 'Imágenes (opcional)'}
+                    <span className="ml-2 font-normal normal-case tracking-normal text-tea/40">
+                      {form.images.length}/{MAX_IMAGENES}
+                    </span>
+                  </label>
+                  <div className="mt-2 space-y-3">
+                    {form.images.map((url, i) => (
+                      <ImageUpload
+                        key={`${url}-${i}`}
+                        value={url}
+                        onChange={(u) => set({
+                          images: u
+                            ? form.images.map((x, j) => (j === i ? u : x))
+                            : form.images.filter((_, j) => j !== i),   // vaciar = quitar
+                        })}
+                        folder="publicaciones"
+                        label={`Imagen ${i + 1}`}
+                      />
+                    ))}
+                    {form.images.length < MAX_IMAGENES && (
+                      <ImageUpload
+                        key={`nueva-${form.images.length}`}
+                        value=""
+                        onChange={(u) => u && set({ images: [...form.images, u] })}
+                        folder="publicaciones"
+                        label={form.images.length === 0 ? 'Añadir imagen' : 'Añadir otra'}
+                      />
+                    )}
+                  </div>
+                  {form.type === 'Photo' && form.images.length === 0 && (
+                    <p className="mt-2 text-xs text-terracotta">Una publicación de tipo Foto necesita al menos una imagen.</p>
+                  )}
+                </div>
               )}
 
               <div>
