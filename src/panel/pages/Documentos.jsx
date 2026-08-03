@@ -30,6 +30,9 @@ export default function Documentos() {
   const puedeSubir = tab === 'Community' ? subirComunidad : verAdmin
   const tabs = [{ id: 'Community', label: 'Comunidad' }, ...(verAdmin ? [{ id: 'Administration', label: 'Administración' }] : [])]
 
+  const [busqueda, setBusqueda] = useState('')
+  const [filtroCat, setFiltroCat] = useState('')
+
   const [abierto, setAbierto] = useState(false)
   const [form, setForm] = useState({ name: '', category: '', accessLevel: 'Members' })
   const [file, setFile] = useState(null)
@@ -104,7 +107,17 @@ export default function Documentos() {
   }
 
   const noAutorizado = error?.status === 401 || error?.status === 403
-  const lista = data ?? []
+  const todos = data ?? []
+
+  // Las categorías las escribe quien sube, así que salen de los propios datos.
+  const categorias = [...new Set(todos.map((d) => d.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
+
+  const lista = todos.filter((d) => {
+    const q = busqueda.trim().toLowerCase()
+    if (q && !`${d.name} ${d.category} ${d.authorName}`.toLowerCase().includes(q)) return false
+    if (filtroCat && d.category !== filtroCat) return false
+    return true
+  })
 
   return (
     <>
@@ -163,13 +176,47 @@ export default function Documentos() {
 
       <input ref={replaceRef} type="file" className="hidden" onChange={onReplaceFile} />
 
+      {/* Explorador: buscar por nombre, categoría o autor, y filtrar por categoría.
+          Una biblioteca crece rápido y recorrerla entera deja de ser viable. */}
+      {!loading && !error && todos.length > 0 && (
+        <div className="mb-4 rounded-2xl border border-tea/10 bg-jungle p-4">
+          <input
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre, categoría o autor…"
+            className={inputCls}
+            autoComplete="off"
+          />
+          {categorias.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[{ id: '', label: 'Todas' }, ...categorias.map((c) => ({ id: c, label: c }))].map((f) => (
+                <button
+                  key={f.id || 'todas'}
+                  type="button"
+                  onClick={() => setFiltroCat(f.id)}
+                  className={`rounded-full px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${filtroCat === f.id ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/55 hover:bg-tea/15 hover:text-tea'}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="mt-3 font-mono text-xs text-tea/40">{lista.length} de {todos.length} documentos</p>
+        </div>
+      )}
+
       {loading && <p className="text-tea/50">Cargando documentos…</p>}
       {error && (noAutorizado
         ? <Card><p className="text-sm text-tea/60">Tu rol no tiene acceso a esta biblioteca.</p></Card>
         : <p className="text-candy">No se pudieron cargar los documentos.</p>)}
 
-      {!loading && !error && lista.length === 0 && (
+      {!loading && !error && todos.length === 0 && (
         <Card><p className="text-sm text-tea/55">Aún no hay documentos en esta biblioteca.{puedeSubir && ' Usa «+ Subir documento».'}</p></Card>
+      )}
+
+      {!loading && !error && todos.length > 0 && lista.length === 0 && (
+        <Card><p className="text-sm text-tea/55">Ningún documento coincide con la búsqueda.</p></Card>
       )}
 
       {!loading && !error && lista.length > 0 && (
@@ -190,7 +237,7 @@ export default function Documentos() {
                   <Td><Chip tone={accesoTono[d.accessLevel]}>{accesoLabel[d.accessLevel] ?? d.accessLevel}</Chip></Td>
                   <Td className="text-right">
                     <div className="flex justify-end gap-3 text-xs font-semibold uppercase tracking-wide">
-                      <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="text-caribbean/80 hover:text-caribbean">Descargar</a>
+                      <a href={d.fileUrl} download={d.fileName || d.name} target="_blank" rel="noopener noreferrer" className="text-caribbean/80 hover:text-caribbean">Descargar</a>
                       {puedeSubir && <button onClick={() => { setReplacing(d); replaceRef.current?.click() }} className="text-caribbean/80 hover:text-caribbean">Reemplazar</button>}
                       {puedeSubir && <button onClick={() => eliminar(d.id)} className="text-candy hover:underline">Eliminar</button>}
                     </div>
