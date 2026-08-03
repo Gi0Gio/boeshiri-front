@@ -1,21 +1,21 @@
 import { useState } from 'react'
-import { API_BASE } from '../api/client'
 import { useToast } from './Toast'
 
 /**
  * Compartir una publicación o un anuncio (RF-MKT-05).
  *
- * El enlace que se reparte apunta a la API (`/compartir/...`), no al front: es la
- * única forma de que WhatsApp e Instagram vean una vista previa. Sus robots no
- * ejecutan JavaScript, así que de una SPA solo obtendrían un index vacío; esa
- * ruta les devuelve el HTML con las etiquetas og:* y redirige a la persona al
- * sitio sin que note el rodeo.
+ * El enlace se reparte con el dominio del sitio, aunque quien lo resuelve es la
+ * API: `/compartir/*` está redirigido por proxy en _redirects. Hace falta porque
+ * los robots de WhatsApp e Instagram no ejecutan JavaScript, así que de la SPA
+ * solo obtendrían un index vacío; esa ruta les entrega el HTML con las etiquetas
+ * og:* y a la persona la manda al sitio sin que note el rodeo.
  */
 export default function CompartirBoton({ tipo, id, titulo, className = '' }) {
   const toast = useToast()
   const [abierto, setAbierto] = useState(false)
 
-  const enlace = `${API_BASE}/compartir/${tipo}/${id}`
+  // Origen del sitio, no el de la API: el proxy de _redirects lo resuelve.
+  const enlace = `${window.location.origin}/compartir/${tipo}/${id}`
   const imagen = (formato) => `${enlace}/imagen.png${formato ? `?formato=${formato}` : ''}`
 
   async function compartir() {

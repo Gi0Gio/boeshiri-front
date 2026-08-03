@@ -2,7 +2,5 @@
   command = "npm run build"
   publish = "dist"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Las redirecciones viven en public/_redirects, que tiene precedencia sobre este
+# archivo. Estaban duplicadas aquí y era fácil tocar una y olvidar la otra.

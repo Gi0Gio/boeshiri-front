@@ -40,6 +40,18 @@ export default defineConfig(({ command, mode }) => {
     plugins: [react(), tailwindcss()],
     // Puerto fijo: la API solo permite CORS desde 5173/4173. Si Vite saltara a otro
     // puerto (p. ej. por sockets en TIME_WAIT), el front quedaría bloqueado por CORS.
-    server: { host: 'localhost', port: 5173, strictPort: true },
+    server: {
+      host: 'localhost',
+      port: 5173,
+      strictPort: true,
+      // Espeja el proxy de _redirects: en producción /compartir/* lo sirve la API
+      // bajo el dominio del sitio, y sin esto los enlaces darían 404 en local.
+      proxy: {
+        '/compartir': {
+          target: env.VITE_API_URL || 'http://localhost:8080',
+          changeOrigin: true,
+        },
+      },
+    },
   }
 })

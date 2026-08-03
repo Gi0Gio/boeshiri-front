@@ -1,1 +1,9 @@
-/* /index.html 200
+# Las rutas para compartir las resuelve la API, pero bajo ESTE dominio: así los
+# enlaces que la gente reparte llevan boeshiri.grupogeshk.com y no la URL de
+# Railway. Es un proxy (status 200), no una redirección: el robot de WhatsApp
+# recibe aquí mismo el HTML con las etiquetas og:*, sin saltar a otro host.
+# Tiene que ir ANTES del comodín de la SPA, que si no se lo traga.
+/compartir/*  https://boeshiri-api-production.up.railway.app/compartir/:splat  200
+
+# Fallback de la SPA: cualquier otra ruta la resuelve React Router.
+/*  /index.html  200
