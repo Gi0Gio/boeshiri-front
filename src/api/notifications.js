@@ -5,4 +5,5 @@ export const notificationsApi = {
   list: () => apiFetch('/notificaciones'),
   unreadCount: () => apiFetch('/notificaciones/no-leidas'),
   markRead: (id) => apiFetch(`/notificaciones/${id}/leer`, { method: 'POST' }),
+  markAllRead: () => apiFetch('/notificaciones/leer-todas', { method: 'POST' }),
 }

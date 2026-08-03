@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, Link, Navigate } from 'react-router-dom'
 import { useSession, ROLES, alcanza } from '../auth/SessionContext'
 import { iniciales, gradientFor } from '../utils/gradient'
+import CampanaAvisos from './CampanaAvisos'
 import ranaUrl from '../assets/SVG/ranita_patas_espatulares.svg'
 
 /* Íconos de navegación (line-art) */
@@ -158,7 +159,8 @@ export default function PanelLayout() {
           </button>
           <Link to="/" className="hidden font-mono text-xs uppercase tracking-[0.15em] text-tea/45 transition hover:text-caribbean lg:block">← Ver sitio público</Link>
           <div className="flex items-center gap-3">
-            <div className="text-right">
+            <CampanaAvisos />
+            <div className="hidden text-right sm:block">
               <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">{user.fullName}</p>
               <p className="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-caribbean">{ROLES[rol].label}</p>
             </div>
