@@ -19,7 +19,9 @@ const label = (api) => TIPOS.find((t) => t.api === api)?.label ?? api
 
 const MAX_IMAGENES = 3
 
-const BLANK = { type: 'Article', title: '', body: '', externalUrl: '', images: [], tags: '', visibility: 'Public' }
+const MAX_ENLACES = 3
+
+const BLANK = { type: 'Article', title: '', body: '', externalUrl: '', images: [], links: [], tags: '', visibility: 'Public' }
 
 export default function Publicaciones() {
   const { hasPermission } = useSession()
@@ -56,6 +58,7 @@ export default function Publicaciones() {
         body: p.body ?? '',
         externalUrl: p.externalUrl ?? '',
         images: p.images ?? [],
+        links: p.links ?? [],
         tags: (p.tags ?? []).join(', '),
         visibility: p.visibility ?? 'Public',
       })
@@ -79,6 +82,8 @@ export default function Publicaciones() {
           visibility: form.visibility,
           // Lista final: lo que no venga aquí se elimina, también del bucket.
           images: form.images,
+          // Las filas a medio llenar no se envían: el backend exige ambos campos.
+          links: form.links.filter((l) => l.title.trim() && l.url.trim()),
           tags,
         })
       } else {
@@ -89,6 +94,8 @@ export default function Publicaciones() {
           externalUrl: form.externalUrl || null,
           visibility: form.visibility,
           images: form.images,
+          // Las filas a medio llenar no se envían: el backend exige ambos campos.
+          links: form.links.filter((l) => l.title.trim() && l.url.trim()),
           tags,
         })
       }
@@ -212,6 +219,50 @@ export default function Publicaciones() {
                   {form.type === 'Photo' && form.images.length === 0 && (
                     <p className="mt-2 text-xs text-terracotta">Una publicación de tipo Foto necesita al menos una imagen.</p>
                   )}
+                </div>
+              )}
+
+              {/* Enlaces de referencia: solo en textos, que es donde el §4.3 los
+                  contempla. El backend acepta hasta 3 al crear y al editar. */}
+              {esTexto && (
+                <div>
+                  <label className={labelCls}>
+                    Enlaces de referencia
+                    <span className="ml-2 font-normal normal-case tracking-normal text-tea/40">{form.links.length}/{MAX_ENLACES}</span>
+                  </label>
+                  <div className="mt-2 space-y-2">
+                    {form.links.map((l, i) => (
+                      <div key={i} className="flex flex-col gap-2 sm:flex-row">
+                        <input
+                          className={`${inputCls} sm:w-1/3`}
+                          value={l.title}
+                          onChange={(e) => set({ links: form.links.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)) })}
+                          placeholder="Título"
+                        />
+                        <input
+                          className={`${inputCls} flex-1`}
+                          value={l.url}
+                          onChange={(e) => set({ links: form.links.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })}
+                          placeholder="https://…"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => set({ links: form.links.filter((_, j) => j !== i) })}
+                          className="flex-none px-2 text-lg text-tea/40 transition hover:text-candy"
+                          aria-label="Quitar enlace"
+                        >✕</button>
+                      </div>
+                    ))}
+                    {form.links.length < MAX_ENLACES && (
+                      <button
+                        type="button"
+                        onClick={() => set({ links: [...form.links, { title: '', url: '' }] })}
+                        className="font-mono text-xs font-semibold uppercase tracking-[0.1em] text-caribbean/80 transition hover:text-caribbean"
+                      >
+                        + Añadir enlace
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 

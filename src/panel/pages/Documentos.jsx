@@ -32,6 +32,7 @@ export default function Documentos() {
 
   const [busqueda, setBusqueda] = useState('')
   const [filtroCat, setFiltroCat] = useState('')
+  const [bajando, setBajando] = useState(null)
 
   const [abierto, setAbierto] = useState(false)
   const [form, setForm] = useState({ name: '', category: '', accessLevel: 'Members' })
@@ -51,6 +52,15 @@ export default function Documentos() {
     if (!f) return
     setFile(f)
     if (!form.name) set({ name: f.name.replace(/\.[^.]+$/, '') })
+  }
+
+  async function descargar(d) {
+    setBajando(d.id)
+    try {
+      await documentsApi.download(d.id, d.fileName || d.name)
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || 'No se pudo descargar.' })
+    } finally { setBajando(null) }
   }
 
   async function subir() {
@@ -237,7 +247,9 @@ export default function Documentos() {
                   <Td><Chip tone={accesoTono[d.accessLevel]}>{accesoLabel[d.accessLevel] ?? d.accessLevel}</Chip></Td>
                   <Td className="text-right">
                     <div className="flex justify-end gap-3 text-xs font-semibold uppercase tracking-wide">
-                      <a href={d.fileUrl} download={d.fileName || d.name} target="_blank" rel="noopener noreferrer" className="text-caribbean/80 hover:text-caribbean">Descargar</a>
+                      <button onClick={() => descargar(d)} disabled={bajando === d.id} className="text-caribbean/80 hover:text-caribbean disabled:opacity-40">
+                        {bajando === d.id ? '…' : 'Descargar'}
+                      </button>
                       {puedeSubir && <button onClick={() => { setReplacing(d); replaceRef.current?.click() }} className="text-caribbean/80 hover:text-caribbean">Reemplazar</button>}
                       {puedeSubir && <button onClick={() => eliminar(d.id)} className="text-candy hover:underline">Eliminar</button>}
                     </div>

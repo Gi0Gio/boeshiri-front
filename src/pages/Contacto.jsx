@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
+import { contactApi } from '../api/contact'
+import { useToast } from '../components/Toast'
 
 const canales = [
   { etiqueta: 'Correo', valor: 'hola@boeshiri.org', href: 'mailto:hola@boeshiri.org' },
@@ -17,10 +19,29 @@ const labelBase = 'font-display text-xs font-semibold uppercase tracking-[0.2em]
 
 export default function Contacto() {
   const [enviado, setEnviado] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
+  const [busy, setBusy] = useState(false)
+  const toast = useToast()
 
-  function handleSubmit(e) {
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+
+  async function handleSubmit(e) {
     e.preventDefault()
-    setEnviado(true)
+    setBusy(true)
+    try {
+      const r = await contactApi.send({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        subject: form.subject || null,
+        message: form.message.trim(),
+      })
+      setEnviado(true)
+      toast.success(r?.mensaje || 'Mensaje enviado.')
+    } catch (err) {
+      toast.error(err.message || 'No se pudo enviar el mensaje.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -111,7 +132,7 @@ export default function Contacto() {
                     <label htmlFor="nombre" className={labelBase}>
                       Nombre
                     </label>
-                    <input id="nombre" name="nombre" required placeholder="Tu nombre" className={inputBase} />
+                    <input id="nombre" name="name" required autoComplete="name" value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="Tu nombre" className={inputBase} />
                   </div>
                   <div className="flex flex-col gap-2">
                     <label htmlFor="correo" className={labelBase}>
@@ -119,7 +140,10 @@ export default function Contacto() {
                     </label>
                     <input
                       id="correo"
-                      name="correo"
+                      name="email"
+                      autoComplete="email"
+                      value={form.email}
+                      onChange={(e) => set({ email: e.target.value })}
                       type="email"
                       required
                       placeholder="tu@correo.com"
@@ -132,7 +156,7 @@ export default function Contacto() {
                   <label htmlFor="asunto" className={labelBase}>
                     Asunto
                   </label>
-                  <select id="asunto" name="asunto" className={inputBase} defaultValue="">
+                  <select id="asunto" name="subject" className={inputBase} value={form.subject} onChange={(e) => set({ subject: e.target.value })}>
                     <option value="" disabled>
                       Selecciona un motivo…
                     </option>
@@ -150,7 +174,10 @@ export default function Contacto() {
                   </label>
                   <textarea
                     id="mensaje"
-                    name="mensaje"
+                    name="message"
+                    value={form.message}
+                    onChange={(e) => set({ message: e.target.value })}
+                    maxLength={4000}
                     required
                     rows={5}
                     placeholder="Cuéntanos qué tienes en mente…"
@@ -161,8 +188,9 @@ export default function Contacto() {
                 <button
                   type="submit"
                   className="mt-8 w-full rounded-full bg-candy px-8 py-3.5 font-display text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:-translate-y-0.5 hover:bg-terracotta hover:shadow-[0_8px_30px_rgba(229,0,49,0.3)]"
+                  disabled={busy}
                 >
-                  Enviar mensaje
+                  {busy ? 'Enviando…' : 'Enviar mensaje'}
                 </button>
               </form>
             )}
