@@ -7,7 +7,9 @@ import { useFetch } from '../hooks/useFetch'
 import { gradientFor } from '../utils/gradient'
 
 const KINDS = [{ id: 'Todo', label: 'Todo' }, { id: 'Product', label: 'Productos' }, { id: 'Service', label: 'Servicios' }]
-const fmtPrecio = (p) => (p > 0 ? `$${p}` : 'A convenir')
+// Rango si lo hay (servicios), precio si no, y "a convenir" cuando vale 0.
+const fmtPrecio = (p) =>
+  p.priceMax != null && p.priceMax > p.price ? `$${p.price} – $${p.priceMax}` : p.price > 0 ? `$${p.price}` : 'A convenir'
 
 export default function Marketplace() {
   const [kind, setKind] = useState('Todo')
@@ -86,7 +88,7 @@ export default function Marketplace() {
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-3">
                         <h3 className="font-display text-lg font-semibold uppercase leading-tight tracking-wide text-jungle">{p.name}</h3>
-                        <span className="font-display text-lg font-semibold text-rainforest">{fmtPrecio(p.price)}</span>
+                        <span className="font-display text-lg font-semibold text-rainforest">{fmtPrecio(p)}</span>
                       </div>
                       <p className="mt-2 text-xs uppercase tracking-[0.12em] text-jungle/50">{p.sellerName}</p>
                     </div>

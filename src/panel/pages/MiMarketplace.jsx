@@ -11,7 +11,13 @@ import { useConfirm } from '../../components/ConfirmDialog'
 
 const estadoTono = { Published: 'caribbean', Sold: 'gris', Hidden: 'terracotta' }
 const estadoLabel = { Published: 'Publicado', Sold: 'Vendido', Hidden: 'Oculto' }
-const BLANK = { kind: 'Product', name: '', category: '', price: '', description: '', deliveryLocation: '', images: [] }
+const BLANK = { kind: 'Product', name: '', category: '', price: '', priceMax: '', description: '', deliveryLocation: '', images: [] }
+
+/** Rango si lo hay, precio si no, y "a convenir" cuando vale 0. */
+export function precioTexto(p) {
+  if (p.priceMax != null && p.priceMax > p.price) return `$${p.price} – $${p.priceMax}`
+  return p.price > 0 ? `$${p.price}` : 'A convenir'
+}
 
 export default function MiMarketplace() {
   const { hasPermission } = useSession()
@@ -51,7 +57,7 @@ export default function MiMarketplace() {
     setMsg(null)
     try {
       const p = await marketplaceApi.get(id)
-      setForm({ kind: p.kind ?? 'Product', name: p.name ?? '', category: p.category ?? '', price: String(p.price ?? ''), description: p.description ?? '', deliveryLocation: p.deliveryLocation ?? '', images: p.images ?? [] })
+      setForm({ kind: p.kind ?? 'Product', name: p.name ?? '', category: p.category ?? '', price: String(p.price ?? ''), priceMax: p.priceMax != null ? String(p.priceMax) : '', description: p.description ?? '', deliveryLocation: p.deliveryLocation ?? '', images: p.images ?? [] })
       setEditId(id); setAbierto(true)
     } catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo abrir el producto.' }) }
   }
@@ -59,7 +65,15 @@ export default function MiMarketplace() {
   async function guardar() {
     if (!form.name.trim() || !form.category.trim()) { setMsg({ ok: false, text: 'Nombre y categoría son obligatorios.' }); return }
     setSaving(true); setMsg(null)
-    const base = { name: form.name.trim(), category: form.category.trim(), price: Number(form.price) || 0, description: form.description || null, deliveryLocation: form.deliveryLocation || null }
+    const base = {
+      name: form.name.trim(),
+      category: form.category.trim(),
+      price: Number(form.price) || 0,
+      // El rango solo viaja en servicios; en un producto el backend lo rechaza.
+      priceMax: form.kind === 'Service' && form.priceMax !== '' ? Number(form.priceMax) : null,
+      description: form.description || null,
+      deliveryLocation: form.deliveryLocation || null,
+    }
     try {
       if (editId) await marketplaceApi.update(editId, base)
       else await marketplaceApi.create({ ...base, kind: form.kind, images: form.images.filter(Boolean) })
@@ -147,8 +161,22 @@ export default function MiMarketplace() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className={labelCls}>Precio (USD)</label>
+                  <label className={labelCls}>{form.kind === 'Service' ? 'Precio desde (USD)' : 'Precio (USD)'}</label>
                   <input type="number" min="0" step="0.01" className={`${inputCls} mt-1.5`} value={form.price} onChange={(e) => set({ price: e.target.value })} placeholder="0 = a convenir" />
+                  {/* Rango solo en servicios: su costo depende del alcance del trabajo,
+                      y pedir un precio único obliga a inventarse una cifra. */}
+                  {form.kind === 'Service' && (
+                    <>
+                      <label className={`${labelCls} mt-3 block`}>Precio hasta (opcional)</label>
+                      <input
+                        type="number" min="0" step="0.01"
+                        className={`${inputCls} mt-1.5`}
+                        value={form.priceMax}
+                        onChange={(e) => set({ priceMax: e.target.value })}
+                        placeholder="Vacío = precio fijo"
+                      />
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>{form.kind === 'Service' ? 'Modalidad / lugar' : 'Lugar de entrega'}</label>
@@ -195,7 +223,7 @@ export default function MiMarketplace() {
                   <Chip tone="tea">{p.category}</Chip>
                   {p.kind === 'Service' && <Chip tone="rainforest">Servicio</Chip>}
                 </span>
-                <span className="relative font-display text-xl font-semibold text-white">{p.price > 0 ? `$${p.price}` : 'A convenir'}</span>
+                <span className="relative font-display text-xl font-semibold text-white">{precioTexto(p)}</span>
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between gap-2">
@@ -208,7 +236,10 @@ export default function MiMarketplace() {
                   {p.status === 'Published'
                     ? <button onClick={() => cambiarEstado(p.id, 'Hide')} className="text-caribbean/80 hover:text-caribbean">Ocultar</button>
                     : p.status === 'Hidden' && <button onClick={() => cambiarEstado(p.id, 'Show')} className="text-caribbean/80 hover:text-caribbean">Mostrar</button>}
-                  {p.status !== 'Sold' && <button onClick={() => cambiarEstado(p.id, 'Sold')} className="text-caribbean/80 hover:text-caribbean">Vendido</button>}
+                  {/* Un servicio no se agota: si no hay agenda, se oculta. */}
+                  {p.kind !== 'Service' && p.status !== 'Sold' && (
+                    <button onClick={() => cambiarEstado(p.id, 'Sold')} className="text-caribbean/80 hover:text-caribbean">Vendido</button>
+                  )}
                   <button onClick={() => cambiarEstado(p.id, 'Delete')} className="text-candy hover:underline">Eliminar</button>
                 </div>
               </div>

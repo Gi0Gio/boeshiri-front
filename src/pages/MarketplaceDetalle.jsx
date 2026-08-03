@@ -87,7 +87,12 @@ export default function MarketplaceDetalle() {
               {p.kind === 'Service' && <span className="rounded-full bg-rainforest px-3 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-cream">Servicio</span>}
             </div>
             <h1 className="mt-4 font-display text-4xl font-semibold uppercase leading-tight tracking-wide text-jungle">{p.name}</h1>
-            <p className="mt-3 font-display text-3xl font-semibold text-rainforest">{p.price > 0 ? `$${p.price}` : 'A convenir'}</p>
+            {/* Los servicios pueden traer rango: su costo depende del alcance. */}
+            <p className="mt-3 font-display text-3xl font-semibold text-rainforest">
+              {p.priceMax != null && p.priceMax > p.price
+                ? `$${p.price} – $${p.priceMax}`
+                : p.price > 0 ? `$${p.price}` : 'A convenir'}
+            </p>
             {p.description && <p className="mt-5 whitespace-pre-wrap leading-relaxed text-jungle/75">{p.description}</p>}
             {p.deliveryLocation && <p className="mt-4 text-sm uppercase tracking-[0.12em] text-jungle/50">📍 {p.kind === 'Service' ? p.deliveryLocation : `Entrega en ${p.deliveryLocation}`}</p>}
 
