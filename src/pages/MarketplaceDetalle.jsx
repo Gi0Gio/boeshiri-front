@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
+import NotFound from './NotFound'
 import { marketplaceApi } from '../api/marketplace'
 import { useFetch } from '../hooks/useFetch'
 import CompartirBoton from '../components/CompartirBoton'
@@ -28,15 +29,16 @@ export default function MarketplaceDetalle() {
 
   if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/50">Cargando…</section>
 
+  // Un anuncio borrado, oculto o inexistente es un 404 como cualquier otro: se
+  // enseña la misma página, no un aviso suelto ni el error crudo de la API.
   if (error || !p) {
     return (
-      <section className="bg-dorace-pattern flex min-h-screen items-center justify-center bg-jungle pt-16 text-center text-tea">
-        <div className="px-6">
-          <FrogIcon className="mx-auto h-20 w-20 text-caribbean" />
-          <h1 className="mt-6 font-display text-3xl font-semibold uppercase tracking-wide text-cream">Producto no disponible</h1>
-          <Link to="/marketplace" className="mt-8 inline-block rounded-full border border-caribbean px-6 py-2.5 font-display text-sm uppercase tracking-[0.18em] text-caribbean transition hover:bg-caribbean hover:text-jungle">Volver al marketplace</Link>
-        </div>
-      </section>
+      <NotFound
+        title="Este anuncio ya no está"
+        description="Puede que se haya vendido, lo hayan ocultado o el enlace esté mal. En el marketplace hay más cosas de la comunidad."
+        volverA="/marketplace"
+        volverTexto="Ir al marketplace"
+      />
     )
   }
 

@@ -74,10 +74,12 @@ export default function MiMarketplace() {
       priceMax: form.kind === 'Service' && form.priceMax !== '' ? Number(form.priceMax) : null,
       description: form.description || null,
       deliveryLocation: form.deliveryLocation || null,
+      // Lista completa: el backend borra del bucket lo que no venga en ella.
+      images: form.images.filter(Boolean),
     }
     try {
       if (editId) await marketplaceApi.update(editId, base)
-      else await marketplaceApi.create({ ...base, kind: form.kind, images: form.images.filter(Boolean) })
+      else await marketplaceApi.create({ ...base, kind: form.kind })
       setMsg({ ok: true, text: editId ? 'Producto actualizado.' : 'Producto publicado.' })
       cerrar(); reload()
     } catch (e) {
@@ -188,18 +190,17 @@ export default function MiMarketplace() {
                 <label className={labelCls}>Descripción</label>
                 <textarea rows={3} className={`${inputCls} mt-1.5 resize-none`} value={form.description} onChange={(e) => set({ description: e.target.value })} placeholder="Detalles, materiales, medidas…" />
               </div>
-              {!editId ? (
-                <div className="space-y-3">
-                  {form.images.map((url, i) => (
-                    <ImageUpload key={i} value={url} onChange={(u) => setImageAt(i, u)} folder="productos" label={`Imagen ${i + 1}`} />
-                  ))}
-                  {form.images.length < 5 && (
-                    <ImageUpload key={`new-${form.images.length}`} value="" onChange={(u) => u && set({ images: [...form.images, u] })} folder="productos" label="Añadir imagen (hasta 5)" />
-                  )}
-                </div>
-              ) : (
-                <p className="font-mono text-[0.65rem] text-tea/40">Las imágenes no se editan aquí; para cambiarlas, elimina y vuelve a publicar el producto.</p>
-              )}
+              <div className="space-y-3">
+                {form.images.map((url, i) => (
+                  <ImageUpload key={i} value={url} onChange={(u) => setImageAt(i, u)} folder="productos" label={`Imagen ${i + 1}`} />
+                ))}
+                {form.images.length < 5 && (
+                  <ImageUpload key={`new-${form.images.length}`} value="" onChange={(u) => u && set({ images: [...form.images, u] })} folder="productos" label="Añadir imagen (hasta 5)" />
+                )}
+                {editId && (
+                  <p className="font-mono text-[0.65rem] text-tea/40">Las que quites se borran del almacenamiento al guardar.</p>
+                )}
+              </div>
             </div>
             <div className="mt-6 flex justify-end">
               <Btn onClick={guardar} disabled={saving}>{saving ? 'Guardando…' : editId ? 'Guardar cambios' : 'Publicar'}</Btn>
@@ -220,11 +221,13 @@ export default function MiMarketplace() {
             <Card className="overflow-hidden p-0">
               <div className="relative flex aspect-[4/3] items-end justify-between overflow-hidden p-4" style={p.coverImage ? undefined : { background: 'linear-gradient(150deg,#00735e,#002420)' }}>
                 {p.coverImage && <img src={p.coverImage} alt={p.name} className="absolute inset-0 h-full w-full object-cover" />}
+                {/* Velo inferior: sostiene el precio y las pills cuando la foto es clara. */}
+                {p.coverImage && <span className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-jungle-deep/85 to-transparent" />}
                 <span className="relative flex items-center gap-1.5">
-                  <Chip tone="tea">{p.category}</Chip>
-                  {p.kind === 'Service' && <Chip tone="rainforest">Servicio</Chip>}
+                  <Chip tone="foto">{p.category}</Chip>
+                  {p.kind === 'Service' && <Chip tone="fotoAcento">Servicio</Chip>}
                 </span>
-                <span className="relative font-display text-xl font-semibold text-white">{precioTexto(p)}</span>
+                <span className="relative font-display text-xl font-semibold text-white drop-shadow-[0_2px_6px_rgba(0,17,14,0.8)]">{precioTexto(p)}</span>
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between gap-2">

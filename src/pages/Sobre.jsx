@@ -1,9 +1,18 @@
 import { Link } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
-import { misionVision, valores, hitos, perfiles } from '../data/contenido'
+import { communityApi } from '../api/community'
+import { useFetch } from '../hooks/useFetch'
+import { gradientFor, iniciales } from '../utils/gradient'
+import { misionVision, valores, hitos } from '../data/contenido'
+
+/** Nombre del rol tal cual lo siembra la API; el filtro es por coincidencia exacta. */
+const ROL_JUNTA = 'Junta Directiva'
 
 export default function Sobre() {
+  const { data: juntaData, loading: loadingJunta } = useFetch(() => communityApi.list(ROL_JUNTA))
+  const junta = juntaData ?? []
+
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -132,7 +141,7 @@ export default function Sobre() {
         </div>
       </section>
 
-      {/* ── Equipo (puente a perfiles) ───────────────────────── */}
+      {/* ── Junta Directiva ──────────────────────────────────── */}
       <section className="relative bg-cream py-24">
         <div className="mx-auto max-w-6xl px-5">
           <Reveal className="flex flex-wrap items-end justify-between gap-4">
@@ -141,51 +150,70 @@ export default function Sobre() {
                 Las manos detrás
               </p>
               <h2 className="mt-3 font-display text-4xl font-semibold uppercase tracking-wide text-jungle md:text-5xl">
-                Quiénes lo hacemos
+                Junta Directiva
               </h2>
+              <p className="mt-4 max-w-xl leading-relaxed text-jungle/60">
+                Quienes hoy sostienen las decisiones del colectivo. Los nombres salen de los perfiles
+                reales: cuando la Junta cambia, esta sección cambia con ella.
+              </p>
             </div>
             <Link
-              to="/explorar"
+              to="/comunidad"
               className="font-display text-sm uppercase tracking-[0.2em] text-rainforest underline-offset-8 transition hover:text-jungle hover:underline"
             >
-              Ver todos los perfiles →
+              Ver toda la comunidad →
             </Link>
           </Reveal>
 
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {perfiles.slice(0, 4).map((p, i) => (
-              <Reveal
-                as={Link}
-                to={`/perfil/${p.slug}`}
-                key={p.slug}
-                delay={i * 110}
-                className="group block overflow-hidden rounded-2xl bg-white shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(0,37,32,0.14)]"
-              >
-                <div
-                  className="relative aspect-[4/5] overflow-hidden"
-                  style={{
-                    background: `linear-gradient(150deg, ${p.colores[0]}, ${p.colores[1]})`,
-                  }}
+          {loadingJunta && <p className="mt-14 text-jungle/50">Cargando la Junta…</p>}
+
+          {/* Sin Junta cargada la página no se rompe: se enseña la puerta a la comunidad. */}
+          {!loadingJunta && junta.length === 0 && (
+            <Reveal className="mt-14 rounded-3xl border border-rainforest/20 bg-white p-10 text-center">
+              <FrogIcon className="mx-auto h-16 w-16 text-rainforest/40" />
+              <p className="mt-5 text-jungle/60">
+                Aún no hemos publicado la composición de la Junta. Mientras tanto, puedes conocer a
+                todo el colectivo en <Link to="/comunidad" className="text-rainforest underline underline-offset-4">Comunidad</Link>.
+              </p>
+            </Reveal>
+          )}
+
+          {junta.length > 0 && (
+            <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {junta.map((m, i) => (
+                <Reveal
+                  as={Link}
+                  to={`/perfil/${m.id}`}
+                  key={m.id}
+                  delay={(i % 4) * 110}
+                  className="group block overflow-hidden rounded-2xl bg-white shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(0,37,32,0.14)]"
                 >
-                  <FrogIcon className="absolute -bottom-6 -right-4 h-28 w-28 text-white/15 transition-transform duration-500 group-hover:scale-110" />
-                  <span className="absolute left-5 top-5 font-display text-5xl font-semibold text-white/90">
-                    {p.nombre
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-display text-lg font-semibold uppercase tracking-wide text-jungle">
-                    {p.nombre}
-                  </h3>
-                  <p className="mt-1 text-xs font-medium uppercase tracking-[0.15em] text-rainforest">
-                    {p.disciplina}
-                  </p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+                  <div className="relative aspect-[4/5] overflow-hidden" style={{ background: gradientFor(m.id) }}>
+                    {m.photoUrl ? (
+                      <img src={m.photoUrl} alt={m.fullName} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    ) : (
+                      <>
+                        <FrogIcon className="absolute -bottom-6 -right-4 h-28 w-28 text-white/15 transition-transform duration-500 group-hover:scale-110" />
+                        <span className="absolute left-5 top-5 font-display text-5xl font-semibold text-white/90">
+                          {iniciales(m.fullName)}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-display text-lg font-semibold uppercase tracking-wide text-jungle">
+                      {m.fullName}
+                    </h3>
+                    {m.discipline && (
+                      <p className="mt-1 text-xs font-medium uppercase tracking-[0.15em] text-rainforest">
+                        {m.discipline}
+                      </p>
+                    )}
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </>

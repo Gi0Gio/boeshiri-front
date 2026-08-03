@@ -11,6 +11,10 @@ const chipTone = {
   candy: 'bg-candy/20 text-candy',
   rainforest: 'bg-rainforest/30 text-tea',
   gris: 'bg-tea/10 text-tea/55',
+  // Sobre una foto no se puede contar con el lienzo oscuro del panel: los tonos
+  // translúcidos desaparecen en cuanto la imagen es clara. Estos van opacos.
+  foto: 'bg-jungle-deep/80 text-cream ring-1 ring-white/15 backdrop-blur-sm',
+  fotoAcento: 'bg-caribbean text-jungle-deep',
 }
 
 export function Chip({ tone = 'gris', children, className = '' }) {
