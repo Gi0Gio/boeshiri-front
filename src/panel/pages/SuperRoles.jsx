@@ -3,6 +3,7 @@ import { PageHeader, Card, Chip, Btn, Reveal, inputCls } from '../ui'
 import { rolesApi } from '../../api/roles'
 import { useFetch } from '../../hooks/useFetch'
 import { useToast } from '../../components/Toast'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 /** Chip de rol con su color (hex de la BD) o un color por defecto. */
 function RolChip({ name, color }) {
@@ -26,6 +27,7 @@ export default function SuperRoles() {
   const { data: permisos, loading: lp } = useFetch(() => rolesApi.permissions(), [version])
   const { data: usuarios, loading: lu, error: eu } = useFetch(() => rolesApi.users(), [version])
   const toast = useToast()
+  const confirm = useConfirm()
   const setMsg = (m) => { if (m) m.ok ? toast.success(m.text) : toast.error(m.text) }
 
   // La matriz es material de consulta, no de trabajo diario: ocupaba media pantalla
@@ -35,6 +37,10 @@ export default function SuperRoles() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroRol, setFiltroRol] = useState('')   // '' todos · 'sin' sin roles · id de rol
   const [busy, setBusy] = useState(null)
+
+  // Editor de rol. `editando` null = cerrado; sin id = creando uno nuevo.
+  const [editando, setEditando] = useState(null)
+  const COLORES = ['#00e6bc', '#00735e', '#d67a63', '#e60035', '#d9f2c2', '#002420']
   // Los postulantes y las bajas ensucian la lista: asignar roles es una tarea
   // sobre gente activa. Se pueden mostrar por si hay que retirarle un rol a
   // alguien suspendido, pero no estorban por defecto.
@@ -63,6 +69,57 @@ export default function SuperRoles() {
 
   const ocultos = listaUsuarios.length - activos.length
 
+  const abrirNuevo = () => setEditando({ name: '', color: COLORES[0], permissions: [] })
+  const abrirEdicion = (r) => setEditando({ id: r.id, name: r.name, color: r.color || COLORES[0], permissions: [...r.permissions] })
+
+  const alternarPermiso = (key) => setEditando((e) => ({
+    ...e,
+    permissions: e.permissions.includes(key) ? e.permissions.filter((k) => k !== key) : [...e.permissions, key],
+  }))
+
+  async function guardarRol() {
+    const nombre = editando.name.trim()
+    if (!nombre) { setMsg({ ok: false, text: 'El nombre del rol es obligatorio.' }); return }
+
+    setBusy('rol'); setMsg(null)
+    try {
+      if (editando.id) {
+        // Nombre/color y permisos van por endpoints distintos: el mapa de permisos
+        // se reemplaza entero y conviene poder auditarlo por separado.
+        await rolesApi.updateRole(editando.id, { name: nombre, color: editando.color })
+        await rolesApi.setPermissions(editando.id, editando.permissions)
+      } else {
+        await rolesApi.createRole({ name: nombre, color: editando.color, permissions: editando.permissions })
+      }
+      setMsg({ ok: true, text: editando.id ? 'Rol actualizado.' : 'Rol creado.' })
+      setEditando(null)
+      reload()
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || 'No se pudo guardar el rol.' })
+    } finally { setBusy(null) }
+  }
+
+  async function borrarRol(r) {
+    const ok = await confirm({
+      title: `¿Eliminar el rol «${r.name}»?`,
+      message: r.userCount > 0
+        ? `${r.userCount} ${r.userCount === 1 ? 'miembro perderá' : 'miembros perderán'} los permisos que este rol les daba.`
+        : 'No lo tiene asignado nadie.',
+      danger: true,
+      confirmLabel: 'Eliminar',
+    })
+    if (!ok) return
+
+    setBusy(r.id); setMsg(null)
+    try {
+      const res = await rolesApi.deleteRole(r.id)
+      setMsg({ ok: true, text: res?.mensaje || 'Rol eliminado.' })
+      reload()
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || 'No se pudo eliminar.' })
+    } finally { setBusy(null) }
+  }
+
   async function asignar(userId, roleId) {
     if (!roleId) return
     setBusy(userId); setMsg(null)
@@ -84,7 +141,80 @@ export default function SuperRoles() {
         eyebrow="Sistema · Super Admin"
         title="Roles y permisos"
         description="Los permisos se asignan a los roles; los usuarios acumulan permisos al sumar roles (modelo aditivo tipo Discord)."
+        actions={<Btn onClick={abrirNuevo}>+ Nuevo rol</Btn>}
       />
+
+      {/* Editor de rol */}
+      {editando && (
+        <Reveal className="mb-6">
+          <Card>
+            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">
+              {editando.id ? 'Editar rol' : 'Nuevo rol'}
+            </h2>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_auto]">
+              <div>
+                <label className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-caribbean">Nombre</label>
+                <input
+                  className={`${inputCls} mt-1.5`}
+                  value={editando.name}
+                  onChange={(e) => setEditando((x) => ({ ...x, name: e.target.value }))}
+                  placeholder="Ej. Fotógrafo, Archivista…"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-caribbean">Color</label>
+                <div className="mt-1.5 flex gap-2">
+                  {COLORES.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setEditando((x) => ({ ...x, color: c }))}
+                      aria-label={`Color ${c}`}
+                      className={`h-9 w-9 rounded-full border-2 transition ${editando.color === c ? 'border-cream' : 'border-transparent'}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <label className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-caribbean">
+                Permisos <span className="font-normal normal-case tracking-normal text-tea/40">({editando.permissions.length} de {listaPerm.length})</span>
+              </label>
+              {/* El comodín no se ofrece: concederlo crearía un segundo Super
+                  Administrador saltándose el modelo, y el backend lo rechaza. */}
+              <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                {listaPerm.filter((p) => p.key !== '*').map((p) => {
+                  const activo = editando.permissions.includes(p.key)
+                  return (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => alternarPermiso(p.key)}
+                      title={p.description || ''}
+                      className={`flex items-start gap-2 rounded-lg px-3 py-2 text-left transition ${activo ? 'bg-caribbean/12' : 'hover:bg-tea/5'}`}
+                    >
+                      <span className={`mt-0.5 flex h-4 w-4 flex-none items-center justify-center rounded text-[0.6rem] font-bold ${activo ? 'bg-caribbean text-jungle' : 'bg-tea/12 text-transparent'}`}>✓</span>
+                      <span className="min-w-0">
+                        <span className={`block font-mono text-xs ${activo ? 'text-cream' : 'text-tea/60'}`}>{p.key}</span>
+                        {p.description && <span className="block text-[0.7rem] leading-snug text-tea/35">{p.description}</span>}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Btn onClick={guardarRol} disabled={busy === 'rol'}>{busy === 'rol' ? 'Guardando…' : 'Guardar'}</Btn>
+              <Btn tone="ghost" onClick={() => setEditando(null)}>Cancelar</Btn>
+            </div>
+          </Card>
+        </Reveal>
+      )}
 
       {(er || eu) && <p className="mb-6 text-candy">No se pudo cargar la información de roles (¿tienes permiso de Super Admin?).</p>}
 
@@ -93,12 +223,29 @@ export default function SuperRoles() {
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {listaRoles.map((r, i) => (
             <Reveal key={r.id} delay={(i % 3) * 70}>
-              <Card className="flex items-center justify-between py-4">
-                <div>
-                  <RolChip name={r.name} color={r.color} />
-                  <p className="mt-2 font-mono text-xs text-tea/45">{r.userCount} usuarios · {r.permissions.includes('*') ? 'todos los permisos' : `${r.permissions.length} permisos`}</p>
+              <Card className="flex h-full flex-col justify-between py-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <RolChip name={r.name} color={r.color} />
+                    <p className="mt-2 font-mono text-xs text-tea/45">
+                      {r.userCount} usuarios · {r.permissions.includes('*') ? 'todos los permisos' : `${r.permissions.length} permisos`}
+                    </p>
+                  </div>
+                  {r.isSystem && <Chip tone="gris">Sistema</Chip>}
                 </div>
-                {r.isSystem && <Chip tone="gris">Sistema</Chip>}
+
+                {/* Los de sistema no se editan: la semilla repondría sus permisos
+                    al reiniciar, así que el cambio sería una ilusión. */}
+                {r.isSystem ? (
+                  <p className="mt-3 font-mono text-[0.65rem] text-tea/25">Definido por el sistema</p>
+                ) : (
+                  <div className="mt-3 flex gap-3 text-xs font-semibold uppercase tracking-wide">
+                    <button onClick={() => abrirEdicion(r)} className="text-caribbean/80 hover:text-caribbean">Editar</button>
+                    <button onClick={() => borrarRol(r)} disabled={busy === r.id} className="text-candy hover:underline disabled:opacity-40">
+                      {busy === r.id ? '…' : 'Eliminar'}
+                    </button>
+                  </div>
+                )}
               </Card>
             </Reveal>
           ))}
