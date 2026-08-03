@@ -15,6 +15,7 @@ import PublicacionDetalle from './pages/PublicacionDetalle'
 import Perfil from './pages/Perfil'
 import Comunidad from './pages/Comunidad'
 import Eventos from './pages/Eventos'
+import EventoDetalle from './pages/EventoDetalle'
 import Marketplace from './pages/Marketplace'
 import MarketplaceDetalle from './pages/MarketplaceDetalle'
 import Contacto from './pages/Contacto'
@@ -59,6 +60,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="perfil/:slug" element={<Perfil />} />
             <Route path="comunidad" element={<Comunidad />} />
             <Route path="eventos" element={<Eventos />} />
+            <Route path="eventos/:id" element={<EventoDetalle />} />
             <Route path="marketplace" element={<Marketplace />} />
             <Route path="marketplace/:id" element={<MarketplaceDetalle />} />
             <Route path="contacto" element={<Contacto />} />

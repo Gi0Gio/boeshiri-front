@@ -109,7 +109,7 @@ export default function Eventos() {
               {resto.map((e, i) => {
                 const p = parts(e.date)
                 return (
-                  <Reveal key={e.id} delay={i * 110} className="group flex flex-col gap-5 rounded-2xl bg-white p-5 shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1 sm:flex-row sm:items-center">
+                  <Reveal as={Link} to={`/eventos/${e.id}`} key={e.id} delay={i * 110} className="group flex flex-col gap-5 rounded-2xl bg-white p-5 shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1 sm:flex-row sm:items-center">
                     <DateBlock dia={p.dia} mes={p.mes} className="flex-none sm:w-24" />
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3">
@@ -154,7 +154,7 @@ export default function Eventos() {
               {historial.map((e, i) => {
                 const p = parts(e.date)
                 return (
-                  <Reveal key={e.id} delay={(i % 2) * 120} className="group flex overflow-hidden rounded-2xl border border-rainforest/15 bg-white shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1">
+                  <Reveal as={Link} to={`/eventos/${e.id}`} key={e.id} delay={(i % 2) * 120} className="group flex overflow-hidden rounded-2xl border border-rainforest/15 bg-white shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1">
                     <div className="relative w-28 flex-none saturate-[0.85]" style={{ background: gradientFor(e.id) }}>
                       <span className="absolute inset-x-0 bottom-3 text-center font-display text-xs font-semibold uppercase tracking-[0.15em] text-white/90">✓ Realizado</span>
                       <FrogIcon className="absolute left-1/2 top-6 h-12 w-12 -translate-x-1/2 text-white/20" />
