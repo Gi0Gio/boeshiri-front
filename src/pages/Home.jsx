@@ -266,7 +266,7 @@ export default function Home() {
           </Reveal>
           <Reveal delay={140}>
             <h2 className="mt-8 font-display text-4xl font-semibold uppercase leading-tight tracking-wide text-cream md:text-5xl">
-              ¿Sientes el llamado de la rana?
+              ¿Sientes el llamado de Boesh?
             </h2>
           </Reveal>
           <Reveal delay={280}>
