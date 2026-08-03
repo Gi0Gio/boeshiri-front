@@ -2,10 +2,11 @@ import { apiFetch } from './client'
 
 /** Marketplace de productos de los miembros (§9). Catálogo público; gestión propia. */
 export const marketplaceApi = {
-  list: (nombre, categoria) => {
+  list: (nombre, categoria, vendedor) => {
     const q = new URLSearchParams()
     if (nombre) q.set('nombre', nombre)
     if (categoria && categoria !== 'Todo') q.set('categoria', categoria)
+    if (vendedor) q.set('vendedor', vendedor)
     const s = q.toString()
     return apiFetch(`/marketplace${s ? `?${s}` : ''}`)
   },

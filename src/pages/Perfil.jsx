@@ -32,6 +32,10 @@ const marcas = {
 }
 const iconKey = (type) => String(type).toLowerCase()
 
+/** Rango si lo hay (servicios), precio si no, y "a convenir" cuando vale 0. */
+const precioAnuncio = (a) =>
+  a.priceMax != null && a.priceMax > a.price ? `$${a.price} – $${a.priceMax}` : a.price > 0 ? `$${a.price}` : 'A convenir'
+
 const proceso = [
   { t: 'Investigar', d: 'Entender el símbolo, su origen y su contexto.' },
   { t: 'Explorar', d: 'Bocetar direcciones. Preguntar. Refinar.' },
@@ -106,6 +110,8 @@ export default function Perfil() {
   const intro = perfil.intro || perfil.bio
   const idCode = `BI/2026/${String(perfil.id).replace(/-/g, '').slice(-2).toUpperCase()}`
   const articulos = (perfil.gallery ?? []).filter((g) => g.type === 'Article')
+  // La API solo devuelve anuncios si está dado de alta como vendedor.
+  const tieneAnuncios = (perfil.marketplace ?? []).length > 0
   const contactos = [
     ...(perfil.email ? [{ red: 'mail', valor: perfil.email }] : []),
     ...(perfil.phone ? [{ red: 'whatsapp', valor: perfil.phone }] : []),
@@ -258,7 +264,44 @@ export default function Perfil() {
           )}
         </Reveal>
 
-        {/* Últimas publicaciones */}
+        {/* 04 · Sus anuncios si vende; si no, sus publicaciones. La galería ya sale
+            en «Obra seleccionada», así que repetirla aquí no aportaba nada nuevo;
+            los anuncios, en cambio, no aparecen en ningún otro punto del perfil. */}
+        {tieneAnuncios ? (
+          <Reveal as="section" id="marketplace" className="mt-16 scroll-mt-32 border-t pt-10" style={{ borderColor: c.line }}>
+            <Head num="04 / 05" accent={c.accent} muted={muted}>En el marketplace</Head>
+
+            {/* auto-fill: el viewport decide cuántas caben, sin fijar el número de columnas. */}
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(11rem, 1fr))' }}>
+              {perfil.marketplace.map((a) => (
+                <Link
+                  key={a.id}
+                  to={`/marketplace/${a.id}`}
+                  className="group block overflow-hidden rounded-xl transition hover:-translate-y-1"
+                  style={{ backgroundColor: hexRgba(c.ink, 0.05) }}
+                >
+                  <div className="aspect-square overflow-hidden" style={{ background: `linear-gradient(150deg, ${c.duoDark}, ${c.accent})` }}>
+                    {a.coverImage && <img src={a.coverImage} alt={a.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
+                  </div>
+                  <div className="p-3">
+                    <p className="font-display text-sm font-semibold uppercase leading-snug tracking-wide">{a.name}</p>
+                    <p className="mt-1 font-mono text-xs" style={muted}>
+                      {a.kind === 'Service' ? 'Servicio' : 'Producto'} · {precioAnuncio(a)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <Link
+              to={`/marketplace?vendedor=${perfil.id}`}
+              className="mt-6 inline-block font-mono text-xs font-semibold uppercase tracking-[0.15em] transition hover:opacity-70"
+              style={{ color: c.accent }}
+            >
+              Ver todos los productos de {perfil.fullName.split(' ')[0]} →
+            </Link>
+          </Reveal>
+        ) : (
         <Reveal as="section" id="publicaciones" className="mt-16 scroll-mt-32 border-t pt-10" style={{ borderColor: c.line }}>
           <Head num="04 / 05" accent={c.accent} muted={muted}>Últimas publicaciones</Head>
           {perfil.gallery?.length > 0 ? (
@@ -288,6 +331,7 @@ export default function Perfil() {
             </div>
           ) : <p style={muted}>Aún no hay publicaciones.</p>}
         </Reveal>
+        )}
 
         {/* Contacto */}
         <Reveal as="section" id="contacto" className="mt-16 scroll-mt-32 border-t pt-10 text-center lg:text-left" style={{ borderColor: c.line }}>

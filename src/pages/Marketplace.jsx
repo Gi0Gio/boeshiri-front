@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import Reveal from '../components/Reveal'
 import FrogIcon from '../components/FrogIcon'
 import { marketplaceApi } from '../api/marketplace'
@@ -15,8 +15,14 @@ export default function Marketplace() {
   const [kind, setKind] = useState('Todo')
   const [cat, setCat] = useState('Todo')
   const [q, setQ] = useState('')
-  const { data, loading, error } = useFetch(() => marketplaceApi.list())
+
+  // ?vendedor= llega desde la ficha de un anuncio o desde el perfil del miembro.
+  const [params, setParams] = useSearchParams()
+  const vendedor = params.get('vendedor')
+
+  const { data, loading, error } = useFetch(() => marketplaceApi.list(null, null, vendedor), [vendedor])
   const productos = data ?? []
+  const nombreVendedor = productos[0]?.sellerName
 
   const porKind = kind === 'Todo' ? productos : productos.filter((p) => p.kind === kind)
   const categorias = useMemo(
@@ -44,6 +50,25 @@ export default function Marketplace() {
 
       <section className="bg-cream py-14">
         <div className="mx-auto max-w-6xl px-5">
+
+          {/* Filtro por vendedor activo. Se muestra siempre que venga en la URL,
+              con salida a la vista: si no, se quedaría filtrado sin saber por qué. */}
+          {vendedor && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rainforest/20 bg-white px-5 py-4">
+              <p className="text-sm text-jungle/75">
+                Mostrando solo lo de{' '}
+                <strong className="text-jungle">{nombreVendedor || 'este miembro'}</strong>
+                {!loading && ` · ${productos.length} ${productos.length === 1 ? 'anuncio' : 'anuncios'}`}
+              </p>
+              <button
+                onClick={() => { setParams({}); setKind('Todo'); setCat('Todo'); setQ('') }}
+                className="font-display text-xs font-semibold uppercase tracking-[0.15em] text-rainforest underline-offset-4 transition hover:underline"
+              >
+                Ver todo el marketplace
+              </button>
+            </div>
+          )}
+
           <div className="mb-6 flex justify-center">
             <div className="inline-flex rounded-full bg-jungle/8 p-1">
               {KINDS.map((k) => (

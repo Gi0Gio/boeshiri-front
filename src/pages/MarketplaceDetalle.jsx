@@ -104,7 +104,12 @@ export default function MarketplaceDetalle() {
                 </div>
                 <div>
                   <p className="font-display text-base font-semibold uppercase tracking-wide text-jungle">{p.sellerName}</p>
-                  <Link to={`/perfil/${p.sellerId}`} className="text-xs uppercase tracking-[0.12em] text-rainforest hover:underline">Ver perfil →</Link>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <Link to={`/perfil/${p.sellerId}`} className="text-xs uppercase tracking-[0.12em] text-rainforest hover:underline">Ver perfil →</Link>
+                    <Link to={`/marketplace?vendedor=${p.sellerId}`} className="text-xs uppercase tracking-[0.12em] text-rainforest hover:underline">
+                      Ver todos sus anuncios →
+                    </Link>
+                  </div>
                 </div>
               </div>
 
