@@ -4,7 +4,7 @@ import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
 import { marketplaceApi } from '../api/marketplace'
 import { useFetch } from '../hooks/useFetch'
-import { useToast } from '../components/Toast'
+import CompartirBoton from '../components/CompartirBoton'
 import { gradientFor, iniciales } from '../utils/gradient'
 
 const soloDigitos = (s) => (s || '').replace(/[^\d]/g, '')
@@ -25,7 +25,6 @@ export default function MarketplaceDetalle() {
   const { id } = useParams()
   const { data: p, loading, error } = useFetch(() => marketplaceApi.get(id), [id])
   const [img, setImg] = useState(0)
-  const toast = useToast()
 
   if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/50">Cargando…</section>
 
@@ -50,14 +49,6 @@ export default function MarketplaceDetalle() {
       : p.contact?.email
         ? { label: 'Escribir correo', href: `mailto:${p.contact.email}` }
         : null
-
-  const compartir = async () => {
-    const url = window.location.href
-    try {
-      if (navigator.share) await navigator.share({ title: p.name, url })
-      else { await navigator.clipboard.writeText(url); toast.info('Enlace copiado al portapapeles') }
-    } catch { /* cancelado */ }
-  }
 
   return (
     <section className="bg-cream pt-16">
@@ -119,9 +110,7 @@ export default function MarketplaceDetalle() {
                     {contactoPrincipal.label}
                   </a>
                 )}
-                <button onClick={compartir} className="rounded-full border border-rainforest/30 px-6 py-3 font-display text-xs font-semibold uppercase tracking-[0.15em] text-rainforest transition hover:bg-rainforest hover:text-cream">
-                  Compartir
-                </button>
+                <CompartirBoton tipo="producto" id={p.id} titulo={p.name} />
               </div>
 
               {p.contact?.socialLinks?.length > 0 && (

@@ -4,6 +4,7 @@ import Reveal from '../components/Reveal'
 import { publicationsApi } from '../api/publications'
 import { useFetch } from '../hooks/useFetch'
 import { useSession } from '../auth/SessionContext'
+import CompartirBoton from '../components/CompartirBoton'
 import { gradientFor } from '../utils/gradient'
 
 const TIPO_LABEL = { News: 'Noticia', Article: 'Artículo', Photo: 'Foto', Video: 'Video', Music: 'Música' }
@@ -64,7 +65,10 @@ export default function PublicacionDetalle() {
             <span className="text-xs uppercase tracking-wide text-jungle/50">{fmtFecha(p.createdAt)}{p.editedAt && ' · editada'}</span>
           </div>
           <h1 className="mt-4 font-display text-4xl font-semibold uppercase leading-tight tracking-tight text-jungle md:text-5xl">{p.title}</h1>
-          <Link to={`/perfil/${p.authorId}`} className="mt-3 inline-block font-display text-sm font-semibold uppercase tracking-[0.15em] text-rainforest hover:underline">Por {p.authorName}</Link>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+            <Link to={`/perfil/${p.authorId}`} className="font-display text-sm font-semibold uppercase tracking-[0.15em] text-rainforest hover:underline">Por {p.authorName}</Link>
+            <CompartirBoton tipo="publicacion" id={p.id} titulo={p.title} />
+          </div>
         </Reveal>
 
         {/* Media */}
