@@ -5,6 +5,7 @@ import { publicationsApi } from '../../api/publications'
 import { useFetch } from '../../hooks/useFetch'
 import { useSession } from '../../auth/SessionContext'
 import ImageUpload from '../../components/ImageUpload'
+import CompartirBoton from '../../components/CompartirBoton'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
 
@@ -322,6 +323,11 @@ export default function Publicaciones() {
               <div className="mt-4 flex flex-wrap gap-3 border-t border-tea/8 pt-4 text-xs font-semibold uppercase tracking-wide">
                 <Link to={`/publicaciones/${p.id}`} target="_blank" className="text-caribbean/80 hover:text-caribbean">Ver</Link>
                 <button onClick={() => editar(p.id)} className="text-caribbean/80 hover:text-caribbean">Editar</button>
+                {/* Solo si está publicada: compartir un enlace oculto daría 404 a
+                    quien lo abra. */}
+                {p.status === 'Published' && (
+                  <CompartirBoton tipo="publicacion" id={p.id} titulo={p.title} variant="panel" />
+                )}
                 {p.status === 'Published'
                   ? <button onClick={() => cambiarEstado(p.id, 'Hide')} className="text-caribbean/80 hover:text-caribbean">Ocultar</button>
                   : <button onClick={() => cambiarEstado(p.id, 'Show')} className="text-caribbean/80 hover:text-caribbean">Mostrar</button>}

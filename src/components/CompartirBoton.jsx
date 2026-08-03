@@ -10,7 +10,9 @@ import { useToast } from './Toast'
  * solo obtendrían un index vacío; esa ruta les entrega el HTML con las etiquetas
  * og:* y a la persona la manda al sitio sin que note el rodeo.
  */
-export default function CompartirBoton({ tipo, id, titulo, className = '' }) {
+export default function CompartirBoton({ tipo, id, titulo, variant = 'publico', className = '' }) {
+  // El sitio público es claro y el panel oscuro: el mismo botón no sirve en ambos.
+  const esPanel = variant === 'panel'
   const toast = useToast()
   const [abierto, setAbierto] = useState(false)
 
@@ -47,41 +49,45 @@ export default function CompartirBoton({ tipo, id, titulo, className = '' }) {
       <button
         type="button"
         onClick={compartir}
-        className="inline-flex items-center gap-2 rounded-full border border-rainforest/30 px-5 py-2.5 font-display text-xs font-semibold uppercase tracking-[0.15em] text-rainforest transition hover:border-rainforest hover:bg-rainforest hover:text-cream"
+        className={esPanel
+          ? 'text-xs font-semibold uppercase tracking-wide text-caribbean/80 transition hover:text-caribbean'
+          : 'inline-flex items-center gap-2 rounded-full border border-rainforest/30 px-5 py-2.5 font-display text-xs font-semibold uppercase tracking-[0.15em] text-rainforest transition hover:border-rainforest hover:bg-rainforest hover:text-cream'}
       >
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-          <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
-        </svg>
+        {!esPanel && (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+            <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+          </svg>
+        )}
         Compartir
       </button>
 
       {abierto && (
-        <div className="absolute left-0 top-full z-20 mt-2 w-64 rounded-2xl border border-rainforest/20 bg-white p-3 shadow-[0_16px_40px_rgba(0,37,32,0.18)]">
-          <button onClick={copiar} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-jungle transition hover:bg-tea/30">
+        <div className={`absolute right-0 top-full z-30 mt-2 w-64 rounded-2xl p-3 shadow-[0_16px_40px_rgba(0,17,14,0.5)] ${esPanel ? 'border border-tea/12 bg-jungle' : 'border border-rainforest/20 bg-white'}`}>
+          <button onClick={copiar} className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${esPanel ? "text-tea hover:bg-tea/8" : "text-jungle hover:bg-tea/30"}`}>
             Copiar enlace
           </button>
           <a
             href={`https://wa.me/?text=${encodeURIComponent(`${titulo} — ${enlace}`)}`}
             target="_blank" rel="noopener noreferrer"
             onClick={() => setAbierto(false)}
-            className="block rounded-lg px-3 py-2 text-sm text-jungle transition hover:bg-tea/30"
+            className={`block rounded-lg px-3 py-2 text-sm transition ${esPanel ? "text-tea hover:bg-tea/8" : "text-jungle hover:bg-tea/30"}`}
           >
             Enviar por WhatsApp
           </a>
 
-          <div className="mt-2 border-t border-rainforest/10 pt-2">
-            <p className="px-3 pb-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-jungle/40">
+          <div className={`mt-2 border-t pt-2 ${esPanel ? "border-tea/10" : "border-rainforest/10"}`}>
+            <p className={`px-3 pb-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] ${esPanel ? "text-tea/35" : "text-jungle/40"}`}>
               Descargar imagen
             </p>
             {/* Dos formatos porque son dos usos distintos: el cuadrado va en chats
                 y grupos; el vertical, en historias. */}
             <a href={imagen()} download target="_blank" rel="noopener noreferrer"
-              className="block rounded-lg px-3 py-2 text-sm text-jungle transition hover:bg-tea/30">
+              className={`block rounded-lg px-3 py-2 text-sm transition ${esPanel ? "text-tea hover:bg-tea/8" : "text-jungle hover:bg-tea/30"}`}>
               Cuadrada · para chats
             </a>
             <a href={imagen('historia')} download target="_blank" rel="noopener noreferrer"
-              className="block rounded-lg px-3 py-2 text-sm text-jungle transition hover:bg-tea/30">
+              className={`block rounded-lg px-3 py-2 text-sm transition ${esPanel ? "text-tea hover:bg-tea/8" : "text-jungle hover:bg-tea/30"}`}>
               Vertical · para historias
             </a>
           </div>

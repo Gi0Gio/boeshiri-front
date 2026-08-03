@@ -11,7 +11,6 @@ export const marketplaceApi = {
     return apiFetch(`/marketplace${s ? `?${s}` : ''}`)
   },
   get: (id) => apiFetch(`/marketplace/${id}`),
-  share: (id) => apiFetch(`/marketplace/${id}/compartir`),
   mine: () => apiFetch('/marketplace/mios'),
   moderationList: () => apiFetch('/marketplace/moderacion'),
   enroll: () => apiFetch('/marketplace/alta', { method: 'POST' }),

@@ -6,6 +6,7 @@ import { profileApi } from '../../api/profile'
 import { useFetch } from '../../hooks/useFetch'
 import { useSession } from '../../auth/SessionContext'
 import ImageUpload from '../../components/ImageUpload'
+import CompartirBoton from '../../components/CompartirBoton'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
 
@@ -233,6 +234,11 @@ export default function MiMarketplace() {
                 <div className="mt-4 flex flex-wrap gap-3 border-t border-tea/8 pt-3 text-xs font-semibold uppercase tracking-wide">
                   <Link to={`/marketplace/${p.id}`} target="_blank" className="text-caribbean/80 hover:text-caribbean">Ver</Link>
                   <button onClick={() => editar(p.id)} className="text-caribbean/80 hover:text-caribbean">Editar</button>
+                  {/* Compartir desde aquí: es donde publicas, y es justo cuando
+                      quieres difundirlo. Solo si está visible al público. */}
+                  {p.status === 'Published' && (
+                    <CompartirBoton tipo="producto" id={p.id} titulo={p.name} variant="panel" />
+                  )}
                   {p.status === 'Published'
                     ? <button onClick={() => cambiarEstado(p.id, 'Hide')} className="text-caribbean/80 hover:text-caribbean">Ocultar</button>
                     : p.status === 'Hidden' && <button onClick={() => cambiarEstado(p.id, 'Show')} className="text-caribbean/80 hover:text-caribbean">Mostrar</button>}
