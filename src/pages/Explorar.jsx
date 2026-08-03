@@ -29,15 +29,28 @@ const META = {
 const fmtFecha = (iso) =>
   new Date(iso).toLocaleDateString('es-PA', { day: 'numeric', month: 'short', year: 'numeric' })
 
-function Badge({ type }) {
+/**
+ * Etiqueta del tipo. La PRIMERA etiqueta de la publicación se muestra al lado
+ * como subcategoría: "Artículo · Poesía" dice mucho más que "Artículo" a secas,
+ * y aprovecha algo que quien publica ya escribe.
+ */
+function Badge({ type, tags }) {
   const m = META[type]
   if (!m) return null
+  const sub = tags?.[0]
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${m.clase}`}>
       <FrogIcon className="h-3 w-3" />
       {m.label}
+      {sub && <span className="opacity-65">· {sub}</span>}
     </span>
   )
+}
+
+/** "5 min de lectura". No se pinta si no hay texto (foto, video, música). */
+function Lectura({ minutos, className = '' }) {
+  if (!minutos) return null
+  return <span className={className}>{minutos} min de lectura</span>
 }
 
 /* Portada: imagen real o gradiente de marca con la rana */
@@ -75,7 +88,7 @@ function CardVisual({ p, aspect }) {
   return (
     <Link to={`/publicaciones/${p.id}`} className="group relative block overflow-hidden rounded-2xl">
       <Cover p={p} aspect={aspect} play={play} />
-      <span className="absolute left-3 top-3"><Badge type={p.type} /></span>
+      <span className="absolute left-3 top-3"><Badge type={p.type} tags={p.tags} /></span>
       <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-jungle/90 via-jungle/10 to-transparent p-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
         <h3 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">{p.title}</h3>
         <p className="text-xs uppercase tracking-[0.15em] text-tea/70">{p.authorName}</p>
@@ -93,12 +106,15 @@ function CardTexto({ p, dark = false }) {
       {dark && <FrogIcon className="pointer-events-none absolute -bottom-8 -right-6 h-40 w-40 text-white/5" />}
       <div className="relative">
         <div className="flex items-center justify-between gap-2">
-          <Badge type={p.type} />
+          <Badge type={p.type} tags={p.tags} />
           <span className={`text-xs font-medium uppercase tracking-wide ${dark ? 'text-tea/50' : 'text-jungle/50'}`}>{fmtFecha(p.createdAt)}</span>
         </div>
         <h3 className={`mt-4 font-display text-xl font-semibold uppercase tracking-wide ${dark ? 'text-cream' : 'text-jungle transition-colors group-hover:text-rainforest'}`}>{p.title}</h3>
         <Tags tags={p.tags} />
-        <p className={`mt-5 font-display text-xs font-semibold uppercase tracking-[0.2em] ${dark ? 'text-caribbean' : 'text-rainforest'}`}>Por {p.authorName} · Leer más →</p>
+        <p className={`mt-5 font-display text-xs font-semibold uppercase tracking-[0.2em] ${dark ? 'text-caribbean' : 'text-rainforest'}`}>
+          Por {p.authorName} · Leer más →
+        </p>
+        <Lectura minutos={p.readingMinutes} className={`mt-1 block font-mono text-[0.65rem] ${dark ? 'text-tea/40' : 'text-jungle/40'}`} />
       </div>
     </Link>
   )

@@ -60,9 +60,16 @@ export default function PublicacionDetalle() {
 
         <Reveal className="mt-6">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full bg-jungle px-3.5 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-tea">{TIPO_LABEL[p.type] ?? p.type}</span>
+            {/* La primera etiqueta acompaña al tipo: "Artículo · Poesía". */}
+            <span className="rounded-full bg-jungle px-3.5 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-tea">
+              {TIPO_LABEL[p.type] ?? p.type}
+              {p.tags?.[0] && <span className="opacity-65"> · {p.tags[0]}</span>}
+            </span>
             {p.visibility === 'Members' && <span className="rounded-full bg-terracotta px-3.5 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">Solo miembros</span>}
-            <span className="text-xs uppercase tracking-wide text-jungle/50">{fmtFecha(p.createdAt)}{p.editedAt && ' · editada'}</span>
+            <span className="text-xs uppercase tracking-wide text-jungle/50">
+              {fmtFecha(p.createdAt)}{p.editedAt && ' · editada'}
+              {p.readingMinutes > 0 && ` · ${p.readingMinutes} min de lectura`}
+            </span>
           </div>
           <h1 className="mt-4 font-display text-4xl font-semibold uppercase leading-tight tracking-tight text-jungle md:text-5xl">{p.title}</h1>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-4">

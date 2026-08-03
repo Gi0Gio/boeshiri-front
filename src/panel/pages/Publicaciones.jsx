@@ -267,8 +267,23 @@ export default function Publicaciones() {
               )}
 
               <div>
-                <label className={labelCls}>Etiquetas</label>
-                <input className={`${inputCls} mt-1.5`} value={form.tags} onChange={(e) => set({ tags: e.target.value })} placeholder="Separadas por coma: mural, chiriquí, colectivo" />
+                <label className={`${labelCls} inline-flex items-center gap-1.5`}>
+                  Etiquetas
+                  {/* El orden importa y no es evidente: sin avisarlo, alguien pone
+                      "chiriquí" primero y su artículo de poesía sale como
+                      "Artículo · Chiriquí". */}
+                  <span
+                    tabIndex={0}
+                    role="note"
+                    title="La primera etiqueta acompaña al tipo en las tarjetas y en el detalle. Si escribes «poesía, texto, dolega», se mostrará «Artículo · Poesía»."
+                    aria-label="La primera etiqueta acompaña al tipo. Escribe primero la más representativa."
+                    className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-tea/15 font-mono text-[0.6rem] normal-case text-tea/60 transition hover:bg-caribbean hover:text-jungle"
+                  >i</span>
+                </label>
+                <input className={`${inputCls} mt-1.5`} value={form.tags} onChange={(e) => set({ tags: e.target.value })} placeholder="Separadas por coma: poesía, chiriquí, colectivo" />
+                <p className="mt-1.5 font-mono text-[0.65rem] text-tea/40">
+                  La primera se muestra junto al tipo: «{label(form.type)}{form.tags.split(',')[0]?.trim() ? ` · ${form.tags.split(',')[0].trim()}` : ''}»
+                </p>
               </div>
             </div>
 
