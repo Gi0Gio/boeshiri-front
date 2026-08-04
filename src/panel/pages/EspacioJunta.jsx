@@ -4,12 +4,6 @@ import { documentsApi } from '../../api/documents'
 import { useFetch } from '../../hooks/useFetch'
 import { useSession } from '../../auth/SessionContext'
 
-const fmtSize = (b) => {
-  if (!b) return ''
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`
-  return `${(b / 1024 / 1024).toFixed(1)} MB`
-}
-
 /* Ícono line-art reutilizado del nav */
 function Ico({ d }) {
   return <svg viewBox="0 0 24 24" className="h-5 w-5 flex-none" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
@@ -27,9 +21,11 @@ const herramientas = [
 export default function EspacioJunta() {
   const { hasPermission } = useSession()
   const verBiblioteca = hasPermission('documentos.ver_admin')
-  const { data: docs, loading, error } = useFetch(() => (verBiblioteca ? documentsApi.list('Administration') : Promise.resolve([])), [verBiblioteca])
+  const { data: docs, loading, error } = useFetch(() => (verBiblioteca ? documentsApi.list() : Promise.resolve([])), [verBiblioteca])
 
-  const biblioteca = docs ?? []
+  // Solo el conteo: el listado vive en Documentos. Tenerlo también aquí obligaba
+  // a mantener dos diseños del mismo archivo y dejaba sin claro cuál es el bueno.
+  const reservados = (docs ?? []).filter((d) => d.accessLevel === 'Administration').length
   const tools = herramientas.filter((h) => hasPermission(h.perm))
 
   return (
@@ -40,27 +36,32 @@ export default function EspacioJunta() {
         {/* Biblioteca de la Junta (documentos de nivel Administración) */}
         <Reveal>
           <Card>
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Biblioteca de la Junta</h2>
-              <Link to="/panel/documentos" className="font-mono text-xs font-semibold uppercase tracking-wide text-caribbean/80 hover:text-caribbean">Gestionar →</Link>
-            </div>
-            <p className="mt-1 text-xs text-tea/45">Plantillas, actas y cartas membretadas (nivel Administración).</p>
+            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Documentos de la Junta</h2>
+            <p className="mt-1 text-xs text-tea/45">Cartas membretadas, actas y todo lo que no sale de la Junta.</p>
 
             {!verBiblioteca ? (
-              <p className="mt-4 text-sm text-tea/55">Tu rol no tiene acceso a la biblioteca de Administración.</p>
-            ) : loading ? <p className="mt-4 text-sm text-tea/45">Cargando…</p>
-              : error ? <p className="mt-4 text-sm text-candy">No se pudo cargar la biblioteca.</p>
-              : biblioteca.length === 0 ? <p className="mt-4 text-sm text-tea/55">Aún no hay documentos. Súbelos desde <Link to="/panel/documentos" className="text-caribbean hover:underline">Documentos</Link>.</p>
-              : (
-                <ul className="mt-4 space-y-2">
-                  {biblioteca.map((d) => (
-                    <li key={d.id} className="flex items-center justify-between gap-3 rounded-lg border border-tea/10 bg-black/15 px-4 py-2.5 text-sm text-tea">
-                      <span className="min-w-0 flex-1 truncate">📄 {d.name} <span className="font-mono text-xs text-tea/35">· {d.category}{d.sizeBytes ? ` · ${fmtSize(d.sizeBytes)}` : ''}</span></span>
-                      <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="flex-none font-mono text-xs font-semibold uppercase tracking-wide text-caribbean/80 hover:text-caribbean">Abrir</a>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <p className="mt-4 text-sm text-tea/55">Tu rol no tiene acceso a los documentos reservados.</p>
+            ) : (
+              <>
+                <p className="mt-6 font-display text-5xl font-semibold text-caribbean">
+                  {loading ? '·' : error ? '—' : reservados}
+                </p>
+                <p className="mt-1 text-xs uppercase tracking-[0.2em] text-tea/50">
+                  {reservados === 1 ? 'archivo reservado' : 'archivos reservados'}
+                </p>
+                {error && <p className="mt-3 text-sm text-candy">No se pudo consultar la biblioteca.</p>}
+                <Link
+                  to="/panel/documentos#junta"
+                  className="mt-6 inline-block rounded-full bg-caribbean/15 px-5 py-2.5 font-mono text-xs font-semibold uppercase tracking-wide text-caribbean transition hover:bg-caribbean hover:text-jungle"
+                >
+                  Abrir el estante →
+                </Link>
+                <p className="mt-4 text-xs leading-relaxed text-tea/40">
+                  Los archivos viven en <strong className="text-tea/60">Documentos</strong>, junto a los recursos
+                  para toda la membresía. Ahí se suben, se reemplazan y se descargan.
+                </p>
+              </>
+            )}
           </Card>
         </Reveal>
 
