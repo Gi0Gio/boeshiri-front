@@ -10,6 +10,24 @@ import { useSeo } from '../hooks/useSeo'
 /** Nombre del rol tal cual lo siembra la API; el filtro es por coincidencia exacta. */
 const ROL_JUNTA = 'Junta Directiva'
 
+/**
+ * Los cargos, en el orden en que se presenta una junta. El orden importa: es
+ * jerárquico y salir alfabéticamente sería raro. Quien no lleve ninguno de
+ * estos roles va después, que también es parte de la Junta aunque sin cartera.
+ */
+const CARGOS = ['Presidente', 'Vicepresidente', 'Tesorero', 'Secretario']
+
+const cargoDe = (m) => CARGOS.find((c) => m.roles?.includes(c)) ?? null
+
+/** Con cargo primero y por jerarquía; el resto detrás, por nombre. */
+function ordenarJunta(miembros) {
+  const rango = (m) => {
+    const i = CARGOS.indexOf(cargoDe(m))
+    return i === -1 ? CARGOS.length : i
+  }
+  return [...miembros].sort((a, b) => rango(a) - rango(b) || a.fullName.localeCompare(b.fullName))
+}
+
 export default function Sobre() {
   useSeo({
     titulo: 'Sobre el colectivo',
@@ -17,7 +35,7 @@ export default function Sobre() {
   })
 
   const { data: juntaData, loading: loadingJunta } = useFetch(() => communityApi.list(ROL_JUNTA))
-  const junta = juntaData ?? []
+  const junta = ordenarJunta(juntaData ?? [])
 
   return (
     <>
@@ -205,15 +223,23 @@ export default function Sobre() {
                         </span>
                       </>
                     )}
+                    {/* Opaca a propósito: encima de una foto clara, un fondo
+                        translúcido deja el cargo ilegible. */}
+                    {cargoDe(m) && (
+                      <span className="absolute bottom-4 left-4 rounded-full bg-jungle px-3 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-tea shadow-lg">
+                        {cargoDe(m)}
+                      </span>
+                    )}
                   </div>
                   <div className="p-5">
-                    <h3 className="font-display text-lg font-semibold uppercase tracking-wide text-jungle">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rainforest">
+                      {cargoDe(m) ?? 'Miembro de la Junta'}
+                    </p>
+                    <h3 className="mt-1.5 font-display text-lg font-semibold uppercase leading-tight tracking-wide text-jungle">
                       {m.fullName}
                     </h3>
                     {m.discipline && (
-                      <p className="mt-1 text-xs font-medium uppercase tracking-[0.15em] text-rainforest">
-                        {m.discipline}
-                      </p>
+                      <p className="mt-1 text-xs text-jungle/50">{m.discipline}</p>
                     )}
                   </div>
                 </Reveal>
