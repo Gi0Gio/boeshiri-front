@@ -4,24 +4,47 @@ import { PageHeader, Card, Chip, Reveal } from '../ui'
 import { groupsApi } from '../../api/groups'
 import { useFetch } from '../../hooks/useFetch'
 import { useToast } from '../../components/Toast'
+import { gradientFor } from '../../utils/gradient'
 
 const rolLabel = { Coordinator: 'Coordinador', Leader: 'Líder', Member: 'Miembro' }
 const rolTono = { Coordinator: 'caribbean', Leader: 'terracotta', Member: 'gris' }
 
-/** Tarjeta de un grupo propio. Los equipos enlazan a su comisión madre. */
-function TarjetaGrupo({ g, i }) {
+/**
+ * Tarjeta de un grupo propio. Los equipos enlazan a su comisión madre, y ahora
+ * dicen cuál es: «Ver comisión madre →» obligaba a entrar para averiguarlo.
+ *
+ * `comision` es la entrada del listado que ya se descarga en esta página —la
+ * propia si es comisión, la madre si es equipo—, así que el contexto extra no
+ * cuesta ninguna petición.
+ */
+function TarjetaGrupo({ g, i, comision }) {
   const destino = g.type === 'Commission' ? g.id : g.parentCommissionId
+  const esComision = g.type === 'Commission'
+
   return (
-    <Reveal delay={(i % 3) * 90}>
+    <Reveal delay={(i % 3) * 90} className="h-full">
       <Link
         to={destino ? `/panel/grupos/${destino}` : '#'}
-        className="block h-full rounded-2xl border border-tea/10 bg-jungle p-6 transition hover:-translate-y-1 hover:border-caribbean/40 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
+        className="flex h-full flex-col overflow-hidden rounded-2xl border border-tea/10 bg-jungle transition hover:-translate-y-1 hover:border-caribbean/40 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
       >
-        <Chip tone={rolTono[g.role] ?? 'gris'}>{rolLabel[g.role] ?? g.role}</Chip>
-        <h3 className="mt-4 font-display text-lg font-semibold uppercase leading-tight tracking-wide text-cream">{g.name}</h3>
-        <span className="mt-4 inline-block font-mono text-xs font-semibold uppercase tracking-[0.12em] text-caribbean">
-          {g.type === 'Commission' ? 'Ver comisión →' : 'Ver comisión madre →'}
-        </span>
+        <div className="h-1.5 w-full" style={{ background: gradientFor(destino || g.id) }} />
+        <div className="flex flex-1 flex-col p-6">
+          <Chip tone={rolTono[g.role] ?? 'gris'}>{rolLabel[g.role] ?? g.role}</Chip>
+          <h3 className="mt-4 font-display text-lg font-semibold uppercase leading-tight tracking-wide text-cream">{g.name}</h3>
+
+          {!esComision && comision && (
+            <p className="mt-2 font-mono text-xs text-tea/45">En {comision.name}</p>
+          )}
+          {esComision && comision && (
+            <p className="mt-2 font-mono text-xs text-tea/45">
+              {comision.coordinatorName || 'Sin coordinador'} · {comision.memberCount} integrantes
+            </p>
+          )}
+
+          <span className="mt-auto pt-4 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-caribbean">
+            {esComision ? 'Ver comisión →' : 'Ver comisión madre →'}
+          </span>
+        </div>
       </Link>
     </Reveal>
   )
@@ -45,6 +68,9 @@ export default function Grupos() {
   const idsMisComisiones = new Set(misComisiones.map((g) => g.id))
 
   const disponibles = (comisiones ?? []).filter((c) => !idsMisComisiones.has(c.id))
+  const porId = new Map((comisiones ?? []).map((c) => [c.id, c]))
+  // Para un equipo, la comisión relevante es la madre; para una comisión, ella misma.
+  const contextoDe = (g) => porId.get(g.type === 'Commission' ? g.id : g.parentCommissionId)
 
   async function solicitar(id) {
     setBusy(id); setMsg(null)
@@ -75,7 +101,7 @@ export default function Grupos() {
             <Card className="mt-3"><p className="text-sm text-tea/55">Aún no perteneces a ninguna comisión. Puedes postularte abajo.</p></Card>
           ) : (
             <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {misComisiones.map((g, i) => <TarjetaGrupo key={g.id} g={g} i={i} />)}
+              {misComisiones.map((g, i) => <TarjetaGrupo key={g.id} g={g} i={i} comision={contextoDe(g)} />)}
             </div>
           )}
 
@@ -87,7 +113,7 @@ export default function Grupos() {
             <Card className="mt-3"><p className="text-sm text-tea/55">No estás en ningún equipo. Los crea el coordinador de cada comisión.</p></Card>
           ) : (
             <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {misEquipos.map((g, i) => <TarjetaGrupo key={g.id} g={g} i={i} />)}
+              {misEquipos.map((g, i) => <TarjetaGrupo key={g.id} g={g} i={i} comision={contextoDe(g)} />)}
             </div>
           )}
         </>

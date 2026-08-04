@@ -3,6 +3,7 @@
  * Lienzo jungle-deep, superficies en jungle, acentos caribbean/tea, datos en mono.
  */
 import Reveal from '../components/Reveal'
+import { gradientFor, iniciales } from '../utils/gradient'
 
 const chipTone = {
   caribbean: 'bg-caribbean/15 text-caribbean',
@@ -48,6 +49,49 @@ export function Stat({ valor, etiqueta, tono = '#00e6bc' }) {
       <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full" style={{ background: `radial-gradient(closest-side, ${tono}38, transparent 70%)` }} />
       <p className="relative font-display text-4xl font-semibold" style={{ color: tono }}>{valor}</p>
       <p className="relative mt-1 font-mono text-[0.7rem] uppercase tracking-[0.15em] text-tea/50">{etiqueta}</p>
+    </div>
+  )
+}
+
+const AVATAR_TAM = { xs: 'h-7 w-7 text-[0.6rem]', sm: 'h-9 w-9 text-xs', md: 'h-11 w-11 text-sm', lg: 'h-14 w-14 text-base' }
+
+/**
+ * Cara de una persona. Sin foto cae al gradiente de marca con las iniciales:
+ * un hueco gris repetido convierte cualquier lista de gente en una lista de
+ * filas, y lo que se quiere aquí es reconocer a alguien de un vistazo.
+ */
+export function Avatar({ id, nombre, foto, size = 'sm', className = '' }) {
+  const base = `flex flex-none items-center justify-center overflow-hidden rounded-full font-display font-semibold uppercase text-white/90 ${AVATAR_TAM[size]} ${className}`
+
+  if (foto) return <img src={foto} alt={nombre || ''} title={nombre} className={`${base} object-cover`} />
+
+  return (
+    <span className={base} style={{ background: gradientFor(id || nombre || '') }} title={nombre}>
+      {iniciales(nombre)}
+    </span>
+  )
+}
+
+/**
+ * Pila de caras solapadas con un «+N» al final. Comunica el tamaño de un grupo
+ * más rápido que el número suelto, y sin ocupar una lista entera.
+ */
+export function AvatarStack({ personas, max = 5, size = 'sm' }) {
+  const visibles = personas.slice(0, max)
+  const resto = personas.length - visibles.length
+
+  return (
+    <div className="flex items-center">
+      {visibles.map((p, i) => (
+        <span key={p.id ?? p.userId ?? i} className={i > 0 ? '-ml-2' : ''}>
+          <Avatar id={p.id ?? p.userId} nombre={p.name ?? p.fullName} foto={p.photoUrl} size={size} className="ring-2 ring-jungle" />
+        </span>
+      ))}
+      {resto > 0 && (
+        <span className={`-ml-2 flex flex-none items-center justify-center rounded-full bg-tea/12 font-mono font-semibold text-tea/60 ring-2 ring-jungle ${AVATAR_TAM[size]}`}>
+          +{resto}
+        </span>
+      )}
     </div>
   )
 }
