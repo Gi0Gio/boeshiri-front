@@ -5,8 +5,14 @@ import Reveal from '../components/Reveal'
 import { communityApi } from '../api/community'
 import { useFetch } from '../hooks/useFetch'
 import { gradientFor, iniciales } from '../utils/gradient'
+import { useSeo } from '../hooks/useSeo'
 
 export default function Comunidad() {
+  useSeo({
+    titulo: 'Comunidad',
+    descripcion: 'Las personas de Boesh Irí: artistas, diseñadores, músicos y gestores culturales de Chiriquí. Cada perfil es un portafolio vivo.',
+  })
+
   const { data, loading, error } = useFetch(() => communityApi.list())
   const miembros = data ?? []
   const [filtro, setFiltro] = useState('Todas')

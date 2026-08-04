@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
+import { useSeo } from '../hooks/useSeo'
 
 /**
  * Página de "no existe". Sirve tanto de ruta comodín como de estado de error de
@@ -17,6 +18,8 @@ export default function NotFound({
   volverA = '/',
   volverTexto = 'Volver al inicio',
 }) {
+  useSeo({ titulo: title, descripcion: description, noindex: true })
+
   return (
     <section className="bg-dorace-pattern relative flex min-h-screen items-center justify-center overflow-hidden bg-jungle pt-16 text-tea">
       <div className="relative mx-auto max-w-xl px-6 py-24 text-center">

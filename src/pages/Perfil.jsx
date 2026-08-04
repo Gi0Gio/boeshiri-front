@@ -4,6 +4,7 @@ import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
 import { communityApi } from '../api/community'
 import { useFetch } from '../hooks/useFetch'
+import { useSeo } from '../hooks/useSeo'
 
 const combos = [
   { id: 'jungla', nombre: 'Jungla', bg: '#002420', ink: '#f6fbef', accent: '#00e6bc', line: 'rgba(217,242,194,0.16)', circle: '#00e6bc', duoDark: '#002420', duoLight: '#d9f2c2' },
@@ -86,6 +87,28 @@ export default function Perfil() {
     tabsPerfil.forEach((t) => { const el = document.getElementById(t.id); if (el) obs.observe(el) })
     return () => obs.disconnect()
   }, [perfil])
+
+  // Un perfil es la puerta de entrada más probable al sitio: la gente busca a la
+  // persona por su nombre, no al colectivo. El schema Person con worksFor es lo
+  // que ata ese nombre a Boesh Irí a ojos del buscador.
+  useSeo({
+    titulo: perfil ? perfil.fullName : 'Perfil',
+    descripcion: perfil
+      ? `${perfil.discipline ? `${perfil.discipline}. ` : ''}${(perfil.bio || perfil.intro || '').replace(/\s+/g, ' ').slice(0, 140) || `Miembro del colectivo Boesh Irí, Chiriquí.`}`
+      : 'Perfil de un miembro del colectivo Boesh Irí.',
+    imagen: perfil?.photoUrl,
+    tipo: 'profile',
+    datos: perfil && {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: perfil.fullName,
+      jobTitle: perfil.discipline || undefined,
+      description: perfil.bio || perfil.intro || undefined,
+      image: perfil.photoUrl || undefined,
+      address: perfil.location ? { '@type': 'PostalAddress', addressLocality: perfil.location, addressCountry: 'PA' } : undefined,
+      worksFor: { '@id': 'https://boeshiri.grupogeshk.com/#organizacion' },
+    },
+  })
 
   if (loading) return <section className="flex min-h-screen items-center justify-center bg-jungle pt-16 text-tea/60">Cargando perfil…</section>
   if (error || !perfil) {

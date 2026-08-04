@@ -4,6 +4,7 @@ import Reveal from '../components/Reveal'
 import { eventsApi } from '../api/events'
 import { useFetch } from '../hooks/useFetch'
 import { gradientFor } from '../utils/gradient'
+import { useSeo } from '../hooks/useSeo'
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 function parts(iso) {
@@ -38,6 +39,11 @@ function DateBlock({ dia, mes, className = '' }) {
 }
 
 export default function Eventos() {
+  useSeo({
+    titulo: 'Eventos',
+    descripcion: 'Talleres, exposiciones, conciertos y encuentros del colectivo Boesh Irí en Chiriquí, Panamá.',
+  })
+
   const { data: prox, loading: lp } = useFetch(() => eventsApi.list('Upcoming'))
   const { data: pasados, loading: lh } = useFetch(() => eventsApi.list('Past'))
   const proximos = prox ?? []

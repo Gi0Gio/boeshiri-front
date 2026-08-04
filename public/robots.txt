@@ -1,0 +1,16 @@
+# Boesh Irí — https://boeshiri.grupogeshk.com
+#
+# Todo el sitio público es rastreable. El panel y el login no: son pantallas que
+# exigen sesión, y anunciarlas solo gasta presupuesto de rastreo y ensucia los
+# resultados con páginas que nadie de fuera puede abrir.
+
+User-agent: *
+Allow: /
+Disallow: /panel
+Disallow: /login
+Disallow: /verificar
+
+# Páginas fijas del sitio (archivo estático) y contenido vivo (lo genera la API,
+# proxied bajo este dominio: un sitemap solo vale para el host que lo sirve).
+Sitemap: https://boeshiri.grupogeshk.com/sitemap.xml
+Sitemap: https://boeshiri.grupogeshk.com/sitemap-contenido.xml

@@ -4,17 +4,81 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#002420" />
+
+    <!--
+      Punto de partida: useSeo() reescribe todo esto en cada ruta. Importa igual
+      porque el robot que NO ejecuta JavaScript (WhatsApp, Instagram, buscadores
+      pequeños) nunca llega a ver más que esto.
+    -->
+    <title>Boesh Irí — Colectivo cultural de Chiriquí, Panamá</title>
     <meta
       name="description"
-      content="Boesh Irí es un colectivo cultural de Chiriquí que resignifica los símbolos de nuestras raíces y crea refugios para artistas, diseñadores y mentes alternativas."
+      content="Boesh Irí es un colectivo cultural de Chiriquí, Panamá, que resignifica los símbolos de nuestras raíces y crea refugios para artistas, diseñadores y mentes alternativas."
     />
-    <meta property="og:title" content="Boesh Irí — Colectivo Cultural" />
+    <link rel="canonical" href="https://boeshiri.grupogeshk.com/" />
+
+    <meta property="og:site_name" content="Boesh Irí" />
+    <meta property="og:locale" content="es_PA" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://boeshiri.grupogeshk.com/" />
+    <meta property="og:title" content="Boesh Irí — Colectivo cultural de Chiriquí" />
     <meta
       property="og:description"
-      content="El puente vivo hacia nuestra historia. Arte, cultura y comunidad desde Chiriquí."
+      content="El puente vivo hacia nuestra historia. Arte, cultura y comunidad desde Chiriquí, Panamá."
     />
-    <meta property="og:type" content="website" />
-    <title>Boesh Irí — Colectivo Cultural</title>
+    <meta property="og:image" content="https://boeshiri.grupogeshk.com/compartir/marca/imagen.png" />
+    <meta property="og:image:width" content="1080" />
+    <meta property="og:image:height" content="1080" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Boesh Irí — Colectivo cultural de Chiriquí" />
+    <meta
+      name="twitter:description"
+      content="El puente vivo hacia nuestra historia. Arte, cultura y comunidad desde Chiriquí, Panamá."
+    />
+    <meta name="twitter:image" content="https://boeshiri.grupogeshk.com/compartir/marca/imagen.png" />
+
+    <!--
+      Datos estructurados: es lo que hace que Google entienda "Boesh Irí" como
+      una organización con nombre, alias y sitio propio, y no como dos palabras
+      sueltas dentro de una página. Los alias cubren cómo lo escribe la gente
+      (sin tilde, junto, solo "Boesh"). sameAs se irá llenando con las redes
+      oficiales: son la confirmación externa de que la marca es esta y no otra.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://boeshiri.grupogeshk.com/#organizacion",
+        "name": "Boesh Irí",
+        "alternateName": ["Boesh Iri", "Boeshiri", "Boesh", "Colectivo Boesh Irí"],
+        "url": "https://boeshiri.grupogeshk.com/",
+        "logo": "https://boeshiri.grupogeshk.com/favicon.svg",
+        "image": "https://boeshiri.grupogeshk.com/compartir/marca/imagen.png",
+        "description": "Colectivo cultural de Chiriquí, Panamá: arte, cultura y comunidad para artistas, diseñadores y mentes alternativas.",
+        "foundingLocation": {
+          "@type": "Place",
+          "address": {
+            "@type": "PostalAddress",
+            "addressRegion": "Chiriquí",
+            "addressCountry": "PA"
+          }
+        },
+        "areaServed": { "@type": "AdministrativeArea", "name": "Chiriquí, Panamá" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://boeshiri.grupogeshk.com/#sitio",
+        "name": "Boesh Irí",
+        "url": "https://boeshiri.grupogeshk.com/",
+        "inLanguage": "es",
+        "publisher": { "@id": "https://boeshiri.grupogeshk.com/#organizacion" }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -6,6 +6,7 @@ import ReenviarVerificacion from '../components/ReenviarVerificacion'
 import { authApi } from '../api/auth'
 import { useToast } from '../components/Toast'
 import { useSession } from '../auth/SessionContext'
+import { useSeo } from '../hooks/useSeo'
 
 const pasos = [
   { id: 1, titulo: 'Tu cuenta', desc: 'Cómo entrarás al colectivo' },
@@ -34,6 +35,11 @@ const LARGO_MAX = 8
 const soloDigitos = (v) => (v || '').replace(/\D/g, '')
 
 export default function Postularme() {
+  useSeo({
+    titulo: 'Postularme al colectivo',
+    descripcion: 'Únete a Boesh Irí. Cuéntanos qué haces y por qué quieres crear con raíz desde Chiriquí; la Junta revisa cada postulación.',
+  })
+
   const toast = useToast()
   const { user, loading: cargandoSesion } = useSession()
   const [paso, setPaso] = useState(1)

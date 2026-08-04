@@ -6,6 +6,7 @@ import { pilares, colaboradores } from '../data/contenido'
 import { publicationsApi } from '../api/publications'
 import { useFetch } from '../hooks/useFetch'
 import { useSession } from '../auth/SessionContext'
+import { useSeo } from '../hooks/useSeo'
 
 const TIPO = {
   News: { label: 'Noticia', clase: 'bg-terracotta text-white' },
@@ -20,6 +21,11 @@ const fmtFecha = (iso) => new Date(iso).toLocaleDateString('es-PA', { day: 'nume
 const VISTO_KEY = 'boeshiri-inicio-visto'
 
 export default function Home() {
+  useSeo({
+    titulo: 'Colectivo cultural de Chiriquí',
+    descripcion: 'Boesh Irí es un colectivo cultural de Chiriquí, Panamá: artistas, diseñadores y mentes alternativas resignificando los símbolos de nuestras raíces.',
+  })
+
   const { user, loading: cargandoSesion } = useSession()
   const { data: pubs } = useFetch(() => publicationsApi.list())
   const recientes = (pubs ?? []).slice(0, 3)

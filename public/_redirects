@@ -5,5 +5,10 @@
 # Tiene que ir ANTES del comodín de la SPA, que si no se lo traga.
 /compartir/*  https://boeshiri-api-production.up.railway.app/compartir/:splat  200
 
+# El sitemap del contenido lo genera la API, pero un buscador solo acepta un
+# sitemap que declare URLs del mismo host desde el que lo descarga: por eso se
+# sirve por proxy aquí en vez de enlazar a Railway.
+/sitemap-contenido.xml  https://boeshiri-api-production.up.railway.app/sitemap-contenido.xml  200
+
 # Fallback de la SPA: cualquier otra ruta la resuelve React Router.
 /*  /index.html  200

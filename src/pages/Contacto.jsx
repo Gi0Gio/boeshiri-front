@@ -3,6 +3,7 @@ import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
 import { contactApi } from '../api/contact'
 import { useToast } from '../components/Toast'
+import { useSeo } from '../hooks/useSeo'
 
 const canales = [
   { etiqueta: 'Correo', valor: 'hola@boeshiri.org', href: 'mailto:hola@boeshiri.org' },
@@ -18,6 +19,11 @@ const inputBase =
 const labelBase = 'font-display text-xs font-semibold uppercase tracking-[0.2em] text-rainforest'
 
 export default function Contacto() {
+  useSeo({
+    titulo: 'Contacto',
+    descripcion: 'Escríbele a Boesh Irí: colaboraciones, invitaciones, prensa o cualquier cosa que quieras proponerle al colectivo.',
+  })
+
   const [enviado, setEnviado] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [busy, setBusy] = useState(false)

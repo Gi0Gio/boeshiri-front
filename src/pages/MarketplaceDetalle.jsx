@@ -4,6 +4,7 @@ import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
 import NotFound from './NotFound'
 import { marketplaceApi } from '../api/marketplace'
+import { useSeo } from '../hooks/useSeo'
 import { useFetch } from '../hooks/useFetch'
 import CompartirBoton from '../components/CompartirBoton'
 import { gradientFor, iniciales } from '../utils/gradient'
@@ -26,6 +27,33 @@ export default function MarketplaceDetalle() {
   const { id } = useParams()
   const { data: p, loading, error } = useFetch(() => marketplaceApi.get(id), [id])
   const [img, setImg] = useState(0)
+
+  // Antes de los returns tempranos: un hook no puede quedar detrás de un if.
+  // El schema Product es lo que permite que el anuncio salga en Google con su
+  // precio y su disponibilidad, no como un enlace suelto.
+  useSeo({
+    titulo: p ? p.name : 'Anuncio',
+    descripcion: p
+      ? `${p.description?.slice(0, 150) || `${p.category} de ${p.sellerName}`} · Marketplace de Boesh Irí.`
+      : 'Anuncio del marketplace de Boesh Irí.',
+    imagen: p?.images?.[0],
+    datos: p && {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: p.name,
+      description: p.description || undefined,
+      image: p.images?.length ? p.images : undefined,
+      category: p.category,
+      brand: { '@type': 'Organization', name: 'Boesh Irí' },
+      offers: {
+        '@type': 'Offer',
+        price: p.price,
+        priceCurrency: 'USD',
+        availability: p.status === 'Sold' ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+        seller: { '@type': 'Person', name: p.sellerName },
+      },
+    },
+  })
 
   if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/50">Cargando…</section>
 

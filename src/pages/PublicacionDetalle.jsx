@@ -6,6 +6,7 @@ import { useFetch } from '../hooks/useFetch'
 import { useSession } from '../auth/SessionContext'
 import CompartirBoton from '../components/CompartirBoton'
 import { gradientFor } from '../utils/gradient'
+import { useSeo } from '../hooks/useSeo'
 
 const TIPO_LABEL = { News: 'Noticia', Article: 'Artículo', Photo: 'Foto', Video: 'Video', Music: 'Música' }
 
@@ -23,6 +24,27 @@ export default function PublicacionDetalle() {
   const { id } = useParams()
   const { user } = useSession()
   const { data: p, loading, error } = useFetch(() => publicationsApi.get(id), [id])
+
+  // Antes de los returns tempranos: un hook no puede quedar detrás de un if.
+  useSeo({
+    titulo: p ? p.title : 'Publicación',
+    descripcion: p
+      ? `${(p.body || '').replace(/\s+/g, ' ').slice(0, 150) || `${TIPO_LABEL[p.type] ?? 'Publicación'} de ${p.authorName}`}`
+      : 'Publicación del colectivo Boesh Irí.',
+    imagen: p?.images?.[0],
+    tipo: 'article',
+    datos: p && {
+      '@context': 'https://schema.org',
+      '@type': p.type === 'Article' ? 'Article' : 'CreativeWork',
+      headline: p.title,
+      image: p.images?.length ? p.images : undefined,
+      datePublished: p.createdAt,
+      dateModified: p.editedAt || p.createdAt,
+      author: { '@type': 'Person', name: p.authorName },
+      publisher: { '@id': 'https://boeshiri.grupogeshk.com/#organizacion' },
+      inLanguage: 'es',
+    },
+  })
 
   if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/50">Cargando…</section>
 

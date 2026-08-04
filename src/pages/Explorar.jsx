@@ -6,6 +6,7 @@ import { publicationsApi } from '../api/publications'
 import { communityApi } from '../api/community'
 import { useFetch } from '../hooks/useFetch'
 import { gradientFor, iniciales } from '../utils/gradient'
+import { useSeo } from '../hooks/useSeo'
 
 const tabs = [
   { id: 'feed', label: 'Feed' },
@@ -210,6 +211,11 @@ function Musica({ pubs }) {
 }
 
 export default function Explorar() {
+  useSeo({
+    titulo: 'Explorar',
+    descripcion: 'Noticias, artículos, fotografía, música y video del colectivo Boesh Irí, y los perfiles de quienes lo hacen.',
+  })
+
   const [activa, setActiva] = useState('feed')
   const { data, loading, error } = useFetch(() => publicationsApi.list())
   const pubs = data ?? []

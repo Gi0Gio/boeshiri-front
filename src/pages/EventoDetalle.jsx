@@ -6,6 +6,7 @@ import { eventsApi } from '../api/events'
 import { useFetch } from '../hooks/useFetch'
 import { useSession } from '../auth/SessionContext'
 import { gradientFor } from '../utils/gradient'
+import { useSeo } from '../hooks/useSeo'
 
 const fmtFecha = (iso) =>
   new Date(iso).toLocaleDateString('es-PA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -17,6 +18,37 @@ export default function EventoDetalle() {
   const { user } = useSession()
   const { data: e, loading, error } = useFetch(() => eventsApi.get(id), [id])
   const [img, setImg] = useState(0)
+
+  // Antes de los returns tempranos: un hook no puede quedar detrás de un if.
+  // El schema Event es el que hace que Google muestre fecha y lugar en el
+  // resultado, y el que alimenta las fichas de "eventos cerca de ti".
+  useSeo({
+    titulo: e ? e.title : 'Evento',
+    descripcion: e
+      ? `${e.description?.slice(0, 140) || e.category} · ${fmtFecha(e.date)}${e.location ? `, ${e.location}` : ''}.`
+      : 'Evento del colectivo Boesh Irí.',
+    imagen: e?.images?.[0],
+    datos: e && {
+      '@context': 'https://schema.org',
+      '@type': 'Event',
+      name: e.title,
+      description: e.description || undefined,
+      image: e.images?.length ? e.images : undefined,
+      startDate: e.date,
+      eventStatus: 'https://schema.org/EventScheduled',
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      location: e.location
+        ? { '@type': 'Place', name: e.location, address: { '@type': 'PostalAddress', addressRegion: 'Chiriquí', addressCountry: 'PA' } }
+        : undefined,
+      organizer: { '@id': 'https://boeshiri.grupogeshk.com/#organizacion' },
+      offers: {
+        '@type': 'Offer',
+        price: e.cost ?? 0,
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+      },
+    },
+  })
 
   if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/50">Cargando…</section>
 

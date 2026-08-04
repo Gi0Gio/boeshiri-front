@@ -5,11 +5,17 @@ import { communityApi } from '../api/community'
 import { useFetch } from '../hooks/useFetch'
 import { gradientFor, iniciales } from '../utils/gradient'
 import { misionVision, valores, hitos } from '../data/contenido'
+import { useSeo } from '../hooks/useSeo'
 
 /** Nombre del rol tal cual lo siembra la API; el filtro es por coincidencia exacta. */
 const ROL_JUNTA = 'Junta Directiva'
 
 export default function Sobre() {
+  useSeo({
+    titulo: 'Sobre el colectivo',
+    descripcion: 'Quiénes somos, qué defendemos y quiénes forman la Junta Directiva de Boesh Irí, colectivo cultural de Chiriquí, Panamá.',
+  })
+
   const { data: juntaData, loading: loadingJunta } = useFetch(() => communityApi.list(ROL_JUNTA))
   const junta = juntaData ?? []
 

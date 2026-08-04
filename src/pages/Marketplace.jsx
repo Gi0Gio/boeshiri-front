@@ -5,6 +5,7 @@ import FrogIcon from '../components/FrogIcon'
 import { marketplaceApi } from '../api/marketplace'
 import { useFetch } from '../hooks/useFetch'
 import { gradientFor } from '../utils/gradient'
+import { useSeo } from '../hooks/useSeo'
 
 const KINDS = [{ id: 'Todo', label: 'Todo' }, { id: 'Product', label: 'Productos' }, { id: 'Service', label: 'Servicios' }]
 // Rango si lo hay (servicios), precio si no, y "a convenir" cuando vale 0.
@@ -12,6 +13,11 @@ const fmtPrecio = (p) =>
   p.priceMax != null && p.priceMax > p.price ? `$${p.price} – $${p.priceMax}` : p.price > 0 ? `$${p.price}` : 'A convenir'
 
 export default function Marketplace() {
+  useSeo({
+    titulo: 'Marketplace',
+    descripcion: 'Productos y servicios de los artistas y creadores de Boesh Irí. Compra directo a quien lo hace, sin intermediarios.',
+  })
+
   const [kind, setKind] = useState('Todo')
   const [cat, setCat] = useState('Todo')
   const [q, setQ] = useState('')
