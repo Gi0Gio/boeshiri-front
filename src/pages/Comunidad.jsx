@@ -6,34 +6,7 @@ import { communityApi } from '../api/community'
 import { useFetch } from '../hooks/useFetch'
 import { gradientFor, iniciales } from '../utils/gradient'
 import { useSeo } from '../hooks/useSeo'
-
-/**
- * Familias de disciplina para filtrar. La disciplina del perfil es texto libre
- * («Dibujo, canto, edición…», «Muralismo , Artista visual»), así que filtrar por
- * el texto exacto daba un chip por persona. Cada familia reconoce sus palabras y
- * una persona puede caer en varias. Quien no encaja en ninguna sigue en «Todas».
- *
- * TODO: lo limpio es que la API guarde disciplinas de una lista cerrada; esto
- * es el puente mientras tanto.
- */
-const FAMILIAS = [
-  { id: 'dibujo', label: 'Dibujo e ilustración', claves: ['dibujo', 'ilustracion'] },
-  { id: 'pintura', label: 'Pintura y muralismo', claves: ['pintura', 'pintor', 'mural', 'artista visual'] },
-  { id: 'foto', label: 'Foto y audiovisual', claves: ['fotograf', 'audiovisual', 'video', 'edicion', 'cine'] },
-  { id: 'diseno', label: 'Diseño', claves: ['diseno', 'grafic'] },
-  { id: 'escena', label: 'Música y escena', claves: ['canto', 'music', 'baile', 'danza', 'teatro'] },
-  { id: 'escritura', label: 'Escritura', claves: ['escritura', 'escritor', 'poesia'] },
-  { id: 'artesania', label: 'Artesanía', claves: ['ceramica', 'crochet', 'bisuteria', 'textil', 'artesan'] },
-  { id: 'tecnologia', label: 'Tecnología', claves: ['desarrollo', 'programacion', 'web'] },
-]
-
-const normalizar = (t) =>
-  t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-
-function familiasDe(miembro) {
-  const texto = normalizar([miembro.discipline, ...(miembro.tags ?? [])].filter(Boolean).join(' '))
-  return FAMILIAS.filter((f) => f.claves.some((c) => texto.includes(c))).map((f) => f.id)
-}
+import { useDisciplinas } from '../components/DisciplinasPicker'
 
 /** «Muralismo , Artista visual» → «Muralismo, artista visual». Solo presentación. */
 function limpiarDisciplina(d) {
@@ -55,16 +28,20 @@ export default function Comunidad() {
   const miembros = data ?? []
   const [filtro, setFiltro] = useState('todas')
 
-  const conFamilias = useMemo(() => miembros.map((m) => ({ ...m, familias: familiasDe(m) })), [miembros])
-  // Solo las familias que tienen a alguien: un chip que filtra a cero es un callejón.
+  const catalogo = useDisciplinas()
+
+  // Cada miembro elige sus disciplinas del catálogo cerrado de la API, así que el
+  // filtro es exacto. Solo salen las que tienen a alguien: un chip que filtra a
+  // cero es un callejón.
   const filtros = useMemo(() => {
-    const presentes = FAMILIAS.map((f) => ({
-      ...f,
-      total: conFamilias.filter((m) => m.familias.includes(f.id)).length,
+    const presentes = catalogo.map((d) => ({
+      id: d.key,
+      label: d.label,
+      total: miembros.filter((m) => m.disciplines?.includes(d.key)).length,
     })).filter((f) => f.total > 0)
-    return [{ id: 'todas', label: 'Todas', total: conFamilias.length }, ...presentes]
-  }, [conFamilias])
-  const lista = filtro === 'todas' ? conFamilias : conFamilias.filter((m) => m.familias.includes(filtro))
+    return [{ id: 'todas', label: 'Todas', total: miembros.length }, ...presentes]
+  }, [catalogo, miembros])
+  const lista = filtro === 'todas' ? miembros : miembros.filter((m) => m.disciplines?.includes(filtro))
 
   return (
     <>

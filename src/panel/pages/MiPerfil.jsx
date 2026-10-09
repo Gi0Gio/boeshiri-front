@@ -4,6 +4,7 @@ import { PageHeader, Card, Toggle, Btn, Chip, Reveal, inputCls, labelCls } from 
 import { profileApi } from '../../api/profile'
 import { useFetch } from '../../hooks/useFetch'
 import ImageUpload from '../../components/ImageUpload'
+import DisciplinasPicker from '../../components/DisciplinasPicker'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
 import { useSession } from '../../auth/SessionContext'
@@ -31,6 +32,7 @@ function toForm(d) {
     bio: d.bio ?? '',
     intro: d.intro ?? '',
     discipline: d.discipline ?? '',
+    disciplines: d.disciplines ?? [],
     location: d.location ?? '',
     photoUrl: d.photoUrl ?? '',
     tags: d.tags ?? [],
@@ -92,7 +94,7 @@ export default function MiPerfil() {
 
   const faltantes = [
     !form.bio && 'descripción',
-    !form.discipline && 'disciplina',
+    form.disciplines.length === 0 && 'disciplinas',
     !form.photoUrl && 'foto',
     form.tags.length === 0 && 'etiquetas',
     !REDES.some((r) => form.redes[r.type]?.value) && 'redes de contacto',
@@ -115,7 +117,7 @@ export default function MiPerfil() {
       const skills = form.skills
         .map((s) => ({ name: s.name.trim(), level: s.level }))
         .filter((s) => s.name)
-      await profileApi.update({ fullName: form.fullName, bio: form.bio || null, intro: form.intro || null, discipline: form.discipline || null, location: form.location || null, photoUrl: form.photoUrl || null, tags: form.tags, skills })
+      await profileApi.update({ fullName: form.fullName, bio: form.bio || null, intro: form.intro || null, discipline: form.discipline || null, disciplines: form.disciplines, location: form.location || null, photoUrl: form.photoUrl || null, tags: form.tags, skills })
       await profileApi.updatePrivacy(form.privacy)
       const links = REDES
         .map((r) => ({ type: r.type, value: (form.redes[r.type]?.value || '').trim(), visible: !!form.redes[r.type]?.visible }))
@@ -187,8 +189,16 @@ export default function MiPerfil() {
                 <input className={`${inputCls} mt-1.5`} value={form.fullName} onChange={(e) => set({ fullName: e.target.value })} />
               </div>
               <div>
-                <label className={labelCls}>Disciplina</label>
-                <input className={`${inputCls} mt-1.5`} value={form.discipline} onChange={(e) => set({ discipline: e.target.value })} placeholder="Muralismo, Música, Fotografía…" />
+                <p id="mis-disciplinas" className={labelCls}>Disciplinas</p>
+                <p className="mt-1 font-mono text-xs text-tea/70">Las que elijas son las que te encuentran en la Comunidad.</p>
+                <div className="mt-2">
+                  <DisciplinasPicker value={form.disciplines} onChange={(disciplines) => set({ disciplines })} labelledBy="mis-disciplinas" />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="mi-disciplina" className={labelCls}>Cómo te describes (opcional)</label>
+                <input id="mi-disciplina" className={`${inputCls} mt-1.5`} value={form.discipline} onChange={(e) => set({ discipline: e.target.value })} placeholder="Muralismo, artista visual…" maxLength={120} />
+                <p className="mt-1.5 font-mono text-xs text-tea/70">Sale bajo tu nombre en tu perfil.</p>
               </div>
               <div>
                 <label className={labelCls}>Ubicación (opcional)</label>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
 import ReenviarVerificacion from '../components/ReenviarVerificacion'
+import DisciplinasPicker from '../components/DisciplinasPicker'
 import { authApi } from '../api/auth'
 import { useToast } from '../components/Toast'
 import { useSession } from '../auth/SessionContext'
@@ -14,18 +15,13 @@ const pasos = [
   { id: 3, titulo: 'Tu porqué', desc: 'Por qué quieres sumarte' },
 ]
 
-const disciplinas = [
-  'Música', 'Muralismo', 'Fotografía', 'Danza', 'Diseño gráfico', 'Poesía / escritura', 'Otra',
-]
-
 const inputBase =
   'w-full rounded-xl border border-rainforest/20 bg-white px-4 py-3 text-base text-jungle placeholder:text-jungle/40 transition focus:border-caribbean focus:outline-none focus:ring-2 focus:ring-caribbean/30'
 const inputError = 'border-candy focus:border-candy focus:ring-candy/30'
 const labelBase = 'font-display text-xs font-semibold uppercase tracking-[0.2em] text-rainforest'
 
-const OTRA = 'Otra'
 
-const BLANK = { nombre: '', correo: '', clave: '', clave2: '', disciplina: '', disciplinaOtra: '', telefono: '', motivacion: '' }
+const BLANK = { nombre: '', correo: '', clave: '', clave2: '', disciplinas: [], disciplina: '', telefono: '', motivacion: '' }
 
 /** Panamá. El colectivo es de Chiriquí; el prefijo se da por hecho. */
 const COD_PANAMA = '507'
@@ -70,10 +66,10 @@ export default function Postularme() {
       return
     }
 
-    // Elegir "Otra" y dejarlo en blanco guardaría una disciplina vacía sin que
-    // la persona note que su elección se perdió.
-    if (paso === 2 && form.disciplina === OTRA && !form.disciplinaOtra.trim()) {
-      toast.error('Escribe cuál es tu disciplina.')
+    // Sin nada, la Junta no sabe qué hace quien se postula. Quien no se ve en
+    // la lista escribe la suya.
+    if (paso === 2 && form.disciplinas.length === 0 && !form.disciplina.trim()) {
+      toast.error('Elige al menos una disciplina o escribe la tuya.')
       return
     }
 
@@ -92,8 +88,8 @@ export default function Postularme() {
         // Se guarda en formato internacional completo: es lo que necesita wa.me
         // para abrir el chat sin que nadie tenga que anteponer el país a mano.
         phone: form.telefono ? `+${COD_PANAMA}${form.telefono}` : null,
-        // Si eligió "Otra", se guarda lo que escribió; "Otra" a secas no dice nada.
-        discipline: (form.disciplina === OTRA ? form.disciplinaOtra.trim() : form.disciplina) || null,
+        disciplines: form.disciplinas,
+        discipline: form.disciplina.trim() || null,
         applicationReason: form.motivacion.trim() || null,
       })
       setListo(true)
@@ -247,7 +243,7 @@ export default function Postularme() {
                       onChange={(e) => { set({ clave2: e.target.value }); if (campoError === 'clave2') setCampoError(null) }}
                       placeholder="Escríbela otra vez" className={cls('clave2')}
                     />
-                    <p className="text-xs text-jungle/70">Aún no hay recuperación de contraseña: si la olvidas, tendrás que pedir ayuda a la Junta.</p>
+                    <p className="text-xs text-jungle/70">Si la olvidas, puedes recuperarla desde la pantalla de entrada.</p>
                   </div>
                 </div>
               )}
@@ -255,32 +251,22 @@ export default function Postularme() {
               {paso === 2 && (
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="disciplina" className={labelBase}>Disciplina principal</label>
-                    <select
-                      id="disciplina" name="disciplina" className={inputBase}
+                    <p id="disciplinas" className={labelBase}>Qué creas</p>
+                    <DisciplinasPicker tono="claro" labelledBy="disciplinas"
+                      value={form.disciplinas} onChange={(disciplinas) => set({ disciplinas })} />
+                    {/* El catálogo no puede abarcar todo lo que crea un colectivo
+                        cultural: lo propio se escribe aquí y sale en el perfil. */}
+                    <label htmlFor="disciplina" className="mt-2 text-sm text-jungle/80">¿Cómo lo describes? (opcional)</label>
+                    <input
+                      id="disciplina" name="disciplina"
                       value={form.disciplina}
-                      onChange={(e) => set({ disciplina: e.target.value, disciplinaOtra: '' })}
-                    >
-                      <option value="">¿Qué creas?</option>
-                      {disciplinas.map((d) => (<option key={d} value={d}>{d}</option>))}
-                    </select>
+                      onChange={(e) => set({ disciplina: e.target.value })}
+                      placeholder="Muralismo, ilustración digital…"
+                      maxLength={80}
+                      className={inputBase}
+                    />
 
-                    {/* La lista no puede abarcar todas las disciplinas de un colectivo
-                        cultural: quien elige "Otra" escribe la suya y es la que se
-                        guarda, en vez de quedar registrado con la etiqueta genérica. */}
-                    {form.disciplina === OTRA && (
-                      <input
-                        aria-label="¿Cuál es tu disciplina?"
-                        value={form.disciplinaOtra}
-                        onChange={(e) => set({ disciplinaOtra: e.target.value })}
-                        placeholder="Escribe tu disciplina"
-                        maxLength={80}
-                        autoFocus
-                        className={inputBase}
-                      />
-                    )}
-
-                    <p className="text-xs text-jungle/70">Podrás afinarla —junto a redes y etiquetas— en tu perfil al ingresar.</p>
+                    <p className="text-xs text-jungle/70">Podrás cambiarlo —junto a redes y etiquetas— en tu perfil al ingresar.</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <label htmlFor="telefono" className={labelBase}>Celular (opcional)</label>
