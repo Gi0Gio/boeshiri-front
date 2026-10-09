@@ -4,7 +4,7 @@ import Reveal from '../components/Reveal'
 import { communityApi } from '../api/community'
 import { useFetch } from '../hooks/useFetch'
 import { gradientFor, iniciales } from '../utils/gradient'
-import { misionVision, valores, hitos } from '../data/contenido'
+import { identidad, principios, garabateo } from '../data/contenido'
 import { useSeo } from '../hooks/useSeo'
 
 /** Nombre del rol tal cual lo siembra la API; el filtro es por coincidencia exacta. */
@@ -31,7 +31,7 @@ function ordenarJunta(miembros) {
 export default function Sobre() {
   useSeo({
     titulo: 'Sobre el colectivo',
-    descripcion: 'Quiénes somos, qué defendemos y quiénes forman la Junta Directiva de Boesh Irí, colectivo cultural de Chiriquí, Panamá.',
+    descripcion: 'Quiénes somos, nuestros objetivos y principios, Garabateo y quiénes forman la Junta Directiva de Boesh Irí, colectivo cultural de Chiriquí, Panamá.',
   })
 
   const { data: juntaData, loading: loadingJunta } = useFetch(() => communityApi.list(ROL_JUNTA))
@@ -74,17 +74,17 @@ export default function Sobre() {
         </div>
       </section>
 
-      {/* ── Misión y visión ──────────────────────────────────── */}
+      {/* ── Quiénes somos y objetivos (Estatutos, arts. 2 y 3) ── */}
       <section className="relative bg-cream py-24">
         <div className="mx-auto grid max-w-6xl gap-6 px-5 md:grid-cols-2">
           <Reveal className="rounded-3xl bg-jungle p-10 text-tea">
             <span className="font-display text-sm uppercase tracking-[0.3em] text-caribbean">
-              Misión
+              Quiénes somos
             </span>
             {/* Párrafo largo: va en la fuente de lectura. Oswald es condensada y
                 pensada para titulares; en tres o cuatro líneas cansa. */}
             <p className="mt-5 text-xl leading-relaxed text-cream md:text-2xl">
-              {misionVision.mision}
+              {identidad.naturaleza}
             </p>
           </Reveal>
           <Reveal
@@ -92,16 +92,21 @@ export default function Sobre() {
             className="rounded-3xl border border-rainforest/20 bg-white p-10"
           >
             <span className="font-display text-sm uppercase tracking-[0.3em] text-rainforest">
-              Visión
+              Nuestros objetivos
             </span>
-            <p className="mt-5 text-xl leading-relaxed text-jungle md:text-2xl">
-              {misionVision.vision}
-            </p>
+            <ul className="mt-5 space-y-3">
+              {identidad.objetivos.map((o) => (
+                <li key={o} className="flex gap-3 text-lg leading-relaxed text-jungle md:text-xl">
+                  <FrogIcon className="mt-1.5 h-5 w-5 flex-none text-rainforest" />
+                  {o}
+                </li>
+              ))}
+            </ul>
           </Reveal>
         </div>
       </section>
 
-      {/* ── Valores ──────────────────────────────────────────── */}
+      {/* ── Principios (Código de Ética) ──────────────────────── */}
       <section className="relative bg-tea/40 py-24">
         <div className="mx-auto max-w-6xl px-5">
           <Reveal>
@@ -109,15 +114,15 @@ export default function Sobre() {
               Lo que nos sostiene
             </p>
             <h2 className="mt-3 font-display text-4xl font-semibold uppercase tracking-wide text-jungle md:text-5xl">
-              Nuestros valores
+              Nuestros principios
             </h2>
           </Reveal>
 
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {valores.map((v, i) => (
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {principios.map((v, i) => (
               <Reveal
                 key={v.titulo}
-                delay={i * 110}
+                delay={(i % 3) * 110}
                 className="group rounded-2xl bg-white p-7 shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(0,37,32,0.14)]"
               >
                 <FrogIcon className="h-9 w-9 text-rainforest transition-colors group-hover:text-caribbean" />
@@ -131,29 +136,30 @@ export default function Sobre() {
         </div>
       </section>
 
-      {/* ── Historia / línea de tiempo ───────────────────────── */}
+      {/* ── Garabateo: lo que hacemos (Eventos/Garabateando) ──── */}
       <section className="bg-dorace-pattern relative overflow-hidden bg-jungle py-24">
         <div className="pointer-events-none absolute left-1/2 top-0 h-[42rem] w-[42rem] -translate-x-1/2 bg-[radial-gradient(closest-side,rgba(0,115,94,0.3),transparent_70%)]" />
         <div className="relative mx-auto max-w-4xl px-5">
           <Reveal className="text-center">
             <p className="font-display text-sm uppercase tracking-[0.3em] text-caribbean">
-              De dónde venimos
+              Lo que hacemos
             </p>
             <h2 className="mt-3 font-display text-4xl font-semibold uppercase tracking-wide text-cream md:text-5xl">
-              Nuestra historia
+              Garabateo
             </h2>
+            <p className="mx-auto mt-5 max-w-2xl leading-relaxed text-tea/80">{garabateo.resumen}</p>
           </Reveal>
 
           <ol className="mt-16 space-y-3">
-            {hitos.map((h, i) => (
+            {garabateo.momentos.map((h, i) => (
               <Reveal
                 as="li"
-                key={h.año}
+                key={h.titulo}
                 delay={i * 120}
                 className="grid gap-4 rounded-2xl border border-tea/10 bg-jungle-deep/40 p-7 md:grid-cols-[auto_1fr] md:items-baseline md:gap-8"
               >
                 <span className="font-display text-4xl font-semibold text-caribbean md:text-5xl">
-                  {h.año}
+                  {String(i + 1).padStart(2, '0')}
                 </span>
                 <div>
                   <h3 className="font-display text-xl font-semibold uppercase tracking-wide text-cream">

@@ -6,9 +6,13 @@ import { contactApi } from '../api/contact'
 import { useToast } from '../components/Toast'
 import { useSeo } from '../hooks/useSeo'
 
-/** Solo canales que existen: WhatsApp e Instagram se añaden cuando haya cuentas oficiales. */
+/**
+ * Solo canales que existen. El correo vuelve cuando el colectivo tenga dominio
+ * propio: boeshiri.org no está registrado, así que lo escrito ahí rebotaba (o, si
+ * alguien lo registrara, le llegaría a esa persona). Mientras, el formulario.
+ * WhatsApp e Instagram se añaden cuando haya cuentas oficiales.
+ */
 const canales = [
-  { etiqueta: 'Correo', valor: 'hola@boeshiri.org', href: 'mailto:hola@boeshiri.org' },
   { etiqueta: 'Ubicación', valor: 'David, Chiriquí — Panamá', href: null },
 ]
 

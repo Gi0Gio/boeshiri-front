@@ -60,9 +60,10 @@ export default function Footer() {
           <ul className="mt-2 text-sm text-tea/80 md:mt-4 md:space-y-2.5">
             {/* Los mismos canales que /contacto: si se añade uno, va en los dos sitios. */}
             <li>
-              <a className="inline-flex min-h-11 items-center transition-colors hover:text-caribbean md:min-h-0" href="mailto:hola@boeshiri.org">
-                hola@boeshiri.org
-              </a>
+              {/* Sin correo hasta que haya dominio propio (ver canales en Contacto). */}
+              <Link className="inline-flex min-h-11 items-center transition-colors hover:text-caribbean md:min-h-0" to="/contacto">
+                Escríbenos
+              </Link>
             </li>
             <li className="flex min-h-11 items-center md:min-h-0">David, Chiriquí — Panamá</li>
           </ul>
