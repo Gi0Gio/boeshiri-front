@@ -1,4 +1,4 @@
-import { API_BASE, getToken, ApiError } from './client'
+import { API_BASE, fetchConSesion, ApiError } from './client'
 
 /**
  * Sube un archivo a través del API (multipart) y devuelve su URL pública.
@@ -9,10 +9,8 @@ export async function uploadFile(file, folder = 'misc') {
   fd.append('file', file)
   fd.append('folder', folder)
 
-  const token = getToken()
-  const res = await fetch(`${API_BASE}/archivos`, {
+  const res = await fetchConSesion(`${API_BASE}/archivos`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: fd, // el navegador pone el Content-Type multipart con boundary
   })
 

@@ -51,6 +51,12 @@ export default defineConfig(({ command, mode }) => {
           target: env.VITE_API_URL || 'http://localhost:8080',
           changeOrigin: true,
         },
+        // Igual que en _redirects: la sesión va por el mismo origen para que la
+        // cookie de renovación sea de primera parte.
+        '^/auth/(login|renovar|salir)$': {
+          target: env.VITE_API_URL || 'http://localhost:8080',
+          changeOrigin: true,
+        },
       },
     },
   }

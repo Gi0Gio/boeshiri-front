@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, iniciarSesion, cerrarSesion } from './client'
 
 /** Endpoints de autenticación (§4.6, §7). */
 export const authApi = {
@@ -7,6 +7,8 @@ export const authApi = {
   // Responde lo mismo exista o no la cuenta: no revela quién está registrado.
   resendVerification: (email) =>
     apiFetch('/auth/reenviar-verificacion', { method: 'POST', body: { email }, auth: false }),
-  login: (data) => apiFetch('/auth/login', { method: 'POST', body: data, auth: false }),
+  // Por el mismo origen (proxy): la respuesta deja la cookie de renovación.
+  login: (data) => iniciarSesion(data),
+  logout: () => cerrarSesion(),
   me: () => apiFetch('/auth/yo'),
 }

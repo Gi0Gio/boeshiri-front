@@ -1,4 +1,4 @@
-import { apiFetch, API_BASE, getToken, ApiError } from './client'
+import { apiFetch, API_BASE, fetchConSesion, ApiError } from './client'
 
 /** Biblioteca de documentos (§8). Solo miembros; admin gated por permiso. */
 export const documentsApi = {
@@ -19,9 +19,7 @@ export const documentsApi = {
    * fuerza la descarga en vez de abrir el PDF en otra pestaña.
    */
   download: async (id, fileName) => {
-    const res = await fetch(`${API_BASE}/documentos/${id}/descargar`, {
-      headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
-    })
+    const res = await fetchConSesion(`${API_BASE}/documentos/${id}/descargar`)
     if (!res.ok) {
       const t = await res.text()
       let d = null

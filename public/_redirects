@@ -10,5 +10,14 @@
 # sirve por proxy aquí en vez de enlazar a Railway.
 /sitemap-contenido.xml  https://boeshiri-api-production.up.railway.app/sitemap-contenido.xml  200
 
+# Sesión: login, renovación y salida pasan por aquí para que la cookie HttpOnly de
+# renovación sea de ESTE dominio. Si el navegador hablara con Railway directamente
+# sería una cookie de terceros, y Safari (y cada vez más navegadores) la bloquean:
+# la sesión se perdería cada vez que caduca el JWT. El resto de la API sigue yendo
+# directo a Railway con el JWT en la cabecera.
+/auth/login    https://boeshiri-api-production.up.railway.app/auth/login    200
+/auth/renovar  https://boeshiri-api-production.up.railway.app/auth/renovar  200
+/auth/salir    https://boeshiri-api-production.up.railway.app/auth/salir    200
+
 # Fallback de la SPA: cualquier otra ruta la resuelve React Router.
 /*  /index.html  200

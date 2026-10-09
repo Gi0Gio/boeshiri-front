@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { authApi } from '../api/auth'
-import { setToken, getToken } from '../api/client'
+import { esperarSesion, onSesionPerdida } from '../api/client'
 
 /**
  * Sesión real respaldada por la API (JWT + permisos efectivos).
@@ -29,39 +29,36 @@ export function SessionProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Hidratar la sesión al cargar si hay token guardado.
+  // Recuperar la sesión al cargar con la cookie de renovación. Un fallo de red o
+  // un 5xx deja la pantalla sin sesión, pero no la cierra: al recargar se reintenta.
   useEffect(() => {
     let active = true
+    const dejarDeOir = onSesionPerdida(() => setUser(null))
     ;(async () => {
-      if (getToken()) {
-        try {
+      try {
+        if (await esperarSesion()) {
           const me = await authApi.me()
           if (active) setUser(me)
-        } catch (err) {
-          // Solo un rechazo de credenciales invalida la sesión. Ante un fallo de
-          // red (status 0) o un 5xx transitorio se conserva el token: borrarlo
-          // expulsaría al usuario por un problema ajeno a su sesión.
-          if (err.status === 401 || err.status === 403) setToken(null)
         }
-      }
+      } catch { /* sin conexión: se queda como visitante */ }
       if (active) setLoading(false)
     })()
     return () => {
       active = false
+      dejarDeOir()
     }
   }, [])
 
   const login = useCallback(async (email, password) => {
-    const res = await authApi.login({ email, password })
-    setToken(res.token)
+    await authApi.login({ email, password })
     const me = await authApi.me()
     setUser(me)
     return me
   }, [])
 
   const logout = useCallback(() => {
-    setToken(null)
     setUser(null)
+    authApi.logout()
   }, [])
 
   const permisos = user?.permissions ?? []
