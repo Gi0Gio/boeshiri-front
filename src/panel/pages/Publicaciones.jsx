@@ -8,6 +8,7 @@ import ImageUpload from '../../components/ImageUpload'
 import CompartirBoton from '../../components/CompartirBoton'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
+import Ico from '../Ico'
 
 const TIPOS = [
   { api: 'Article', label: 'Artículo', desc: 'Texto largo, con imagen de portada y etiquetas.' },
@@ -128,12 +129,12 @@ export default function Publicaciones() {
         eyebrow="Miembro"
         title="Mis publicaciones"
         description="Publicas sin aprobación previa; la administración puede moderar."
-        actions={puedeCrear && <Btn tone="candy" onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : '+ Nueva publicación'}</Btn>}
+        actions={puedeCrear && <Btn onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : <><Ico name="mas" className="h-4 w-4" />Nueva publicación</>}</Btn>}
       />
 
 
       {!puedeCrear && (
-        <Card className="mb-6"><p className="text-sm text-tea/60">Tu rol aún no tiene permiso para publicar. Pídeselo a la administración.</p></Card>
+        <Card className="mb-6"><p className="text-sm text-tea/70">Tu rol aún no tiene permiso para publicar. Pídeselo a la administración.</p></Card>
       )}
 
       {abierto && (
@@ -143,16 +144,16 @@ export default function Publicaciones() {
 
             {!editId && (
               <>
-                <p className="mt-3 font-mono text-xs uppercase tracking-wide text-tea/45">Tipo</p>
+                <p className="mt-3 font-mono text-xs uppercase tracking-wide text-tea/70">Tipo</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {tiposDisponibles.map((t) => (
                     <button key={t.api} type="button" onClick={() => set({ type: t.api })}
-                      className={`rounded-full px-4 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${form.type === t.api ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/55 hover:bg-tea/15'}`}>
+                      className={`rounded-full px-4 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${form.type === t.api ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/70 hover:bg-tea/15'}`}>
                       {t.label}
                     </button>
                   ))}
                 </div>
-                <p className="mt-3 rounded-lg border border-tea/10 bg-black/20 px-4 py-2 text-xs text-tea/60">{tipoMeta?.desc}</p>
+                <p className="mt-3 rounded-lg border border-tea/10 bg-black/20 px-4 py-2 text-xs text-tea/70">{tipoMeta?.desc}</p>
               </>
             )}
 
@@ -189,7 +190,7 @@ export default function Publicaciones() {
                 <div>
                   <label className={labelCls}>
                     {form.type === 'Photo' ? 'Imágenes' : 'Imágenes (opcional)'}
-                    <span className="ml-2 font-normal normal-case tracking-normal text-tea/40">
+                    <span className="ml-2 font-normal normal-case tracking-normal text-tea/70">
                       {form.images.length}/{MAX_IMAGENES}
                     </span>
                   </label>
@@ -229,7 +230,7 @@ export default function Publicaciones() {
                 <div>
                   <label className={labelCls}>
                     Enlaces de referencia
-                    <span className="ml-2 font-normal normal-case tracking-normal text-tea/40">{form.links.length}/{MAX_ENLACES}</span>
+                    <span className="ml-2 font-normal normal-case tracking-normal text-tea/70">{form.links.length}/{MAX_ENLACES}</span>
                   </label>
                   <div className="mt-2 space-y-2">
                     {form.links.map((l, i) => (
@@ -249,7 +250,7 @@ export default function Publicaciones() {
                         <button
                           type="button"
                           onClick={() => set({ links: form.links.filter((_, j) => j !== i) })}
-                          className="flex-none px-2 text-lg text-tea/40 transition hover:text-candy"
+                          className="flex-none px-2 text-lg text-tea/70 transition hover:text-candy"
                           aria-label="Quitar enlace"
                         >✕</button>
                       </div>
@@ -260,7 +261,7 @@ export default function Publicaciones() {
                         onClick={() => set({ links: [...form.links, { title: '', url: '' }] })}
                         className="font-mono text-xs font-semibold uppercase tracking-[0.1em] text-caribbean/80 transition hover:text-caribbean"
                       >
-                        + Añadir enlace
+                        <Ico name="mas" className="h-4 w-4" />Añadir enlace
                       </button>
                     )}
                   </div>
@@ -278,11 +279,11 @@ export default function Publicaciones() {
                     role="note"
                     title="La primera etiqueta acompaña al tipo en las tarjetas y en el detalle. Si escribes «poesía, texto, dolega», se mostrará «Artículo · Poesía»."
                     aria-label="La primera etiqueta acompaña al tipo. Escribe primero la más representativa."
-                    className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-tea/15 font-mono text-[0.6rem] normal-case text-tea/60 transition hover:bg-caribbean hover:text-jungle"
+                    className="flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-tea/15 font-mono text-xs normal-case text-tea/70 transition hover:bg-caribbean hover:text-jungle"
                   >i</span>
                 </label>
                 <input className={`${inputCls} mt-1.5`} value={form.tags} onChange={(e) => set({ tags: e.target.value })} placeholder="Separadas por coma: poesía, chiriquí, colectivo" />
-                <p className="mt-1.5 font-mono text-[0.65rem] text-tea/40">
+                <p className="mt-1.5 font-mono text-xs text-tea/70">
                   La primera se muestra junto al tipo: «{label(form.type)}{form.tags.split(',')[0]?.trim() ? ` · ${form.tags.split(',')[0].trim()}` : ''}»
                 </p>
               </div>
@@ -299,10 +300,10 @@ export default function Publicaciones() {
         </Reveal>
       )}
 
-      {loading && <p className="text-tea/50">Cargando publicaciones…</p>}
+      {loading && <p className="text-tea/70">Cargando publicaciones…</p>}
       {error && <p className="text-candy">No se pudieron cargar tus publicaciones.</p>}
       {!loading && !error && pubs.length === 0 && (
-        <Card><p className="text-sm text-tea/55">Aún no has publicado nada. {puedeCrear && 'Usa «+ Nueva publicación» para empezar.'}</p></Card>
+        <Card><p className="text-sm text-tea/70">Aún no has publicado nada. {puedeCrear && 'Usa «+ Nueva publicación» para empezar.'}</p></Card>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -317,21 +318,21 @@ export default function Publicaciones() {
                 <Chip tone={p.status === 'Published' ? 'caribbean' : 'gris'}>{p.status === 'Published' ? 'Pública' : 'Oculta'}</Chip>
               </div>
               <h3 className="mt-3 font-display text-lg font-semibold uppercase tracking-wide text-cream">{p.title}</h3>
-              <p className="mt-2 font-mono text-xs text-tea/40">
+              <p className="mt-2 font-mono text-xs text-tea/70">
                 Creada {new Date(p.createdAt).toLocaleDateString('es-PA')}{p.editedAt && ` · editada ${new Date(p.editedAt).toLocaleDateString('es-PA')}`}
               </p>
-              <div className="mt-4 flex flex-wrap gap-3 border-t border-tea/8 pt-4 text-xs font-semibold uppercase tracking-wide">
-                <Link to={`/publicaciones/${p.id}`} target="_blank" className="text-caribbean/80 hover:text-caribbean">Ver</Link>
-                <button onClick={() => editar(p.id)} className="text-caribbean/80 hover:text-caribbean">Editar</button>
+              <div className="mt-4 flex flex-wrap gap-x-5 border-t border-tea/10 pt-2 text-sm font-semibold">
+                <Link to={`/publicaciones/${p.id}`} target="_blank" className="inline-flex min-h-11 items-center text-caribbean hover:underline">Ver</Link>
+                <button onClick={() => editar(p.id)} className="inline-flex min-h-11 items-center text-caribbean hover:underline">Editar</button>
                 {/* Solo si está publicada: compartir un enlace oculto daría 404 a
                     quien lo abra. */}
                 {p.status === 'Published' && (
                   <CompartirBoton tipo="publicacion" id={p.id} titulo={p.title} variant="panel" />
                 )}
                 {p.status === 'Published'
-                  ? <button onClick={() => cambiarEstado(p.id, 'Hide')} className="text-caribbean/80 hover:text-caribbean">Ocultar</button>
-                  : <button onClick={() => cambiarEstado(p.id, 'Show')} className="text-caribbean/80 hover:text-caribbean">Mostrar</button>}
-                <button onClick={() => cambiarEstado(p.id, 'Delete')} className="text-candy hover:underline">Eliminar</button>
+                  ? <button onClick={() => cambiarEstado(p.id, 'Hide')} className="inline-flex min-h-11 items-center text-caribbean hover:underline">Ocultar</button>
+                  : <button onClick={() => cambiarEstado(p.id, 'Show')} className="inline-flex min-h-11 items-center text-caribbean hover:underline">Mostrar</button>}
+                <button onClick={() => cambiarEstado(p.id, 'Delete')} className="inline-flex min-h-11 items-center text-candy hover:underline">Eliminar</button>
               </div>
             </Card>
           </Reveal>

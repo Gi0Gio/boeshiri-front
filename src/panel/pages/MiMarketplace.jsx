@@ -9,6 +9,7 @@ import ImageUpload from '../../components/ImageUpload'
 import CompartirBoton from '../../components/CompartirBoton'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
+import Ico from '../Ico'
 
 const estadoTono = { Published: 'caribbean', Sold: 'gris', Hidden: 'terracotta' }
 const estadoLabel = { Published: 'Publicado', Sold: 'Vendido', Hidden: 'Oculto' }
@@ -101,11 +102,11 @@ export default function MiMarketplace() {
         eyebrow="Miembro"
         title="Mi marketplace"
         description="Publica tus productos. Boesh Irí no gestiona pagos: el visitante te contacta con los datos de tu perfil."
-        actions={puede && activo && <Btn tone="candy" onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : '+ Nuevo producto'}</Btn>}
+        actions={puede && activo && <Btn onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : <><Ico name="mas" className="h-4 w-4" />Nuevo producto</>}</Btn>}
       />
 
 
-      {!puede && <Card className="mb-6"><p className="text-sm text-tea/60">Tu rol aún no puede vender en el marketplace.</p></Card>}
+      {!puede && <Card className="mb-6"><p className="text-sm text-tea/70">Tu rol aún no puede vender en el marketplace.</p></Card>}
 
       {puede && (
         <Reveal className="mb-6">
@@ -114,7 +115,7 @@ export default function MiMarketplace() {
               <>
                 <div>
                   <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">Estás dado de alta en el marketplace</p>
-                  <p className="mt-1 font-mono text-xs text-tea/55">Tu contacto se toma del perfil{perfil?.email ? `: ${perfil.email}` : ''}</p>
+                  <p className="mt-1 font-mono text-xs text-tea/70">Tu contacto se toma del perfil{perfil?.email ? `: ${perfil.email}` : ''}</p>
                 </div>
                 <Chip tone="caribbean">Vendedor activo</Chip>
               </>
@@ -122,7 +123,7 @@ export default function MiMarketplace() {
               <>
                 <div>
                   <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">Aún no vendes en el marketplace</p>
-                  <p className="mt-1 font-mono text-xs text-tea/55">Date de alta para poder publicar productos.</p>
+                  <p className="mt-1 font-mono text-xs text-tea/70">Date de alta para poder publicar productos.</p>
                 </div>
                 <Btn onClick={darDeAlta}>Darme de alta</Btn>
               </>
@@ -142,12 +143,12 @@ export default function MiMarketplace() {
                   <div className="mt-1.5 inline-flex rounded-full bg-tea/8 p-1">
                     {[{ id: 'Product', label: 'Producto' }, { id: 'Service', label: 'Servicio' }].map((k) => (
                       <button key={k.id} type="button" onClick={() => set({ kind: k.id })}
-                        className={`rounded-full px-5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wide transition ${form.kind === k.id ? 'bg-caribbean text-jungle' : 'text-tea/55 hover:text-tea'}`}>
+                        className={`rounded-full px-5 py-1.5 font-mono text-xs font-semibold uppercase tracking-wide transition ${form.kind === k.id ? 'bg-caribbean text-jungle' : 'text-tea/70 hover:text-tea'}`}>
                         {k.label}
                       </button>
                     ))}
                   </div>
-                  <p className="mt-1.5 font-mono text-[0.65rem] text-tea/40">{form.kind === 'Service' ? 'Un servicio: tutorías, asesorías, encargos…' : 'Un bien físico que entregas.'}</p>
+                  <p className="mt-1.5 font-mono text-xs text-tea/70">{form.kind === 'Service' ? 'Un servicio: tutorías, asesorías, encargos…' : 'Un bien físico que entregas.'}</p>
                 </div>
               ) : (
                 <Chip tone={form.kind === 'Service' ? 'rainforest' : 'tea'}>{form.kind === 'Service' ? 'Servicio' : 'Producto'}</Chip>
@@ -198,7 +199,7 @@ export default function MiMarketplace() {
                   <ImageUpload key={`new-${form.images.length}`} value="" onChange={(u) => u && set({ images: [...form.images, u] })} folder="productos" label="Añadir imagen (hasta 5)" />
                 )}
                 {editId && (
-                  <p className="font-mono text-[0.65rem] text-tea/40">Las que quites se borran del almacenamiento al guardar.</p>
+                  <p className="font-mono text-xs text-tea/70">Las que quites se borran del almacenamiento al guardar.</p>
                 )}
               </div>
             </div>
@@ -209,10 +210,10 @@ export default function MiMarketplace() {
         </Reveal>
       )}
 
-      {loading && <p className="text-tea/50">Cargando productos…</p>}
+      {loading && <p className="text-tea/70">Cargando productos…</p>}
       {error && <p className="text-candy">No se pudieron cargar tus productos.</p>}
       {!loading && !error && activo && mios.length === 0 && (
-        <Card><p className="text-sm text-tea/55">Aún no has publicado productos. Usa «+ Nuevo producto».</p></Card>
+        <Card><p className="text-sm text-tea/70">Aún no has publicado productos. Usa «+ Nuevo producto».</p></Card>
       )}
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

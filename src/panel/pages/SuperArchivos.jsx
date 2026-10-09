@@ -119,14 +119,14 @@ export default function SuperArchivos() {
       />
 
       {!loading && !habilitado && (
-        <Card className="mb-6"><p className="text-sm text-tea/60">El almacenamiento no está configurado. Faltan las credenciales de R2.</p></Card>
+        <Card className="mb-6"><p className="text-sm text-tea/70">El almacenamiento no está configurado. Faltan las credenciales de R2.</p></Card>
       )}
 
-      {loading && <p className="text-tea/50">Cargando archivos…</p>}
+      {loading && <p className="text-tea/70">Cargando archivos…</p>}
       {error && <p className="text-candy">No se pudieron cargar los archivos.</p>}
 
       {!loading && !error && archivos.length === 0 && habilitado && (
-        <Card><p className="text-sm text-tea/55">El bucket está vacío.</p></Card>
+        <Card><p className="text-sm text-tea/70">El bucket está vacío.</p></Card>
       )}
 
       {!loading && !error && archivos.length > 0 && (
@@ -146,20 +146,20 @@ export default function SuperArchivos() {
                   key={f.id || 'todos'}
                   type="button"
                   onClick={() => setFiltro(f.id)}
-                  className={`rounded-full px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${filtro === f.id ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/55 hover:bg-tea/15 hover:text-tea'}`}
+                  className={`rounded-full px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${filtro === f.id ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/70 hover:bg-tea/15 hover:text-tea'}`}
                 >
                   {f.label}
                 </button>
               ))}
             </div>
-            <p className="mt-3 font-mono text-xs text-tea/40">
+            <p className="mt-3 font-mono text-xs text-tea/70">
               {lista.length} de {archivos.length} archivos
               {papelera.length > 0 && ` · papelera: ${papelera.length} (${fmtSize(pesoPapelera)})`}
             </p>
           </div>
 
           {lista.length === 0 ? (
-            <Card><p className="text-sm text-tea/55">Nada coincide con el filtro. Si buscabas basura que limpiar, buena señal.</p></Card>
+            <Card><p className="text-sm text-tea/70">Nada coincide con el filtro. Si buscabas basura que limpiar, buena señal.</p></Card>
           ) : (
             <Reveal>
               <Table minW="820px">
@@ -181,10 +181,10 @@ export default function SuperArchivos() {
                           </a>
                         </Td>
                         <Td><Chip tone={meta.tone}>{meta.label}</Chip></Td>
-                        <Td className="text-tea/60">
+                        <Td className="text-tea/70">
                           {f.ownerType ? (
                             <>
-                              <span className="font-mono text-[0.65rem] uppercase tracking-wide text-tea/40">{f.ownerType}</span>
+                              <span className="font-mono text-xs uppercase tracking-wide text-tea/70">{f.ownerType}</span>
                               <span className="block truncate text-sm">
                                 {ruta
                                   ? <Link to={ruta} target="_blank" className="hover:text-caribbean">{f.ownerName}</Link>
@@ -193,8 +193,8 @@ export default function SuperArchivos() {
                             </>
                           ) : <span className="text-xs text-tea/35">Nada lo referencia</span>}
                         </Td>
-                        <Td className="hidden lg:table-cell font-mono text-xs text-tea/40">{fmtSize(f.size)}</Td>
-                        <Td className="hidden lg:table-cell font-mono text-xs text-tea/40">{fmtFecha(f.lastModified)}</Td>
+                        <Td className="hidden lg:table-cell font-mono text-xs text-tea/70">{fmtSize(f.size)}</Td>
+                        <Td className="hidden lg:table-cell font-mono text-xs text-tea/70">{fmtFecha(f.lastModified)}</Td>
                         <Td className="text-right">
                           {meta.seguro ? (
                             <button
@@ -205,7 +205,7 @@ export default function SuperArchivos() {
                               {busy === f.key ? '…' : 'Borrar'}
                             </button>
                           ) : (
-                            <span className="font-mono text-[0.65rem] uppercase tracking-wide text-tea/25" title="Borrarlo dejaría un enlace roto en el sitio">
+                            <span className="font-mono text-xs uppercase tracking-wide text-tea/25" title="Borrarlo dejaría un enlace roto en el sitio">
                               Protegido
                             </span>
                           )}
@@ -218,7 +218,7 @@ export default function SuperArchivos() {
             </Reveal>
           )}
 
-          <p className="mt-4 font-mono text-xs leading-relaxed text-tea/40">
+          <p className="mt-4 font-mono text-xs leading-relaxed text-tea/70">
             «En uso» no se borra desde aquí: primero elimina la publicación o el producto, y eso lo manda a la papelera.
             Ojo, ocultar contenido no protege su imagen — la URL de R2 es pública. Para material inapropiado hay que eliminarlo y vaciar la papelera.
           </p>

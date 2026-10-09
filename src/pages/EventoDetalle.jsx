@@ -50,7 +50,7 @@ export default function EventoDetalle() {
     },
   })
 
-  if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/50">Cargando…</section>
+  if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/70">Cargando…</section>
 
   if (error || !e) {
     const noAutorizado = error?.status === 401 || error?.status === 403
@@ -87,9 +87,9 @@ export default function EventoDetalle() {
 
         <Reveal className="mt-6">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full bg-jungle px-3.5 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-tea">{e.category}</span>
-            {e.visibility === 'Members' && <span className="rounded-full bg-terracotta px-3.5 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">Solo miembros</span>}
-            {pasado && <span className="rounded-full bg-rainforest/15 px-3.5 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-rainforest">Ya ocurrió</span>}
+            <span className="rounded-full bg-jungle px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.18em] text-tea">{e.category}</span>
+            {e.visibility === 'Members' && <span className="rounded-full bg-terracotta px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.18em] text-jungle">Solo miembros</span>}
+            {pasado && <span className="rounded-full bg-rainforest/15 px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.18em] text-rainforest">Ya ocurrió</span>}
           </div>
           <h1 className="mt-4 font-display text-4xl font-semibold uppercase leading-tight tracking-tight text-jungle md:text-5xl">{e.title}</h1>
         </Reveal>
@@ -116,16 +116,16 @@ export default function EventoDetalle() {
         {/* Los datos prácticos van juntos y arriba: es lo que se busca al abrir. */}
         <Reveal className="mt-8 grid gap-4 rounded-2xl border border-rainforest/15 bg-white p-6 sm:grid-cols-3">
           <div>
-            <p className="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-rainforest">Cuándo</p>
+            <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-rainforest">Cuándo</p>
             <p className="mt-1 text-sm capitalize text-jungle">{fmtFecha(e.date)}</p>
-            <p className="text-sm text-jungle/60">{fmtHora(e.date)}</p>
+            <p className="text-sm text-jungle/70">{fmtHora(e.date)}</p>
           </div>
           <div>
-            <p className="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-rainforest">Dónde</p>
+            <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-rainforest">Dónde</p>
             <p className="mt-1 text-sm text-jungle">{e.location || 'Por confirmar'}</p>
           </div>
           <div>
-            <p className="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-rainforest">Costo</p>
+            <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-rainforest">Costo</p>
             <p className="mt-1 text-sm text-jungle">{e.cost > 0 ? `$${e.cost}` : 'Entrada libre'}</p>
           </div>
         </Reveal>
@@ -137,7 +137,7 @@ export default function EventoDetalle() {
         )}
 
         {(e.responsibleName || (pasado && e.attendanceCount > 0)) && (
-          <Reveal className="mt-10 flex flex-wrap gap-x-8 gap-y-2 border-t border-rainforest/15 pt-6 text-sm text-jungle/60">
+          <Reveal className="mt-10 flex flex-wrap gap-x-8 gap-y-2 border-t border-rainforest/15 pt-6 text-sm text-jungle/70">
             {e.responsibleName && <p>Responsable: <span className="text-jungle">{e.responsibleName}</span></p>}
             {/* La asistencia solo tiene sentido una vez ocurrido (RF-EVT-03). */}
             {pasado && e.attendanceCount > 0 && <p>Asistencia: <span className="text-jungle">{e.attendanceCount} personas</span></p>}

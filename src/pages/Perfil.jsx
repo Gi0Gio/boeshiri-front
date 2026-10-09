@@ -66,7 +66,7 @@ function Head({ num, accent, muted, children }) {
   return (
     <div className="mb-6 flex items-baseline justify-between gap-4">
       <h2 className="font-display text-sm font-semibold uppercase tracking-[0.25em]" style={{ color: accent }}>{children}</h2>
-      <span className="font-mono text-[0.7rem] tracking-wide" style={muted}>{num}</span>
+      <span className="font-mono text-xs tracking-wide" style={muted}>{num}</span>
     </div>
   )
 }
@@ -110,7 +110,7 @@ export default function Perfil() {
     },
   })
 
-  if (loading) return <section className="flex min-h-screen items-center justify-center bg-jungle pt-16 text-tea/60">Cargando perfil…</section>
+  if (loading) return <section className="flex min-h-screen items-center justify-center bg-jungle pt-16 text-tea/70">Cargando perfil…</section>
   if (error || !perfil) {
     return (
       <section className="bg-dorace-pattern flex min-h-screen items-center justify-center bg-jungle pt-16 text-center text-tea">
@@ -168,7 +168,7 @@ export default function Perfil() {
           <Link to="/comunidad" className="flex-none font-mono text-sm font-semibold" style={{ color: c.accent }} title="Volver a Comunidad">←</Link>
           <nav className="flex flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tabsPerfil.map((t) => (
-              <button key={t.id} onClick={() => irA(t.id)} className="flex-none rounded-full px-4 py-1.5 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.1em] transition" style={activa === t.id ? { backgroundColor: c.accent, color: c.bg } : { color: c.ink, opacity: 0.55 }}>{t.label}</button>
+              <button key={t.id} onClick={() => irA(t.id)} className="flex-none rounded-full px-4 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition" style={activa === t.id ? { backgroundColor: c.accent, color: c.bg } : { color: c.ink, opacity: 0.55 }}>{t.label}</button>
             ))}
           </nav>
           <div className="flex flex-none items-center gap-2">
@@ -184,11 +184,11 @@ export default function Perfil() {
         <div className="mt-8 grid items-center gap-8 lg:grid-cols-[1.3fr_1fr]">
           <div className="text-center lg:text-left">
             <Reveal>
-              <p className="font-mono text-[0.7rem] uppercase tracking-[0.12em]" style={muted}>ID·{idCode}{perfil.location ? ` · ${perfil.location}` : ''}</p>
+              <p className="font-mono text-xs uppercase tracking-[0.12em]" style={muted}>ID·{idCode}{perfil.location ? ` · ${perfil.location}` : ''}</p>
               <p className="mt-2 font-display text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: c.accent }}>{[perfil.discipline, rango].filter(Boolean).join(' · ')}</p>
               {perfil.tags?.length > 0 && (
                 <div className="mt-3 flex flex-wrap justify-center gap-2 lg:justify-start">
-                  {perfil.tags.map((e) => (<span key={e} className="rounded-full border px-3 py-1 font-display text-[0.7rem] font-semibold uppercase tracking-[0.12em]" style={{ borderColor: c.line }}>{e}</span>))}
+                  {perfil.tags.map((e) => (<span key={e} className="rounded-full border px-3 py-1 font-display text-xs font-semibold uppercase tracking-[0.12em]" style={{ borderColor: c.line }}>{e}</span>))}
                 </div>
               )}
             </Reveal>
@@ -199,7 +199,7 @@ export default function Perfil() {
             <Reveal delay={620}>
               <div className="mt-6 flex flex-wrap justify-center gap-2 lg:justify-start">
                 <span className="rounded-full px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em]" style={{ backgroundColor: c.accent, color: c.bg }}>{rango}</span>
-                {perfil.location && <span className="rounded-full border px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em]" style={{ borderColor: c.line }}>📍 {perfil.location}</span>}
+                {perfil.location && <span className="rounded-full border px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em]" style={{ borderColor: c.line }}>{perfil.location}</span>}
               </div>
             </Reveal>
           </div>
@@ -233,7 +233,7 @@ export default function Perfil() {
                     </div>
                     <div>
                       <h3 className="font-display text-lg font-semibold uppercase tracking-wide transition-colors group-hover:text-[color:var(--acc)]">{o.title}</h3>
-                      <p className="font-mono text-[0.7rem] uppercase tracking-[0.1em]" style={muted}>{o.type}</p>
+                      <p className="font-mono text-xs uppercase tracking-[0.1em]" style={muted}>{o.type}</p>
                     </div>
                     <span className="font-display text-xl transition-transform group-hover:translate-x-1" style={{ color: c.accent }}>↗</span>
                   </div>
@@ -266,7 +266,7 @@ export default function Perfil() {
                 <div className="space-y-2.5">
                   {perfil.skills.map((sk) => (
                     <div key={sk.name} className="flex items-center gap-3">
-                      <span className="w-36 flex-none font-mono text-[0.7rem] uppercase tracking-[0.05em]" style={muted}>{sk.name}</span>
+                      <span className="w-36 flex-none font-mono text-xs uppercase tracking-[0.05em]" style={muted}>{sk.name}</span>
                       <div className="flex gap-1">
                         {Array.from({ length: 8 }).map((_, i) => (
                           <span key={i} className="h-4 w-4 rounded-[3px]" style={{ backgroundColor: i < sk.level ? c.accent : 'transparent', border: `1px solid ${c.line}` }} />
@@ -275,14 +275,14 @@ export default function Perfil() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 flex w-full max-w-xs justify-between pl-36 font-mono text-[0.65rem] uppercase tracking-[0.12em]" style={muted}><span>Básico</span><span>Experto</span></div>
+                <div className="mt-3 flex w-full max-w-xs justify-between pl-36 font-mono text-xs uppercase tracking-[0.12em]" style={muted}><span>Básico</span><span>Experto</span></div>
               </div>
             ) : <p style={muted}>Aún sin habilidades listadas.</p>}
           </div>
           {perfil.bio && (
             <div className="flex flex-col justify-center gap-4 text-center lg:text-left">
               <blockquote className="font-display text-2xl font-semibold uppercase leading-tight md:text-3xl"><span style={{ color: c.accent }}>“</span>{perfil.bio}<span style={{ color: c.accent }}>”</span></blockquote>
-              <p className="font-mono text-[0.7rem] uppercase tracking-[0.15em]" style={muted}>— {perfil.fullName}</p>
+              <p className="font-mono text-xs uppercase tracking-[0.15em]" style={muted}>— {perfil.fullName}</p>
             </div>
           )}
         </Reveal>
@@ -341,7 +341,7 @@ export default function Perfil() {
               </div>
               {articulos.length > 0 && (
                 <div>
-                  <p className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em]" style={muted}>Artículos</p>
+                  <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em]" style={muted}>Artículos</p>
                   <div className="mt-3 divide-y" style={{ borderColor: c.line }}>
                     {articulos.slice(0, 5).map((a) => (
                       <div key={a.id} className="py-3" style={{ borderColor: c.line }}>
@@ -358,7 +358,7 @@ export default function Perfil() {
 
         {/* Contacto */}
         <Reveal as="section" id="contacto" className="mt-16 scroll-mt-32 border-t pt-10 text-center lg:text-left" style={{ borderColor: c.line }}>
-          <p className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em]" style={muted}>05 / 05 · Contacto</p>
+          <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em]" style={muted}>05 / 05 · Contacto</p>
           <h2 className="mt-2 font-display text-5xl font-semibold uppercase leading-[0.95] tracking-tight sm:text-6xl md:text-7xl">Creemos<br />algo real.</h2>
           {contactos.length > 0 ? (
             <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">

@@ -48,9 +48,9 @@ export function ToastProvider({ children }) {
               className="toast-in pointer-events-auto flex items-start gap-3 rounded-xl border border-l-4 border-tea/10 px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur"
               style={{ backgroundColor: 'rgba(0,17,14,0.92)', borderLeftColor: tipo.color }}
             >
-              <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full text-[0.7rem] font-bold" style={{ backgroundColor: tipo.color + '22', color: tipo.color }}>{tipo.icon}</span>
+              <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: tipo.color + '22', color: tipo.color }}>{tipo.icon}</span>
               <p className="flex-1 text-sm leading-snug text-cream">{t.text}</p>
-              <button onClick={() => remove(t.id)} className="flex-none text-lg leading-none text-tea/40 transition hover:text-tea" aria-label="Cerrar">×</button>
+              <button onClick={() => remove(t.id)} className="flex-none text-lg leading-none text-tea/70 transition hover:text-tea" aria-label="Cerrar">×</button>
             </div>
           )
         })}

@@ -98,7 +98,7 @@ export default function VerificarCorreo() {
                 El enlace no es válido
               </h1>
               <p className="mx-auto mt-5 max-w-md leading-relaxed text-tea/80">{error}</p>
-              <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-tea/50">
+              <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-tea/70">
                 Los enlaces caducan a las 24 horas y solo sirven una vez. Si ya lo habías
                 abierto antes, tu correo puede estar confirmado: prueba a iniciar sesión.
               </p>
@@ -107,7 +107,7 @@ export default function VerificarCorreo() {
                 <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-caribbean">
                   ¿Caducó tu enlace?
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-tea/60">
+                <p className="mt-2 text-sm leading-relaxed text-tea/70">
                   Escribe tu correo y te mandamos uno nuevo.
                 </p>
                 <ReenviarVerificacion />
@@ -122,7 +122,7 @@ export default function VerificarCorreo() {
 
           {estado === 'sin-token' && (
             <>
-              <FrogIcon className="mx-auto h-16 w-16 text-tea/40 sm:h-20 sm:w-20" />
+              <FrogIcon className="mx-auto h-16 w-16 text-tea/70 sm:h-20 sm:w-20" />
               <h1 className="mt-6 font-display text-2xl font-semibold uppercase tracking-wide text-cream sm:text-3xl">
                 Falta el enlace de verificación
               </h1>

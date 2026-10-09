@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { SessionProvider } from './auth/SessionContext'
@@ -22,6 +22,7 @@ import Contacto from './pages/Contacto'
 import Postularme from './pages/Postularme'
 import VerificarCorreo from './pages/VerificarCorreo'
 import Login from './pages/Login'
+import { Recuperar, Restablecer } from './pages/Recuperar'
 import NotFound from './pages/NotFound'
 
 // Panel autenticado
@@ -39,10 +40,11 @@ import AdminEventos from './panel/pages/AdminEventos'
 import AdminModeracion from './panel/pages/AdminModeracion'
 import AdminFinanzas from './panel/pages/AdminFinanzas'
 import AdminTransparencia from './panel/pages/AdminTransparencia'
-import EspacioJunta from './panel/pages/EspacioJunta'
 import SuperRoles from './panel/pages/SuperRoles'
 import SuperAuditoria from './panel/pages/SuperAuditoria'
 import SuperArchivos from './panel/pages/SuperArchivos'
+import Avisos from './panel/pages/Avisos'
+import JuntaPendientes from './panel/pages/JuntaPendientes'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -71,6 +73,8 @@ createRoot(document.getElementById('root')).render(
 
           {/* Login (sin layout público) */}
           <Route path="login" element={<Login />} />
+          <Route path="recuperar" element={<Recuperar />} />
+          <Route path="restablecer" element={<Restablecer />} />
 
           {/* Panel autenticado */}
           <Route path="panel" element={<PanelLayout />}>
@@ -81,13 +85,16 @@ createRoot(document.getElementById('root')).render(
             <Route path="grupos/:id" element={<GrupoDetalle />} />
             <Route path="documentos" element={<Documentos />} />
             <Route path="marketplace" element={<MiMarketplace />} />
+            <Route path="avisos" element={<Avisos />} />
+            <Route path="admin" element={<JuntaPendientes />} />
             <Route path="admin/miembros" element={<AdminMiembros />} />
             <Route path="admin/comisiones" element={<AdminComisiones />} />
             <Route path="admin/eventos" element={<AdminEventos />} />
             <Route path="admin/moderacion" element={<AdminModeracion />} />
             <Route path="admin/finanzas" element={<AdminFinanzas />} />
             <Route path="admin/transparencia" element={<AdminTransparencia />} />
-            <Route path="admin/junta" element={<EspacioJunta />} />
+            {/* «Espacio Junta» repetía el menú y enlazaba a la biblioteca: la ruta vieja lleva a esa biblioteca. */}
+            <Route path="admin/junta" element={<Navigate to="/panel/documentos#junta" replace />} />
             <Route path="super/roles" element={<SuperRoles />} />
             <Route path="super/auditoria" element={<SuperAuditoria />} />
             <Route path="super/archivos" element={<SuperArchivos />} />

@@ -11,6 +11,9 @@ export const tasksApi = {
   // status: 'Pending' | 'InProgress' | 'InReview' | 'Done'
   move: (taskId, status) => apiFetch(`/tareas/${taskId}/mover`, { method: 'PATCH', body: { status } }),
   addLink: (taskId, data) => apiFetch(`/tareas/${taskId}/enlaces`, { method: 'POST', body: data }),
+  // Líder/coordinador. Los asignados se reemplazan por la lista enviada.
+  update: (taskId, data) => apiFetch(`/tareas/${taskId}`, { method: 'PUT', body: data }),
+  remove: (taskId) => apiFetch(`/tareas/${taskId}`, { method: 'DELETE' }),
 }
 
 /** Columnas fijas del tablero (RF-KAN-01; no configurables, RF-KAN-04). */

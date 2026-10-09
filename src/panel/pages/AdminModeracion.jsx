@@ -57,10 +57,10 @@ export default function AdminModeracion() {
       />
 
       {tab === 'publicaciones' ? (
-        !puedePub ? <Card><p className="text-sm text-tea/60">No tienes permiso para moderar publicaciones.</p></Card>
-        : lp ? <p className="text-tea/50">Cargando…</p>
+        !puedePub ? <Card><p className="text-sm text-tea/70">No tienes permiso para moderar publicaciones.</p></Card>
+        : lp ? <p className="text-tea/70">Cargando…</p>
         : ep ? <p className="text-candy">No se pudo cargar la cola.</p>
-        : listaPubs.length === 0 ? <Card><p className="text-sm text-tea/55">No hay publicaciones para moderar.</p></Card>
+        : listaPubs.length === 0 ? <Card><p className="text-sm text-tea/70">No hay publicaciones para moderar.</p></Card>
         : (
           <div className="space-y-4">
             {listaPubs.map((c, i) => (
@@ -73,7 +73,7 @@ export default function AdminModeracion() {
                       {c.visibility === 'Members' && <Chip tone="terracotta">Solo miembros</Chip>}
                     </div>
                     <h3 className="mt-2 font-display text-lg font-semibold uppercase tracking-wide text-cream">{c.title}</h3>
-                    <p className="font-mono text-xs text-tea/45">por {c.authorName}</p>
+                    <p className="font-mono text-xs text-tea/70">por {c.authorName}</p>
                   </div>
                   <div className="flex gap-3 text-xs font-semibold uppercase tracking-wide">
                     <Link to={`/publicaciones/${c.id}`} target="_blank" className="text-caribbean/80 hover:text-caribbean">Ver</Link>
@@ -88,10 +88,10 @@ export default function AdminModeracion() {
           </div>
         )
       ) : (
-        !puedeProd ? <Card><p className="text-sm text-tea/60">No tienes permiso para moderar el marketplace.</p></Card>
-        : lpr ? <p className="text-tea/50">Cargando…</p>
+        !puedeProd ? <Card><p className="text-sm text-tea/70">No tienes permiso para moderar el marketplace.</p></Card>
+        : lpr ? <p className="text-tea/70">Cargando…</p>
         : epr ? <p className="text-candy">No se pudo cargar la cola.</p>
-        : listaProds.length === 0 ? <Card><p className="text-sm text-tea/55">No hay productos para moderar.</p></Card>
+        : listaProds.length === 0 ? <Card><p className="text-sm text-tea/70">No hay productos para moderar.</p></Card>
         : (
           <div className="space-y-4">
             {listaProds.map((c, i) => (
@@ -104,7 +104,7 @@ export default function AdminModeracion() {
                       <Chip tone={estadoProdTono[c.status] ?? 'gris'}>{estadoProdLabel[c.status] ?? c.status}</Chip>
                     </div>
                     <h3 className="mt-2 font-display text-lg font-semibold uppercase tracking-wide text-cream">{c.name} <span className="text-rainforest">· {c.price > 0 ? `$${c.price}` : 'A convenir'}</span></h3>
-                    <p className="font-mono text-xs text-tea/45">por {c.sellerName}</p>
+                    <p className="font-mono text-xs text-tea/70">por {c.sellerName}</p>
                   </div>
                   <div className="flex gap-3 text-xs font-semibold uppercase tracking-wide">
                     <Link to={`/marketplace/${c.id}`} target="_blank" className="text-caribbean/80 hover:text-caribbean">Ver</Link>
@@ -120,7 +120,7 @@ export default function AdminModeracion() {
         )
       )}
 
-      <p className="mt-4 text-xs text-tea/45">Un enlace a contenido oculto/eliminado muestra un mensaje genérico, sin exponer detalles internos.</p>
+      <p className="mt-4 text-xs text-tea/70">Un enlace a contenido oculto/eliminado muestra un mensaje genérico, sin exponer detalles internos.</p>
     </>
   )
 }

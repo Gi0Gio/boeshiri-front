@@ -22,16 +22,58 @@
   --font-display: 'Oswald Variable', 'Alegre Sans', sans-serif;
   --font-body: 'Montserrat Variable', sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
 
-  --animate-marquee: marquee 32s linear infinite;
+/* ── Panel: los dos sombreros ─────────────────────────────────
+ * El panel se pinta con los nombres de la paleta (text-tea, bg-jungle…), y cada
+ * modo los reasigna. «Junta» deja la paleta tal cual: selva oscura, como la sala
+ * donde se administra. «Lo mío» la invierte al crema del sitio público, así el
+ * día a día de cualquier miembro se ve como la misma casa que el sitio:
+ *   jungle-deep → fondo crema · jungle → superficies blancas
+ *   tea, cream  → tinta selva · caribbean → acción en verde selva (AA sobre blanco)
+ *   terracotta, candy → versiones oscuras que pasan AA como texto
+ * Ojo al leer el código de una página del panel: «text-tea» es tinta clara en
+ * Junta y tinta oscura en Lo mío. Es a propósito: una misma página sirve a los dos. */
+/* «Junta» se apoya en la selva oficial (#002420), no en la casi negra: las
+ * superficies suben un escalón para despegarse del fondo con patrón. */
+.modo-junta {
+  --color-jungle-deep: #002420;
+  --color-jungle: #003a33;
+}
 
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
+.modo-mio {
+  --color-jungle-deep: #f6fbef;
+  --color-jungle: #ffffff;
+  --color-tea: #002420;
+  --color-cream: #002420;
+  --color-caribbean: #00735e;
+  --color-rainforest: #00735e;
+  --color-terracotta: #a3452d;
+  --color-candy: #c8002e;
+}
+
+/* El cambio de sombrero se nota: el fondo de la casa cambia de color en vez de
+ * saltar. Solo el fondo; el contenido cambia al instante. */
+.panel-casa {
+  transition: background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Hoja inferior del panel (Más, tu cuenta): sube desde el borde, rápida y sin rebote. */
+@keyframes hoja-sube {
+  from {
+    transform: translateY(100%);
+  }
+}
+.hoja-sube {
+  animation: hoja-sube 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-casa {
+    transition: none;
+  }
+  .hoja-sube {
+    animation: none;
   }
 }
 
@@ -40,6 +82,16 @@ body {
   background-color: var(--color-cream);
   color: var(--color-jungle);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Foco de teclado con los colores de la marca en vez del recuadro del navegador.
+ * Dos anillos: el oscuro (jungle) contrasta sobre crema y blanco; el caribe,
+ * sobre las secciones oscuras. Los campos de formulario tienen su propio anillo
+ * (focus:ring) y lo conservan porque su clase pesa más que esta regla. */
+:focus-visible {
+  outline: 3px solid var(--color-caribbean);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-jungle);
 }
 
 ::selection {
@@ -58,6 +110,15 @@ body {
   background-repeat: repeat;
   background-attachment: fixed;
   background-position: 0 0;
+}
+
+/* En pantallas táctiles el fondo fijo no compensa: iOS Safari lo ignora y otros
+ * navegadores repintan la sección entera en cada scroll. Ahí el patrón se
+ * desplaza con su sección; puede cortarse entre secciones, pero no da tirones. */
+@media (hover: none) {
+  .bg-dorace-pattern {
+    background-attachment: scroll;
+  }
 }
 
 /* Revelado al entrar en viewport (ver hook useReveal) */
@@ -80,10 +141,6 @@ body {
     opacity: 1;
     transform: none;
     transition: none;
-  }
-
-  .animate-marquee {
-    animation: none;
   }
 }
 

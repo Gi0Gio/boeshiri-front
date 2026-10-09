@@ -7,6 +7,44 @@ import { useFetch } from '../hooks/useFetch'
 import { gradientFor, iniciales } from '../utils/gradient'
 import { useSeo } from '../hooks/useSeo'
 
+/**
+ * Familias de disciplina para filtrar. La disciplina del perfil es texto libre
+ * («Dibujo, canto, edición…», «Muralismo , Artista visual»), así que filtrar por
+ * el texto exacto daba un chip por persona. Cada familia reconoce sus palabras y
+ * una persona puede caer en varias. Quien no encaja en ninguna sigue en «Todas».
+ *
+ * TODO: lo limpio es que la API guarde disciplinas de una lista cerrada; esto
+ * es el puente mientras tanto.
+ */
+const FAMILIAS = [
+  { id: 'dibujo', label: 'Dibujo e ilustración', claves: ['dibujo', 'ilustracion'] },
+  { id: 'pintura', label: 'Pintura y muralismo', claves: ['pintura', 'pintor', 'mural', 'artista visual'] },
+  { id: 'foto', label: 'Foto y audiovisual', claves: ['fotograf', 'audiovisual', 'video', 'edicion', 'cine'] },
+  { id: 'diseno', label: 'Diseño', claves: ['diseno', 'grafic'] },
+  { id: 'escena', label: 'Música y escena', claves: ['canto', 'music', 'baile', 'danza', 'teatro'] },
+  { id: 'escritura', label: 'Escritura', claves: ['escritura', 'escritor', 'poesia'] },
+  { id: 'artesania', label: 'Artesanía', claves: ['ceramica', 'crochet', 'bisuteria', 'textil', 'artesan'] },
+  { id: 'tecnologia', label: 'Tecnología', claves: ['desarrollo', 'programacion', 'web'] },
+]
+
+const normalizar = (t) =>
+  t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+function familiasDe(miembro) {
+  const texto = normalizar([miembro.discipline, ...(miembro.tags ?? [])].filter(Boolean).join(' '))
+  return FAMILIAS.filter((f) => f.claves.some((c) => texto.includes(c))).map((f) => f.id)
+}
+
+/** «Muralismo , Artista visual» → «Muralismo, artista visual». Solo presentación. */
+function limpiarDisciplina(d) {
+  const limpia = d
+    .replace(/\s*[/-]\s*/g, ', ')
+    .replace(/\s*,\s*/g, ', ')
+    .trim()
+    .toLowerCase()
+  return limpia.charAt(0).toUpperCase() + limpia.slice(1)
+}
+
 export default function Comunidad() {
   useSeo({
     titulo: 'Comunidad',
@@ -15,13 +53,18 @@ export default function Comunidad() {
 
   const { data, loading, error } = useFetch(() => communityApi.list())
   const miembros = data ?? []
-  const [filtro, setFiltro] = useState('Todas')
+  const [filtro, setFiltro] = useState('todas')
 
-  const disciplinas = useMemo(
-    () => ['Todas', ...new Set(miembros.map((m) => m.discipline).filter(Boolean))],
-    [miembros],
-  )
-  const lista = filtro === 'Todas' ? miembros : miembros.filter((m) => m.discipline === filtro)
+  const conFamilias = useMemo(() => miembros.map((m) => ({ ...m, familias: familiasDe(m) })), [miembros])
+  // Solo las familias que tienen a alguien: un chip que filtra a cero es un callejón.
+  const filtros = useMemo(() => {
+    const presentes = FAMILIAS.map((f) => ({
+      ...f,
+      total: conFamilias.filter((m) => m.familias.includes(f.id)).length,
+    })).filter((f) => f.total > 0)
+    return [{ id: 'todas', label: 'Todas', total: conFamilias.length }, ...presentes]
+  }, [conFamilias])
+  const lista = filtro === 'todas' ? conFamilias : conFamilias.filter((m) => m.familias.includes(filtro))
 
   return (
     <>
@@ -42,31 +85,36 @@ export default function Comunidad() {
 
       <section className="bg-cream py-16">
         <div className="mx-auto max-w-6xl px-5">
-          {loading && <p className="text-center text-jungle/50">Cargando comunidad…</p>}
+          {loading && <p className="text-center text-jungle/70">Cargando comunidad…</p>}
           {error && <p className="text-center text-candy">No se pudo cargar la comunidad.</p>}
 
           {!loading && !error && (
             <>
-              {disciplinas.length > 1 && (
-                <div className="mb-10 flex flex-wrap justify-center gap-2">
-                  {disciplinas.map((d) => (
+              {filtros.length > 2 && (
+                // Una fila que se desliza en móvil en vez de un muro de chips que
+                // llena la primera pantalla; en escritorio caben y se reparten.
+                <div className="-mx-5 mb-8 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:mx-0 sm:mb-10 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+                  {filtros.map((f) => (
                     <button
-                      key={d}
-                      onClick={() => setFiltro(d)}
-                      className={`rounded-full px-4 py-2 font-display text-xs font-semibold uppercase tracking-[0.12em] transition ${
-                        filtro === d ? 'bg-jungle text-tea' : 'bg-jungle/8 text-jungle/60 hover:bg-tea'
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFiltro(f.id)}
+                      aria-pressed={filtro === f.id}
+                      className={`flex min-h-11 flex-none items-center gap-2 rounded-full px-4 font-display text-xs font-semibold uppercase tracking-[0.12em] transition ${
+                        filtro === f.id ? 'bg-jungle text-tea' : 'bg-jungle/8 text-jungle/70 hover:bg-tea'
                       }`}
                     >
-                      {d}
+                      {f.label}
+                      <span className={filtro === f.id ? 'text-tea/70' : 'text-jungle/70'}>{f.total}</span>
                     </button>
                   ))}
                 </div>
               )}
 
               {lista.length === 0 ? (
-                <p className="text-center text-jungle/50">Aún no hay perfiles publicados.</p>
+                <p className="text-center text-jungle/70">Aún no hay perfiles publicados.</p>
               ) : (
-                <div key={filtro} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div key={filtro} className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3">
                   {lista.map((m, i) => (
                     <Reveal
                       as={Link}
@@ -75,23 +123,23 @@ export default function Comunidad() {
                       delay={(i % 3) * 100}
                       className="group block overflow-hidden rounded-2xl bg-white shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(0,37,32,0.14)]"
                     >
-                      <div className="relative aspect-[4/3] overflow-hidden" style={{ background: gradientFor(m.id) }}>
+                      <div className="relative aspect-square overflow-hidden sm:aspect-[4/3]" style={{ background: gradientFor(m.id) }}>
                         {m.photoUrl ? (
                           <img src={m.photoUrl} alt={m.fullName} className="h-full w-full object-cover" />
                         ) : (
                           <>
-                            <FrogIcon className="absolute -bottom-8 -right-6 h-36 w-36 text-white/15 transition-transform duration-500 group-hover:scale-110" />
-                            <span className="absolute left-6 top-5 font-display text-6xl font-semibold text-white/90">{iniciales(m.fullName)}</span>
+                            <FrogIcon className="absolute -bottom-6 -right-4 h-24 w-24 text-white/15 transition-transform duration-500 group-hover:scale-110 sm:-bottom-8 sm:-right-6 sm:h-36 sm:w-36" />
+                            <span className="absolute left-4 top-3 font-display text-4xl font-semibold text-white/90 sm:left-6 sm:top-5 sm:text-6xl">{iniciales(m.fullName)}</span>
                           </>
                         )}
                       </div>
-                      <div className="p-6">
-                        <h3 className="font-display text-xl font-semibold uppercase tracking-wide text-jungle">{m.fullName}</h3>
-                        {m.discipline && <p className="mt-1 text-xs font-medium uppercase tracking-[0.15em] text-rainforest">{m.discipline}</p>}
+                      <div className="p-3 sm:p-6">
+                        <h3 className="break-words font-display text-base font-semibold uppercase leading-tight tracking-wide text-jungle sm:text-xl">{m.fullName}</h3>
+                        {m.discipline && <p className="mt-1 text-xs font-medium text-rainforest sm:text-sm">{limpiarDisciplina(m.discipline)}</p>}
                         {m.tags?.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5">
+                          <div className="mt-3 hidden flex-wrap gap-1.5 sm:flex">
                             {m.tags.slice(0, 4).map((t) => (
-                              <span key={t} className="rounded-full bg-jungle/8 px-2.5 py-0.5 text-xs text-jungle/60">{t}</span>
+                              <span key={t} className="rounded-full bg-jungle/8 px-2.5 py-0.5 text-xs text-jungle/70">{t}</span>
                             ))}
                           </div>
                         )}

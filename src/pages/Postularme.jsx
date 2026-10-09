@@ -168,7 +168,7 @@ export default function Postularme() {
             {/* Aquí es donde uno nota que el correo no llegó, así que el reenvío
                 debe estar a mano y con la dirección ya puesta. */}
             <div className="mt-8 border-t border-tea/10 pt-6">
-              <p className="text-sm leading-relaxed text-tea/55">
+              <p className="text-sm leading-relaxed text-tea/70">
                 ¿No te llegó? Revisa la carpeta de spam. Si pasados un par de minutos sigue
                 sin aparecer, pide otro enlace.
               </p>
@@ -189,13 +189,13 @@ export default function Postularme() {
                       <span
                         aria-current={activo ? 'step' : undefined}
                         className={`flex h-9 w-9 flex-none items-center justify-center rounded-full font-display text-sm font-semibold transition ${
-                          activo ? 'bg-caribbean text-jungle' : hecho ? 'bg-rainforest text-cream' : 'bg-jungle-deep/60 text-tea/50'
+                          activo ? 'bg-caribbean text-jungle' : hecho ? 'bg-rainforest text-cream' : 'bg-jungle-deep/60 text-tea/70'
                         }`}
                       >
                         {hecho ? '✓' : p.id}
                       </span>
                       <span className="hidden sm:block">
-                        <span className={`block font-display text-xs font-semibold uppercase tracking-[0.15em] ${activo || hecho ? 'text-cream' : 'text-tea/45'}`}>
+                        <span className={`block font-display text-xs font-semibold uppercase tracking-[0.15em] ${activo || hecho ? 'text-cream' : 'text-tea/70'}`}>
                           {p.titulo}
                         </span>
                       </span>
@@ -209,7 +209,7 @@ export default function Postularme() {
             {/* Título del paso: en móvil sustituye a las etiquetas ocultas del stepper. */}
             <p className="mb-4 text-center font-display text-sm font-semibold uppercase tracking-[0.15em] text-cream sm:hidden">
               {pasos[paso - 1].titulo}
-              <span className="mt-0.5 block font-sans text-xs font-normal normal-case tracking-normal text-tea/50">{pasos[paso - 1].desc}</span>
+              <span className="mt-0.5 block font-sans text-xs font-normal normal-case tracking-normal text-tea/70">{pasos[paso - 1].desc}</span>
             </p>
 
             <form onSubmit={avanzar} noValidate={false} className="rounded-3xl border border-tea/10 bg-cream p-6 sm:p-8 md:p-10">
@@ -237,7 +237,7 @@ export default function Postularme() {
                   <div className="flex flex-col gap-2">
                     <label htmlFor="clave" className={labelBase}>Contraseña</label>
                     <input id="clave" name="new-password" type="password" required minLength={8} autoComplete="new-password" value={form.clave} onChange={(e) => set({ clave: e.target.value })} placeholder="Crea una contraseña" className={inputBase} />
-                    <p className="text-xs text-jungle/50">Mínimo 8 caracteres.</p>
+                    <p className="text-xs text-jungle/70">Mínimo 8 caracteres.</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <label htmlFor="clave2" className={labelBase}>Repetir contraseña</label>
@@ -247,7 +247,7 @@ export default function Postularme() {
                       onChange={(e) => { set({ clave2: e.target.value }); if (campoError === 'clave2') setCampoError(null) }}
                       placeholder="Escríbela otra vez" className={cls('clave2')}
                     />
-                    <p className="text-xs text-jungle/50">Aún no hay recuperación de contraseña: si la olvidas, tendrás que pedir ayuda a la Junta.</p>
+                    <p className="text-xs text-jungle/70">Aún no hay recuperación de contraseña: si la olvidas, tendrás que pedir ayuda a la Junta.</p>
                   </div>
                 </div>
               )}
@@ -280,7 +280,7 @@ export default function Postularme() {
                       />
                     )}
 
-                    <p className="text-xs text-jungle/50">Podrás afinarla —junto a redes y etiquetas— en tu perfil al ingresar.</p>
+                    <p className="text-xs text-jungle/70">Podrás afinarla —junto a redes y etiquetas— en tu perfil al ingresar.</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <label htmlFor="telefono" className={labelBase}>Celular (opcional)</label>
@@ -291,7 +291,7 @@ export default function Postularme() {
                         dos cajas en fila no caben en pantallas estrechas. El borde lo
                         pinta el contenedor y el input va desnudo encima. */}
                     <div className="flex items-center rounded-xl border border-rainforest/20 bg-white transition focus-within:border-caribbean focus-within:ring-2 focus-within:ring-caribbean/30">
-                      <span className="flex flex-none items-center gap-1.5 border-r border-rainforest/15 py-3 pl-4 pr-3 font-mono text-base text-jungle/60">
+                      <span className="flex flex-none items-center gap-1.5 border-r border-rainforest/15 py-3 pl-4 pr-3 font-mono text-base text-jungle/70">
                         <span aria-hidden="true">🇵🇦</span>+{COD_PANAMA}
                       </span>
                       <input
@@ -302,7 +302,7 @@ export default function Postularme() {
                         className="w-full min-w-0 bg-transparent px-4 py-3 text-base text-jungle placeholder:text-jungle/40 focus:outline-none"
                       />
                     </div>
-                    <p className="text-xs text-jungle/50">Solo números, sin guiones. Lo usamos para contactarte por WhatsApp.</p>
+                    <p className="text-xs text-jungle/70">Solo números, sin guiones. Lo usamos para contactarte por WhatsApp.</p>
                   </div>
                 </div>
               )}
@@ -312,7 +312,7 @@ export default function Postularme() {
                   <div className="flex flex-col gap-2">
                     <label htmlFor="motivacion" className={labelBase}>¿Por qué quieres unirte?</label>
                     <textarea id="motivacion" name="motivacion" required rows={5} maxLength={1000} value={form.motivacion} onChange={(e) => set({ motivacion: e.target.value })} placeholder="Cuéntanos qué te mueve del arte, la cultura y la comunidad…" className={`${inputBase} resize-none`} />
-                    <p className="text-right text-xs text-jungle/40">{form.motivacion.length}/1000</p>
+                    <p className="text-right text-xs text-jungle/70">{form.motivacion.length}/1000</p>
                   </div>
                   <label className="flex items-start gap-3 text-sm text-jungle/70">
                     <input type="checkbox" required className="mt-1 h-4 w-4 flex-none accent-[#00735e]" />
@@ -340,7 +340,7 @@ export default function Postularme() {
               </div>
             </form>
 
-            <p className="mt-6 text-center text-sm text-tea/60">
+            <p className="mt-6 text-center text-sm text-tea/70">
               ¿Ya tienes cuenta?{' '}
               <Link to="/login" className="font-semibold text-caribbean underline-offset-4 hover:underline">Inicia sesión</Link>
             </p>

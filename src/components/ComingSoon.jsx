@@ -22,7 +22,7 @@ export default function ComingSoon({ title, description, illustration: Illustrat
           <p className="mt-5 leading-relaxed text-tea/80">{description}</p>
           <Link
             to="/"
-            className="mt-10 inline-block rounded-full border border-caribbean px-6 py-2.5 font-display text-sm uppercase tracking-[0.18em] text-caribbean transition hover:bg-caribbean hover:text-jungle"
+            className="mt-10 inline-flex min-h-11 items-center rounded-full border border-caribbean px-6 py-2.5 font-display text-sm uppercase tracking-[0.18em] text-caribbean transition hover:bg-caribbean hover:text-jungle"
           >
             Volver al inicio
           </Link>

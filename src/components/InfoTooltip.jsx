@@ -39,8 +39,8 @@ export default function InfoTooltip({ children, label = 'Qué es esto', align = 
         onMouseLeave={() => setHover(false)}
         onFocus={() => setHover(true)}
         onBlur={() => setHover(false)}
-        className={`flex h-5 w-5 items-center justify-center rounded-full border font-mono text-[0.7rem] font-bold transition ${
-          visible ? 'border-caribbean bg-caribbean text-jungle' : 'border-tea/30 text-tea/50 hover:border-caribbean hover:text-caribbean'
+        className={`flex h-5 w-5 items-center justify-center rounded-full border font-mono text-xs font-bold transition ${
+          visible ? 'border-caribbean bg-caribbean text-jungle' : 'border-tea/30 text-tea/70 hover:border-caribbean hover:text-caribbean'
         }`}
       >
         ?

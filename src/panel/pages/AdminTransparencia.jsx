@@ -5,6 +5,7 @@ import { useFetch } from '../../hooks/useFetch'
 import { useSession } from '../../auth/SessionContext'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
+import Ico from '../Ico'
 
 const estadoTono = { Published: 'caribbean', Hidden: 'gris' }
 const fmtFecha = (iso) => new Date(iso).toLocaleDateString('es-PA', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -66,7 +67,7 @@ export default function AdminTransparencia() {
         eyebrow="Administración · Junta"
         title="Transparencia"
         description="Artículos oficiales de la Junta. Al publicarse, se notifica a cada integrante en su panel."
-        actions={puedeGestionar && <Btn tone="candy" onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : '+ Nuevo artículo'}</Btn>}
+        actions={puedeGestionar && <Btn onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : <><Ico name="mas" className="h-4 w-4" />Nuevo artículo</>}</Btn>}
       />
 
 
@@ -93,9 +94,9 @@ export default function AdminTransparencia() {
         </Reveal>
       )}
 
-      {loading && <p className="text-tea/50">Cargando artículos…</p>}
+      {loading && <p className="text-tea/70">Cargando artículos…</p>}
       {error && <p className="text-candy">No se pudieron cargar los artículos.</p>}
-      {!loading && !error && articulos.length === 0 && <Card><p className="text-sm text-tea/55">Aún no hay artículos oficiales.</p></Card>}
+      {!loading && !error && articulos.length === 0 && <Card><p className="text-sm text-tea/70">Aún no hay artículos oficiales.</p></Card>}
 
       <div className="space-y-4">
         {articulos.map((a, i) => (
@@ -105,7 +106,7 @@ export default function AdminTransparencia() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Chip tone="caribbean">{a.category}</Chip>
                   <Chip tone={estadoTono[a.status] ?? 'gris'}>{a.status === 'Published' ? 'Publicado' : 'Oculto'}</Chip>
-                  <span className="font-mono text-xs text-tea/40">{fmtFecha(a.createdAt)} · {a.authorName}</span>
+                  <span className="font-mono text-xs text-tea/70">{fmtFecha(a.createdAt)} · {a.authorName}</span>
                 </div>
                 {puedeGestionar && (
                   <div className="flex gap-3 text-xs font-semibold uppercase tracking-wide">

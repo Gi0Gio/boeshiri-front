@@ -71,7 +71,7 @@ function statusMessage(status) {
     404: 'No se encontró el recurso.',
     409: 'Conflicto con el estado actual.',
     413: 'El archivo es demasiado grande.',
-    429: 'Demasiadas solicitudes, espera un momento.',
+    429: 'Demasiados intentos seguidos. Espera un momento y vuelve a probar.',
   }[status] || (status >= 500 ? 'Ocurrió un error en el servidor. Inténtalo de nuevo.' : `Error ${status}`)
 }
 
@@ -87,20 +87,28 @@ async function leer(res) {
 
   if (!res.ok) {
     // Validación → `detail` (resumen legible); AppException → `title`; si no, mapa por status.
-    const message = data?.detail || data?.title || statusMessage(res.status)
+    let message = data?.detail || data?.title || statusMessage(res.status)
+    // En un 429 la API dice cuánto esperar: mejor un número que «un momento».
+    const espera = Number(res.headers.get('Retry-After'))
+    if (res.status === 429 && espera > 0) {
+      const minutos = Math.ceil(espera / 60)
+      message = `Demasiados intentos seguidos. Vuelve a probar en ${espera < 90 ? `${espera} segundos` : `${minutos} minutos`}.`
+    }
     throw new ApiError(message, res.status, data)
   }
   return data
 }
 
 /** POST a un endpoint de sesión, por el mismo origen para que viaje la cookie. */
-async function llamarSesion(path, body) {
+async function llamarSesion(path, body, token) {
   let res
   try {
+    const headers = body !== undefined ? { 'Content-Type': 'application/json' } : {}
+    if (token) headers['Authorization'] = `Bearer ${token}`
     res = await fetch(path, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: body !== undefined ? { 'Content-Type': 'application/json' } : {},
+      headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
   } catch {
@@ -149,6 +157,29 @@ export function esperarSesion() {
 
 export async function iniciarSesion(credenciales) {
   const data = await llamarSesion('/auth/login', credenciales)
+  accessToken = data.token
+  arranque = Promise.resolve(data)
+  marcar(true)
+  return data
+}
+
+/**
+ * Cambia la contraseña. La API cierra todas las sesiones y deja una cookie nueva
+ * para este navegador, así que va por el mismo origen como el login.
+ */
+export async function cambiarContrasena(datos) {
+  await esperarSesion()
+  let data
+  try {
+    data = await llamarSesion('/auth/cambiar-contrasena', datos, accessToken)
+  } catch (err) {
+    if (err.status !== 401) throw err
+    // El JWT caducó en medio: se renueva una vez y se repite.
+    const renovada = await renovarSesion().catch(() => null)
+    if (!renovada) throw err
+    data = await llamarSesion('/auth/cambiar-contrasena', datos, accessToken)
+  }
+  generacion++ // las renovaciones en vuelo traen tokens ya revocados
   accessToken = data.token
   arranque = Promise.resolve(data)
   marcar(true)

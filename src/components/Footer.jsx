@@ -19,24 +19,34 @@ export default function Footer() {
           <h3 className="font-display text-sm font-semibold uppercase tracking-[0.22em] text-caribbean">
             Explora
           </h3>
-          <ul className="mt-4 space-y-2.5 text-sm">
+          <ul className="mt-2 text-sm md:mt-4 md:space-y-2.5">
             <li>
-              <Link className="transition-colors hover:text-caribbean" to="/sobre">
+              <Link className="inline-flex min-h-11 items-center transition-colors hover:text-caribbean md:min-h-0" to="/sobre">
                 Sobre el colectivo
               </Link>
             </li>
             <li>
-              <Link className="transition-colors hover:text-caribbean" to="/explorar">
-                Eventos, blog y galería
+              <Link className="inline-flex min-h-11 items-center transition-colors hover:text-caribbean md:min-h-0" to="/comunidad">
+                Comunidad
               </Link>
             </li>
             <li>
-              <Link className="transition-colors hover:text-caribbean" to="/postularme">
+              <Link className="inline-flex min-h-11 items-center transition-colors hover:text-caribbean md:min-h-0" to="/explorar">
+                El Mural
+              </Link>
+            </li>
+            <li>
+              <Link className="inline-flex min-h-11 items-center transition-colors hover:text-caribbean md:min-h-0" to="/eventos">
+                Eventos
+              </Link>
+            </li>
+            <li>
+              <Link className="inline-flex min-h-11 items-center transition-colors hover:text-caribbean md:min-h-0" to="/postularme">
                 Quiero ser parte
               </Link>
             </li>
             <li>
-              <Link className="transition-colors hover:text-caribbean" to="/contacto">
+              <Link className="inline-flex min-h-11 items-center transition-colors hover:text-caribbean md:min-h-0" to="/contacto">
                 Contacto
               </Link>
             </li>
@@ -47,21 +57,19 @@ export default function Footer() {
           <h3 className="font-display text-sm font-semibold uppercase tracking-[0.22em] text-caribbean">
             Contacto
           </h3>
-          <ul className="mt-4 space-y-2.5 text-sm text-tea/80">
-            {/* TODO: reemplazar con los datos reales del colectivo */}
+          <ul className="mt-2 text-sm text-tea/80 md:mt-4 md:space-y-2.5">
+            {/* Los mismos canales que /contacto: si se añade uno, va en los dos sitios. */}
             <li>
-              <a className="transition-colors hover:text-caribbean" href="mailto:hola@boeshiri.org">
+              <a className="inline-flex min-h-11 items-center transition-colors hover:text-caribbean md:min-h-0" href="mailto:hola@boeshiri.org">
                 hola@boeshiri.org
               </a>
             </li>
-            <li>WhatsApp · próximamente</li>
-            <li>Instagram · próximamente</li>
-            <li>Chiriquí, Panamá</li>
+            <li className="flex min-h-11 items-center md:min-h-0">David, Chiriquí — Panamá</li>
           </ul>
         </div>
       </div>
 
-      <div className="relative flex flex-col items-center gap-3 border-t border-tea/10 py-5 text-center text-xs tracking-wide text-tea/50">
+      <div className="relative flex flex-col items-center gap-3 border-t border-tea/10 py-5 text-center text-xs tracking-wide text-tea/70">
         <SolGuerraIcon className="h-5 w-auto text-rainforest/60" />
         © {new Date().getFullYear()} Boesh Irí · Hecho con orgullo desde Chiriquí
       </div>

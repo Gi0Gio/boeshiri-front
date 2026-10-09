@@ -28,7 +28,7 @@ export default function ImageUpload({ value, onChange, folder = 'misc', label = 
 
   return (
     <div className={className}>
-      <label className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-caribbean">{label}</label>
+      <label className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-caribbean">{label}</label>
       <div className="mt-1.5 flex items-start gap-4">
         <div className={`h-20 w-20 flex-none overflow-hidden border border-tea/15 bg-jungle-deep/60 ${shape}`}>
           {value
@@ -52,7 +52,7 @@ export default function ImageUpload({ value, onChange, folder = 'misc', label = 
               exponía la ruta del objeto en el bucket, y permitía pegar enlaces
               externos que esquivan la política de subida (conversión a WebP,
               límites de tamaño y tipo) y dependen de un servidor ajeno. */}
-          <p className="mt-2 font-mono text-[0.62rem] text-tea/40">
+          <p className="mt-2 font-mono text-xs text-tea/70">
             JPG, PNG o WebP · máx. 5 MB · se optimiza a WebP automáticamente.
           </p>
           {estado && estado !== 'subiendo' && <p className="mt-1 text-xs text-candy">{estado}</p>}

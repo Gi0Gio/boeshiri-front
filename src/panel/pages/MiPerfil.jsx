@@ -7,6 +7,8 @@ import ImageUpload from '../../components/ImageUpload'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
 import { useSession } from '../../auth/SessionContext'
+import Ico from '../Ico'
+import { CambiarContrasena, MisDatos, EliminarCuenta } from '../CuentaSeguridad'
 
 /** Redes editables; el orden y prefijo son cosméticos. type = enum de la API. */
 const REDES = [
@@ -66,7 +68,7 @@ export default function MiPerfil() {
   // vista, no da los cambios por descartados.
   useEffect(() => { setAvisoOculto(false) }, [form])
 
-  if (loading) return <p className="text-tea/50">Cargando perfil…</p>
+  if (loading) return <p className="text-tea/70">Cargando perfil…</p>
   if (error || !form) return <p className="text-candy">No se pudo cargar tu perfil.</p>
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
@@ -148,7 +150,7 @@ export default function MiPerfil() {
               onClick={() => setAvisoOculto(true)}
               aria-label="Ocultar el aviso (los cambios no se pierden)"
               title="Ocultar aviso"
-              className="flex-none px-1 text-lg leading-none text-tea/40 transition hover:text-tea"
+              className="flex-none px-1 text-lg leading-none text-tea/70 transition hover:text-tea"
             >
               ✕
             </button>
@@ -191,7 +193,7 @@ export default function MiPerfil() {
               <div>
                 <label className={labelCls}>Ubicación (opcional)</label>
                 <input className={`${inputCls} mt-1.5`} value={form.location} onChange={(e) => set({ location: e.target.value })} placeholder="Chiriquí, Panamá" />
-                <p className="mt-1.5 font-mono text-[0.65rem] text-tea/40">Se muestra como pill en tu perfil solo si la rellenas.</p>
+                <p className="mt-1.5 font-mono text-xs text-tea/70">Se muestra como pill en tu perfil solo si la rellenas.</p>
               </div>
               <div>
                 <label className={labelCls}>Descripción corta</label>
@@ -213,11 +215,11 @@ export default function MiPerfil() {
                     value={nuevaTag}
                     onChange={(e) => setNuevaTag(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
-                    placeholder="+ añadir"
-                    className="w-24 rounded-full border border-dashed border-tea/25 bg-transparent px-3 py-0.5 font-mono text-[0.7rem] text-tea placeholder:text-tea/40 focus:border-caribbean focus:outline-none"
+                    placeholder="Añadir"
+                    className="w-24 rounded-full border border-dashed border-tea/25 bg-transparent px-3 py-0.5 font-mono text-xs text-tea placeholder:text-tea/40 focus:border-caribbean focus:outline-none"
                   />
                 </div>
-                <p className="mt-2 text-xs text-tea/40">Describen tu trabajo; no otorgan permisos. Enter para añadir, clic para quitar.</p>
+                <p className="mt-2 text-xs text-tea/70">Describen tu trabajo; no otorgan permisos. Enter para añadir, clic para quitar.</p>
               </div>
             </div>
           </Card>
@@ -227,7 +229,7 @@ export default function MiPerfil() {
           <Reveal delay={100}>
             <Card>
               <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Privacidad</h2>
-              <p className="mt-1 text-xs text-tea/45">Visibles por defecto: foto, nombre, descripción, etiquetas y publicaciones públicas.</p>
+              <p className="mt-1 text-xs text-tea/70">Visibles por defecto: foto, nombre, descripción, etiquetas y publicaciones públicas.</p>
               <div className="mt-3 divide-y divide-tea/8">
                 <Toggle label="Mostrar teléfono" checked={form.privacy.showPhone} onChange={(v) => set({ privacy: { ...form.privacy, showPhone: v } })} />
                 <Toggle label="Mostrar correo personal" checked={form.privacy.showEmail} onChange={(v) => set({ privacy: { ...form.privacy, showEmail: v } })} />
@@ -241,13 +243,13 @@ export default function MiPerfil() {
           <Reveal delay={180}>
             <Card>
               <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Redes</h2>
-              <p className="mt-1 text-xs text-tea/45">Cada red tiene su interruptor. Se ocultan si están vacías o apagadas. WhatsApp requiere código de país (+507…).</p>
+              <p className="mt-1 text-xs text-tea/70">Cada red tiene su interruptor. Se ocultan si están vacías o apagadas. WhatsApp requiere código de país (+507…).</p>
               <div className="mt-4 space-y-3">
                 {REDES.map((r) => {
                   const red = form.redes[r.type]
                   return (
                     <div key={r.type} className="flex items-center gap-3">
-                      <span className="w-20 flex-none font-mono text-[0.7rem] font-semibold uppercase tracking-wide text-caribbean">{r.label}</span>
+                      <span className="w-20 flex-none font-mono text-xs font-semibold uppercase tracking-wide text-caribbean">{r.label}</span>
                       <div className="relative flex-1">
                         {r.prefijo && <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-tea/35">{r.prefijo}</span>}
                         <input value={red.value} onChange={(e) => setRed(r.type, { value: e.target.value })} placeholder={r.ph} className={`${inputCls} ${r.prefijo ? 'pl-8' : ''} ${red.visible ? '' : 'opacity-50'}`} />
@@ -267,12 +269,12 @@ export default function MiPerfil() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Habilidades</h2>
-                  <p className="mt-1 text-xs text-tea/45">Aparecen como barras de nivel en tu perfil (Básico → Experto).</p>
+                  <p className="mt-1 text-xs text-tea/70">Aparecen como barras de nivel en tu perfil (Básico → Experto).</p>
                 </div>
-                <Btn onClick={addSkill} tone="ghost">+ Añadir</Btn>
+                <Btn onClick={addSkill} tone="ghost"><Ico name="mas" className="h-4 w-4" />Añadir</Btn>
               </div>
               <div className="mt-4 space-y-3">
-                {form.skills.length === 0 && <p className="text-sm text-tea/40">Aún no has añadido habilidades.</p>}
+                {form.skills.length === 0 && <p className="text-sm text-tea/70">Aún no has añadido habilidades.</p>}
                 {form.skills.map((s, i) => (
                   <div key={i} className="rounded-xl border border-tea/10 bg-jungle-deep/40 p-3">
                     <div className="flex items-center gap-2">
@@ -283,10 +285,10 @@ export default function MiPerfil() {
                         placeholder="Nombre de la habilidad (ej. Ilustración digital)"
                         className={`${inputCls} flex-1`}
                       />
-                      <button type="button" onClick={() => removeSkill(i)} className="flex-none px-2 text-lg text-tea/40 transition-colors hover:text-candy" aria-label="Quitar habilidad">✕</button>
+                      <button type="button" onClick={() => removeSkill(i)} className="flex-none px-2 text-lg text-tea/70 transition-colors hover:text-candy" aria-label="Quitar habilidad">✕</button>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="w-12 flex-none font-mono text-[0.65rem] uppercase tracking-wide text-tea/40">Nivel</span>
+                      <span className="w-12 flex-none font-mono text-xs uppercase tracking-wide text-tea/70">Nivel</span>
                       <select value={s.level} onChange={(e) => setSkill(i, { level: Number(e.target.value) })} className={`${inputCls} flex-1`}>
                         {NIVELES.map((n, idx) => (<option key={idx} value={idx + 1}>{idx + 1} · {n}</option>))}
                       </select>
@@ -299,6 +301,11 @@ export default function MiPerfil() {
         </div>
       </div>
 
+      <div className="mt-10 grid gap-6 lg:grid-cols-2">
+        <Reveal><CambiarContrasena /></Reveal>
+        <Reveal delay={80}><MisDatos /></Reveal>
+      </div>
+
       {/* Zona de peligro: el cierre de sesión salió del menú lateral, donde se
           pulsaba por error al buscar la salida al sitio público. Aquí hay que
           bajar a propósito, y además se confirma. */}
@@ -308,12 +315,13 @@ export default function MiPerfil() {
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-candy/15 pt-4">
             <div className="min-w-0">
               <p className="text-sm font-medium text-tea">Cerrar sesión</p>
-              <p className="mt-0.5 text-xs leading-relaxed text-tea/50">
+              <p className="mt-0.5 text-xs leading-relaxed text-tea/70">
                 Saldrás del panel en este dispositivo. Tus datos no se pierden.
               </p>
             </div>
             <Btn tone="candy" onClick={cerrarSesion}>Cerrar sesión</Btn>
           </div>
+          <EliminarCuenta />
         </div>
       </Reveal>
 

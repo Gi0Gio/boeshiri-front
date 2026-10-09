@@ -1,75 +1,114 @@
-import { useState } from 'react'
-import { NavLink, Outlet, Link, Navigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { NavLink, Outlet, Link, Navigate, useLocation } from 'react-router-dom'
 import { useSession, ROLES, alcanza } from '../auth/SessionContext'
-import { iniciales, gradientFor } from '../utils/gradient'
-import CampanaAvisos from './CampanaAvisos'
-import ranaUrl from '../assets/SVG/ranita_patas_espatulares.svg'
+import { Avatar } from './ui'
+import Ico from './Ico'
+import { SinLeerProvider, useSinLeer } from './avisos'
+import FrogIcon from '../components/FrogIcon'
+import EstadoCuenta from './EstadoCuenta'
 
-/* Íconos de navegación (line-art) */
-function Ico({ name }) {
-  const p = {
-    home: (<><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></>),
-    user: (<><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20c0-3.6 3.4-5.5 7.5-5.5s7.5 1.9 7.5 5.5" /></>),
-    doc: (<><path d="M7 3h7l4 4v14H7z" /><path d="M14 3v4h4" /><path d="M9.5 12h5M9.5 16h5" /></>),
-    users: (<><circle cx="9" cy="8" r="3" /><path d="M3.5 19c0-3 2.5-4.5 5.5-4.5S14.5 16 14.5 19" /><path d="M16 6a3 3 0 0 1 .3 5.9" /><path d="M17 14.6c1.9.6 3.3 2.2 3.3 4.4" /></>),
-    folder: (<path d="M3 6h6l2 2h10v11H3z" />),
-    cart: (<><circle cx="9" cy="20" r="1.3" /><circle cx="17" cy="20" r="1.3" /><path d="M3 4h2l2.4 12h9.8l1.9-8H6.4" /></>),
-    grid: (<><rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" /><rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" /></>),
-    calendar: (<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" /></>),
-    shield: (<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z" />),
-    dollar: (<><path d="M12 3v18" /><path d="M16.5 6.5c-.8-1.3-2.6-2-4.5-2s-4 1-4 3 2 2.8 4 3 4 1 4 3-2 3-4 3-3.7-.7-4.5-2" /></>),
-    megaphone: (<><path d="M3 11v2l13 5V6L3 11z" /><path d="M16 8.5a4 4 0 0 1 0 7" /><path d="M7 13.5V18h3v-3.3" /></>),
-    briefcase: (<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18" /></>),
-    key: (<><circle cx="8" cy="8" r="4" /><path d="M11 11l8 8M16 16l2-2M18 18l2-2" /></>),
-    list: (<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />),
-    cloud: (<path d="M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 9.5a3.5 3.5 0 0 1 .5 6.96" />),
-  }
-  return (
-    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] flex-none" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      {p[name]}
-    </svg>
-  )
-}
+/* ── Qué hay en cada sombrero ───────────────────────────────── */
 
-const seccionMiembro = [
-  { to: '/panel', label: 'Inicio', end: true, ico: 'home' },
-  { to: '/panel/perfil', label: 'Mi perfil', ico: 'user' },
-  { to: '/panel/publicaciones', label: 'Publicaciones', ico: 'doc' },
+/** «Lo mío»: lo que hace cualquier miembro a diario. Cuatro cosas, nada más. */
+const navMio = [
+  { to: '/panel', label: 'Inicio', ico: 'home', end: true },
   { to: '/panel/grupos', label: 'Grupos', ico: 'users' },
-  { to: '/panel/documentos', label: 'Documentos', ico: 'folder' },
-  { to: '/panel/marketplace', label: 'Mi marketplace', ico: 'cart' },
+  { to: '/panel/publicaciones', label: 'Publicar', ico: 'plus' },
+  { to: '/panel/avisos', label: 'Avisos', ico: 'bell', avisos: true },
 ]
-const seccionAdmin = [
-  { to: '/panel/admin/miembros', label: 'Miembros', ico: 'users' },
+
+/** «Junta»: lo diario delante; lo ocasional, en «Más». */
+const navJunta = [
+  { to: '/panel/admin', label: 'Pendientes', ico: 'inbox', end: true },
+  { to: '/panel/admin/miembros', label: 'Personas', ico: 'users' },
   { to: '/panel/admin/comisiones', label: 'Comisiones', ico: 'grid' },
-  { to: '/panel/admin/eventos', label: 'Eventos', ico: 'calendar' },
+  { to: '/panel/admin/eventos', label: 'Agenda', ico: 'calendar' },
+]
+const masJunta = [
   { to: '/panel/admin/moderacion', label: 'Moderación', ico: 'shield' },
   { to: '/panel/admin/finanzas', label: 'Finanzas', ico: 'dollar' },
   { to: '/panel/admin/transparencia', label: 'Transparencia', ico: 'megaphone' },
-  { to: '/panel/admin/junta', label: 'Espacio Junta', ico: 'briefcase' },
 ]
-const seccionSuper = [
+const sistema = [
   { to: '/panel/super/roles', label: 'Roles y permisos', ico: 'key' },
   { to: '/panel/super/auditoria', label: 'Auditoría', ico: 'list' },
-  { to: '/panel/super/archivos', label: 'Gestor de archivos', ico: 'cloud' },
+  { to: '/panel/super/archivos', label: 'Archivos', ico: 'cloud' },
 ]
 
-function NavSeccion({ titulo, items, onNavigate }) {
+/** Lo personal que no es diario: vive tras el avatar, no en la barra. */
+const tuyo = [
+  { to: '/panel/perfil', label: 'Mi perfil', ico: 'user' },
+  { to: '/panel/marketplace', label: 'Mi marketplace', ico: 'cart' },
+  { to: '/panel/documentos', label: 'Documentos', ico: 'folder' },
+]
+
+const esJunta = (path) => path.startsWith('/panel/admin') || path.startsWith('/panel/super')
+
+/* ── Piezas ─────────────────────────────────────────────────── */
+
+/**
+ * El interruptor de sombrero. Son dos enlaces, no un toggle: cada modo tiene su
+ * propia portada y se puede volver con «atrás».
+ */
+function Sombreros({ modo, className = '' }) {
+  const base = 'flex min-h-11 flex-1 items-center justify-center rounded-full px-4 font-display text-sm font-semibold uppercase tracking-[0.14em] transition-colors'
+  return (
+    <div className={`flex rounded-full border border-tea/15 bg-tea/5 p-1 ${className}`} role="group" aria-label="Modo del panel">
+      <Link to="/panel" aria-current={modo === 'mio' ? 'page' : undefined}
+        className={`${base} ${modo === 'mio' ? 'bg-caribbean text-jungle' : 'text-tea/70 hover:text-tea'}`}>
+        Lo mío
+      </Link>
+      <Link to="/panel/admin" aria-current={modo === 'junta' ? 'page' : undefined}
+        className={`${base} ${modo === 'junta' ? 'bg-caribbean text-jungle' : 'text-tea/70 hover:text-tea'}`}>
+        Junta
+      </Link>
+    </div>
+  )
+}
+
+function Insignia({ n }) {
+  if (!n) return null
+  return (
+    <span className="absolute -right-2 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-candy px-1 font-mono text-xs font-bold leading-none text-white">
+      {n > 9 ? '9+' : n}
+    </span>
+  )
+}
+
+/** Barra inferior para el pulgar (móvil). */
+function BarraInferior({ items, extra, sinLeer }) {
+  return (
+    <nav aria-label="Secciones" className="fixed inset-x-0 bottom-0 z-40 border-t border-tea/10 bg-jungle/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+      <ul className="mx-auto flex max-w-lg">
+        {items.map((it) => (
+          <li key={it.to} className="flex-1">
+            <NavLink to={it.to} end={it.end}
+              className={({ isActive }) => `flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-semibold transition-colors ${isActive ? 'text-caribbean' : 'text-tea/70 hover:text-tea'}`}>
+              <span className="relative"><Ico name={it.ico} /><Insignia n={it.avisos ? sinLeer : 0} /></span>
+              {it.label}
+            </NavLink>
+          </li>
+        ))}
+        {extra && <li className="flex-1">{extra}</li>}
+      </ul>
+    </nav>
+  )
+}
+
+/** Lista de enlaces del carril de escritorio. */
+function Carril({ titulo, items, sinLeer }) {
   return (
     <div className="mb-6">
-      <p className="mb-2 px-3 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-tea/35">{titulo}</p>
+      {titulo && <p className="mb-2 px-3 text-xs font-semibold text-tea/70">{titulo}</p>}
       <ul className="space-y-0.5">
         {items.map((it) => (
           <li key={it.to}>
-            <NavLink to={it.to} end={it.end} onClick={onNavigate}
-              className={({ isActive }) =>
-                `group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${isActive ? 'bg-caribbean/12 font-semibold text-caribbean' : 'text-tea/65 hover:bg-tea/5 hover:text-tea'}`}>
-              {({ isActive }) => (
-                <>
-                  {isActive && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-caribbean" />}
-                  <Ico name={it.ico} />
-                  <span className="truncate">{it.label}</span>
-                </>
+            <NavLink to={it.to} end={it.end}
+              className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm transition-colors ${isActive ? 'bg-caribbean/12 font-semibold text-caribbean' : 'text-tea/80 hover:bg-tea/5 hover:text-tea'}`}>
+              <Ico name={it.ico} className="h-5 w-5" />
+              <span className="flex-1 truncate">{it.label}</span>
+              {it.avisos && sinLeer > 0 && (
+                <span className="rounded-full bg-candy px-2 py-0.5 font-mono text-xs font-bold text-white">{sinLeer > 9 ? '9+' : sinLeer}</span>
               )}
             </NavLink>
           </li>
@@ -79,121 +118,180 @@ function NavSeccion({ titulo, items, onNavigate }) {
   )
 }
 
-function SidebarBody({ rol, onNavigate }) {
+/**
+ * Hoja que sube desde abajo (móvil): para «Más» de la Junta y para lo tuyo.
+ * Escape y tocar fuera la cierran; mientras está abierta, la página no se mueve.
+ */
+function Hoja({ abierta, onCerrar, titulo, children }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!abierta) return
+    const previo = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    ref.current?.querySelector('a, button')?.focus()
+    const tecla = (e) => { if (e.key === 'Escape') onCerrar() }
+    document.addEventListener('keydown', tecla)
+    return () => {
+      document.body.style.overflow = previo
+      document.removeEventListener('keydown', tecla)
+    }
+  }, [abierta, onCerrar])
+
+  if (!abierta) return null
   return (
-    <>
-      <NavSeccion titulo="Miembro" items={seccionMiembro} onNavigate={onNavigate} />
-      {alcanza(rol, 'junta') && <NavSeccion titulo="Administración" items={seccionAdmin} onNavigate={onNavigate} />}
-      {alcanza(rol, 'superadmin') && <NavSeccion titulo="Sistema" items={seccionSuper} onNavigate={onNavigate} />}
-    </>
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-jungle-deep/70 backdrop-blur-sm" onClick={onCerrar} />
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={titulo}
+        className="hoja-sube absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-3xl border-t border-tea/10 bg-jungle px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3">
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-tea/15" aria-hidden="true" />
+        {children}
+      </div>
+    </div>
   )
 }
 
-function SidebarFooter({ rol, onNavigate }) {
+function ListaHoja({ items, onNavigate }) {
   return (
-    <div className="relative mt-6 border-t border-tea/10 pt-4">
-      <div className="mb-3 rounded-xl border border-tea/10 bg-black/20 px-3 py-2.5">
-        <p className="font-mono text-[0.6rem] uppercase tracking-[0.15em] text-tea/40">Sesión activa</p>
-        <p className="mt-0.5 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-wide text-caribbean">
-          <span className="h-1.5 w-1.5 rounded-full bg-caribbean" />{ROLES[rol].label}
-        </p>
-      </div>
-      {/* Volver al sitio sin perder la sesión. En móvil no había forma de salir
-          del panel: el enlace de la cabecera solo aparece en escritorio, y aquí
-          estaba "Cerrar sesión", que es lo contrario de lo que se busca.
-          El cierre de sesión vive ahora en Mi perfil, con confirmación. */}
-      <Link
-        to="/"
-        onClick={onNavigate}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-tea/15 px-3 py-2 font-mono text-xs uppercase tracking-[0.1em] text-tea/70 transition hover:border-caribbean hover:text-caribbean"
-      >
-        ← Volver al sitio
-      </Link>
+    <ul>
+      {items.map((it) => (
+        <li key={it.to}>
+          <NavLink to={it.to} onClick={onNavigate}
+            className={({ isActive }) => `flex min-h-12 items-center gap-3 rounded-xl px-3 text-base transition-colors ${isActive ? 'bg-caribbean/12 font-semibold text-caribbean' : 'text-tea hover:bg-tea/5'}`}>
+            <Ico name={it.ico} className="h-5 w-5" />
+            {it.label}
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/* ── Armazón ────────────────────────────────────────────────── */
+
+function Armazon() {
+  const { rol, user } = useSession()
+  const { pathname } = useLocation()
+  const { sinLeer } = useSinLeer()
+  const [hoja, setHoja] = useState(null) // 'mas' | 'tu' | null
+
+  const puedeJunta = alcanza(rol, 'junta')
+  const modo = puedeJunta && esJunta(pathname) ? 'junta' : 'mio'
+  const items = modo === 'junta' ? navJunta : navMio
+  const cerrar = () => setHoja(null)
+
+  // Cambiar de página cierra cualquier hoja abierta.
+  useEffect(() => { setHoja(null) }, [pathname])
+
+  return (
+    <div className={`panel-casa min-h-screen bg-jungle-deep text-tea ${modo === 'mio' ? 'modo-mio' : 'modo-junta bg-dorace-pattern'}`}>
+      {/* ── Carril (escritorio) ── */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-tea/10 bg-jungle px-4 py-5 lg:flex">
+        <Link to="/" className="mb-6 flex min-h-11 items-center gap-2 px-2" title="Ir al sitio de Boesh Irí">
+          <FrogIcon className="h-7 w-7 text-caribbean" />
+          <span className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Boesh Irí</span>
+        </Link>
+        {puedeJunta && <Sombreros modo={modo} className="mb-6" />}
+        <nav aria-label="Secciones" className="flex-1 overflow-y-auto">
+          <Carril items={items} sinLeer={sinLeer} />
+          {modo === 'junta' && <Carril titulo="Más" items={masJunta} />}
+          {modo === 'junta' && alcanza(rol, 'superadmin') && <Carril titulo="Sistema" items={sistema} />}
+          {modo === 'mio' && <Carril titulo="Lo tuyo" items={tuyo} />}
+        </nav>
+        <Link to="/" className="mt-2 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-tea/80 transition-colors hover:bg-tea/5 hover:text-tea">
+          <Ico name="atras" className="h-5 w-5" />
+          Volver al sitio público
+        </Link>
+        <div className="mt-2 flex items-center gap-3 border-t border-tea/10 pt-4">
+          <Avatar id={user.id} nombre={user.fullName} size="md" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-cream">{user.fullName}</p>
+            <p className="text-xs text-tea/70">{ROLES[rol].label}</p>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Barra superior (móvil) ── */}
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-tea/10 bg-jungle/95 px-4 py-2 backdrop-blur lg:hidden">
+        {/* Volver al sitio público, a la vista: antes era una rana sola que no
+            parecía un botón. Flecha + rana se leen como «salir a la casa». */}
+        <Link to="/" className="flex h-11 flex-none items-center gap-0.5 rounded-full border border-tea/15 pl-2 pr-2.5 text-caribbean transition hover:border-caribbean/50" aria-label="Volver al sitio público">
+          <Ico name="atras" className="h-4 w-4" />
+          <FrogIcon className="h-6 w-6" />
+        </Link>
+        {puedeJunta ? <Sombreros modo={modo} className="flex-1" /> : (
+          // El saludo ya está en el título de Inicio: aquí, el nombre de la casa.
+          <p className="flex-1 font-display text-lg font-semibold uppercase tracking-wide text-cream">Boesh Irí</p>
+        )}
+        <button type="button" onClick={() => setHoja('tu')} className="flex h-11 w-11 flex-none items-center justify-center rounded-full" aria-label="Tu cuenta">
+          <Avatar id={user.id} nombre={user.fullName} size="sm" />
+        </button>
+      </header>
+
+      {/* Una sola columna de lectura en los dos modos: el panel se lee de arriba
+          abajo, también en escritorio, y así el pulgar y el ratón ven lo mismo. */}
+      <main className="px-4 pb-28 pt-6 sm:px-6 lg:ml-64 lg:px-10 lg:pb-12 lg:pt-10">
+        <div className="mx-auto max-w-3xl">
+          <Outlet />
+        </div>
+      </main>
+
+      <BarraInferior
+        items={items}
+        sinLeer={sinLeer}
+        extra={modo === 'junta' && (
+          <button type="button" onClick={() => setHoja('mas')} aria-expanded={hoja === 'mas'}
+            className="flex min-h-16 w-full flex-col items-center justify-center gap-1 text-xs font-semibold text-tea/70 transition-colors hover:text-tea">
+            <Ico name="dots" />
+            Más
+          </button>
+        )}
+      />
+
+      <Hoja abierta={hoja === 'mas'} onCerrar={cerrar} titulo="Más de la Junta">
+        <ListaHoja items={masJunta} onNavigate={cerrar} />
+        {alcanza(rol, 'superadmin') && (
+          <>
+            <p className="mb-1 mt-4 px-3 text-xs font-semibold text-tea/70">Sistema</p>
+            <ListaHoja items={sistema} onNavigate={cerrar} />
+          </>
+        )}
+        <div className="mt-3 border-t border-tea/10 pt-3">
+          <Link to="/" onClick={cerrar} className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-base text-tea hover:bg-tea/5">
+            <Ico name="atras" className="h-5 w-5" /> Volver al sitio público
+          </Link>
+        </div>
+      </Hoja>
+
+      <Hoja abierta={hoja === 'tu'} onCerrar={cerrar} titulo="Tu cuenta">
+        <div className="mb-3 flex items-center gap-3 px-3">
+          <Avatar id={user.id} nombre={user.fullName} size="md" />
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-cream">{user.fullName}</p>
+            <p className="text-sm text-tea/70">{ROLES[rol].label}</p>
+          </div>
+        </div>
+        <ListaHoja items={tuyo} onNavigate={cerrar} />
+        <div className="mt-3 border-t border-tea/10 pt-3">
+          <Link to="/" onClick={cerrar} className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-base text-tea hover:bg-tea/5">
+            <Ico name="atras" className="h-5 w-5" /> Volver al sitio público
+          </Link>
+        </div>
+      </Hoja>
+
     </div>
   )
 }
 
 export default function PanelLayout() {
-  const { rol, user, loading } = useSession()
-  const [open, setOpen] = useState(false)
-
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-jungle-deep text-tea/60">Cargando…</div>
+  const { user, loading } = useSession()
+  if (loading) return <div className="flex min-h-screen items-center justify-center bg-cream text-jungle/70">Cargando…</div>
   if (!user) return <Navigate to="/login" replace />
-
-  const closeMobile = () => setOpen(false)
-
+  // Postulantes e inactivos no tienen panel: la API les niega grupos, gritos y
+  // tareas, y antes veían cada sección fallar.
+  if (user.status !== 'Active') return <EstadoCuenta />
   return (
-    <div className="min-h-screen bg-jungle-deep text-tea lg:flex">
-      {/* Sidebar desktop */}
-      <aside className="sticky top-0 hidden h-screen w-64 flex-none flex-col overflow-hidden border-r border-tea/10 bg-jungle px-4 py-6 lg:flex">
-        <img src={ranaUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-8 h-56 w-auto opacity-[0.05]" />
-        {/* El logo lleva al sitio público, no al inicio del panel: para eso está
-            "Inicio" en la navegación de abajo. */}
-        <Link to="/" className="group relative mb-8 flex items-center gap-2 px-2" title="Ir al sitio de Boesh Irí">
-          <img src={ranaUrl} alt="" className="h-7 w-auto" />
-          <span className="font-display text-lg font-semibold uppercase tracking-wide text-cream transition-colors group-hover:text-caribbean">Boesh Irí</span>
-        </Link>
-        <nav className="relative flex-1 overflow-y-auto">
-          <SidebarBody rol={rol} onNavigate={closeMobile} />
-        </nav>
-        <SidebarFooter rol={rol} onNavigate={closeMobile} />
-      </aside>
-
-      {/* Contenido */}
-      <div className="flex-1">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-tea/10 bg-jungle-deep/90 px-5 py-3 backdrop-blur">
-          {/* El glifo "≡" se apoyaba en la métrica de la fuente y quedaba descentrado
-              respecto al texto; además "tracking-wide" añade espacio DESPUÉS de la
-              última letra, así que el contenido se veía corrido a la izquierda dentro
-              del botón. Con un SVG y compensando ese espacio sobrante queda centrado. */}
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="Abrir el menú"
-            className="flex items-center justify-center gap-2 rounded-lg border border-tea/15 py-2 pl-3 pr-[calc(0.75rem-0.08em)] font-mono text-xs font-semibold uppercase tracking-wide text-tea transition hover:border-caribbean hover:text-caribbean lg:hidden"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4 flex-none" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M4 7h16M4 12h16M4 17h16" />
-            </svg>
-            <span className="-mr-[0.08em]">Menú</span>
-          </button>
-          <Link to="/" className="hidden font-mono text-xs uppercase tracking-[0.15em] text-tea/45 transition hover:text-caribbean lg:block">← Ver sitio público</Link>
-          <div className="flex items-center gap-3">
-            <CampanaAvisos />
-            <div className="hidden text-right sm:block">
-              <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">{user.fullName}</p>
-              <p className="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-caribbean">{ROLES[rol].label}</p>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full font-display text-sm font-semibold text-jungle" style={{ background: gradientFor(user.id) }}>
-              {iniciales(user.fullName)}
-            </div>
-          </div>
-        </header>
-
-        <main className="mx-auto max-w-6xl px-5 py-8">
-          <Outlet />
-        </main>
-      </div>
-
-      {/* Drawer móvil */}
-      {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-jungle-deep/70 backdrop-blur-sm" onClick={closeMobile} />
-          <aside className="absolute inset-y-0 left-0 flex w-72 flex-col overflow-hidden border-r border-tea/10 bg-jungle px-4 py-6">
-            <img src={ranaUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-8 h-64 w-auto opacity-[0.06]" />
-            <div className="relative mb-8 flex items-center justify-between px-2">
-              <Link to="/" onClick={closeMobile} className="flex items-center gap-2 font-display text-lg font-semibold uppercase tracking-wide text-cream transition-colors hover:text-caribbean" title="Ir al sitio de Boesh Irí">
-                <img src={ranaUrl} alt="" className="h-7 w-auto" /> Boesh Irí
-              </Link>
-              <button type="button" onClick={closeMobile} className="text-2xl text-tea/60">×</button>
-            </div>
-            <nav className="relative flex-1 overflow-y-auto">
-              <SidebarBody rol={rol} onNavigate={closeMobile} />
-            </nav>
-            <SidebarFooter rol={rol} onNavigate={closeMobile} />
-          </aside>
-        </div>
-      )}
-    </div>
+    <SinLeerProvider>
+      <Armazon />
+    </SinLeerProvider>
   )
 }

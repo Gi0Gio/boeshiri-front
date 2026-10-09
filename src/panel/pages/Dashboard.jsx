@@ -1,101 +1,205 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PageHeader, Card, Stat, Reveal } from '../ui'
-import { useSession } from '../../auth/SessionContext'
+import { useSession, alcanza } from '../../auth/SessionContext'
 import { useFetch } from '../../hooks/useFetch'
-import { publicationsApi } from '../../api/publications'
+import { useToast } from '../../components/Toast'
 import { groupsApi } from '../../api/groups'
-import { marketplaceApi } from '../../api/marketplace'
-import { eventsApi } from '../../api/events'
-import { notificationsApi } from '../../api/notifications'
+import { gritosApi } from '../../api/gritos'
+import { publicationsApi } from '../../api/publications'
+import { tasksApi } from '../../api/tasks'
+import { useColoresGrupos, varsDeColor } from '../colores'
+import { useMisTareas, siguientePaso, TEXTO_PASO, ESTADO } from '../tareas'
+import { usePendientesJunta } from '../pendientes'
+import Ico from '../Ico'
 
-const accesos = [
-  { to: '/panel/perfil', label: 'Editar mi perfil', desc: 'Datos, privacidad y redes' },
-  { to: '/panel/publicaciones', label: 'Nueva publicación', desc: 'Artículo, foto, video o música' },
-  { to: '/panel/grupos', label: 'Mis grupos', desc: 'Comisiones y equipos' },
-  { to: '/panel/marketplace', label: 'Mi marketplace', desc: 'Publica productos y servicios' },
-]
+const fmtDia = (iso) =>
+  new Date(iso).toLocaleDateString('es-PA', { weekday: 'long', day: 'numeric', month: 'short' })
+const fmtHora = (iso) => new Date(iso).toLocaleTimeString('es-PA', { hour: 'numeric', minute: '2-digit' })
 
-function hace(iso) {
-  const s = Math.floor((Date.now() - new Date(iso)) / 1000)
-  if (s < 60) return 'hace un momento'
-  const m = Math.floor(s / 60); if (m < 60) return `hace ${m} min`
-  const h = Math.floor(m / 60); if (h < 24) return `hace ${h} h`
-  const d = Math.floor(h / 24); if (d < 30) return `hace ${d} d`
-  return new Date(iso).toLocaleDateString('es-PA')
+function Seccion({ titulo, accion, children }) {
+  return (
+    <section className="mt-10">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <h2 className="font-display text-xl font-semibold uppercase tracking-wide text-cream">{titulo}</h2>
+        {accion}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+const enlaceSec = 'inline-flex min-h-11 items-center text-sm font-semibold text-caribbean hover:underline'
+
+/** Una tarea tuya: el color de su grupo a la izquierda y el siguiente paso a mano. */
+function FilaTarea({ t, color, paso, ocupado, onPaso }) {
+  const destino = t.grupo.type === 'Team' ? t.grupo.parentCommissionId : t.grupo.id
+  return (
+    <li className="flex items-stretch overflow-hidden rounded-2xl border border-tea/10 bg-jungle" style={varsDeColor(color)}>
+      <Link to={`/panel/grupos/${destino}`} className="min-w-0 flex-1 px-4 py-3.5">
+        <p className="font-medium leading-snug text-cream">{t.title}</p>
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <span className="rounded-full bg-[var(--g-tinte)] px-2.5 py-0.5 text-xs font-semibold text-[var(--g-tinta)]">{t.grupo.name}</span>
+          <span className="text-tea/70">{ESTADO[t.status].label}</span>
+        </p>
+      </Link>
+      {paso && (
+        <div className="flex flex-none items-center pr-3">
+          <button
+            type="button"
+            onClick={onPaso}
+            disabled={ocupado}
+            className="min-h-11 rounded-full border border-caribbean/40 px-4 text-sm font-semibold text-caribbean transition hover:bg-caribbean hover:text-jungle disabled:opacity-50"
+          >
+            {ocupado ? '…' : TEXTO_PASO[paso]}
+          </button>
+        </div>
+      )}
+    </li>
+  )
 }
 
 export default function Dashboard() {
-  const { user } = useSession()
+  const { user, rol, hasPermission } = useSession()
+  const toast = useToast()
+  const colorDe = useColoresGrupos()
   const [version, setVersion] = useState(0)
-  const reload = () => setVersion((v) => v + 1)
+  const [ocupado, setOcupado] = useState(null)
 
-  const { data: pubs } = useFetch(() => publicationsApi.mine())
-  const { data: grupos } = useFetch(() => groupsApi.mine())
-  const { data: prods } = useFetch(() => marketplaceApi.mine())
-  const { data: historial } = useFetch(() => eventsApi.myHistory())
-  const { data: avisos, loading: la } = useFetch(() => notificationsApi.list(), [version])
+  const { data: grupos, error: errorGrupos } = useFetch(() => groupsApi.mine(), [])
+  const { tareas, cargando, error } = useMisTareas(grupos, user.id, version)
+  const { data: gritos } = useFetch(() => gritosApi.list().catch(() => []), [])
+  const { data: pubs } = useFetch(() => publicationsApi.mine().catch(() => []), [])
+  const puedeJunta = alcanza(rol, 'junta')
+  const pendientes = usePendientesJunta(hasPermission, puedeJunta)
 
-  const notificaciones = avisos ?? []
+  const nombre = user.fullName.split(' ')[0]
+  const abiertos = (gritos ?? []).slice(0, 3)
+  const ultima = (pubs ?? [])[0]
 
-  async function marcar(id) {
-    try { await notificationsApi.markRead(id); reload() } catch { /* silencioso */ }
+  async function avanzar(t, paso) {
+    setOcupado(t.id)
+    try {
+      await tasksApi.move(t.id, paso)
+      toast.success(paso === 'Done' ? 'Tarea hecha.' : paso === 'InReview' ? 'Entregada para revisión.' : 'En proceso.')
+      setVersion((v) => v + 1)
+    } catch (e) {
+      toast.error(e.message || 'No se pudo mover la tarea.')
+    } finally { setOcupado(null) }
   }
+
+  const resumen = cargando && !errorGrupos
+    ? 'Mirando tus grupos…'
+    : [
+        tareas.length === 0 ? 'No tienes tareas pendientes' : `Tienes ${tareas.length} ${tareas.length === 1 ? 'tarea' : 'tareas'}`,
+        abiertos.length > 0 && `${gritos.length} ${gritos.length === 1 ? 'grito abierto' : 'gritos abiertos'}`,
+      ].filter(Boolean).join(' y ') + '.'
 
   return (
     <>
-      <PageHeader
-        eyebrow="Panel del miembro"
-        title={`Hola, ${(user?.fullName || 'miembro').split(' ')[0]}`}
-        description="Tu centro de control en Boesh Irí: perfil, publicaciones, grupos y marketplace."
-      />
+      <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-cream md:text-4xl">Hola, {nombre}</h1>
+      <p className="mt-2 text-tea/80">{resumen}</p>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Reveal><Stat valor={pubs?.length ?? '—'} etiqueta="Publicaciones" /></Reveal>
-        <Reveal delay={80}><Stat valor={grupos?.length ?? '—'} etiqueta="Grupos" tono="#d9f2c2" /></Reveal>
-        <Reveal delay={160}><Stat valor={prods?.length ?? '—'} etiqueta="Productos / servicios" tono="#d67a63" /></Reveal>
-        <Reveal delay={240}><Stat valor={historial?.length ?? '—'} etiqueta="Asistencias" tono="#e60035" /></Reveal>
-      </div>
+      {/* La Junta se entera aquí de que hay algo esperando, sin tener que
+          cambiar de sombrero para comprobarlo. */}
+      {puedeJunta && pendientes.total > 0 && (
+        <Link
+          to="/panel/admin"
+          className="bg-dorace-pattern mt-6 flex items-center justify-between gap-4 rounded-2xl bg-[#002420] px-5 py-4 text-[#d9f2c2] transition hover:brightness-110"
+        >
+          <span>
+            <span className="block font-display text-lg font-semibold uppercase tracking-wide text-[#f6fbef]">
+              {pendientes.total} {pendientes.total === 1 ? 'cosa espera' : 'cosas esperan'} a la Junta
+            </span>
+            <span className="text-sm">Postulantes, solicitudes y comisiones sin coordinar.</span>
+          </span>
+          <span className="flex flex-none items-center gap-1.5 font-display text-sm font-semibold uppercase tracking-[0.14em] text-[#00e6bc]">Ir <Ico name="ir" className="h-4 w-4" /></span>
+        </Link>
+      )}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <Reveal className="lg:col-span-2">
-          <Card>
-            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Accesos rápidos</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {accesos.map((a) => (
-                <Link key={a.to} to={a.to} className="group rounded-xl border border-tea/10 bg-black/10 p-4 transition hover:-translate-y-0.5 hover:border-caribbean/40 hover:bg-caribbean/[0.06]">
-                  <p className="font-display text-sm font-semibold uppercase tracking-wide text-caribbean">{a.label}</p>
-                  <p className="mt-1 text-xs text-tea/50">{a.desc}</p>
+      <Seccion titulo="Tus tareas" accion={<Link to="/panel/grupos" className={enlaceSec}>Tus grupos</Link>}>
+        {/* Sin grupos no hay tableros que pedir: el error de grupos va antes que la carga. */}
+        {cargando && !errorGrupos ? (
+          <p className="text-tea/70">Cargando…</p>
+        ) : error || errorGrupos ? (
+          <div className="rounded-2xl border border-candy/30 bg-jungle p-5">
+            <p className="text-tea">No se pudieron cargar tus tareas.</p>
+            <button type="button" onClick={() => setVersion((v) => v + 1)} className={`${enlaceSec} mt-1`}>Reintentar</button>
+          </div>
+        ) : tareas.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-tea/20 p-5">
+            <p className="text-tea">Nada pendiente en tus grupos.</p>
+            <p className="mt-1 text-sm text-tea/70">
+              {(grupos ?? []).length === 0 ? 'Todavía no estás en ningún grupo.' : 'Cuando te asignen una tarea, aparecerá aquí.'}{' '}
+              <Link to="/panel/grupos" className="font-semibold text-caribbean hover:underline">
+                {(grupos ?? []).length === 0 ? 'Únete a una comisión' : 'Ver tus grupos'}
+              </Link>
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-2.5">
+            {tareas.map((t) => {
+              const paso = siguientePaso(t, { esGestor: t.grupo.role === 'Coordinator' || t.grupo.role === 'Leader', userId: user.id })
+              return (
+                <FilaTarea key={t.id} t={t} color={colorDe(t.grupo)} paso={paso} ocupado={ocupado === t.id} onPaso={() => avanzar(t, paso)} />
+              )
+            })}
+          </ul>
+        )}
+      </Seccion>
+
+      <Seccion titulo="Gritos abiertos" accion={<Link to="/explorar" className={enlaceSec}>Ver en el Mural</Link>}>
+        {abiertos.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-tea/20 p-5 text-tea/80">
+            Ningún grito abierto ahora mismo.{' '}
+            <Link to="/explorar" className="font-semibold text-caribbean hover:underline">Echa uno</Link>
+          </p>
+        ) : (
+          <ul className="grid gap-2.5 sm:grid-cols-2">
+            {abiertos.map((g) => (
+              <li key={g.id}>
+                {/* Un grito se reconoce por su megáfono y sus cupos, no por un
+                    bloque de color: el rojo ya lo usan un grupo y las alertas. */}
+                <Link to="/explorar" className="block h-full rounded-2xl border border-tea/10 bg-jungle p-4 transition hover:border-caribbean/40">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-tea/80">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-tea/5 text-cream"><Ico name="grito" className="h-[18px] w-[18px]" /></span>
+                    {g.authorName.split(' ')[0]} echó un grito
+                  </p>
+                  <p className="mt-3 font-display text-lg font-semibold uppercase leading-tight tracking-wide text-cream">{g.title}</p>
+                  <p className="mt-1.5 text-sm text-tea/80">
+                    <span className="capitalize">{fmtDia(g.happensAt)}</span> · {fmtHora(g.happensAt)} · {g.place}
+                  </p>
+                  {/* Cupos como fichas llenas y vacías: el estado se lee sin contar. */}
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="flex gap-1" aria-hidden="true">
+                      {Array.from({ length: Math.min(g.slots, 8) }, (_, i) => (
+                        <span key={i} className={`h-2.5 w-2.5 rounded-full ${i < g.taken ? 'bg-cream' : 'border border-tea/30'}`} />
+                      ))}
+                    </span>
+                    <span className="text-sm font-semibold text-cream">{g.taken} de {g.slots} van</span>
+                    {g.joined && <span className="rounded-full bg-caribbean/12 px-2.5 py-0.5 text-xs font-semibold text-caribbean">Vas</span>}
+                  </div>
                 </Link>
-              ))}
-            </div>
-          </Card>
-        </Reveal>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Seccion>
 
-        <Reveal delay={120}>
-          <Card>
-            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Actividad reciente</h2>
-            {la ? <p className="mt-4 text-sm text-tea/45">Cargando…</p>
-              : notificaciones.length === 0 ? <p className="mt-4 text-sm text-tea/45">Sin avisos por ahora.</p>
-              : (
-                <ul className="mt-4 space-y-4">
-                  {notificaciones.slice(0, 8).map((n) => (
-                    <li key={n.id} className="flex gap-3">
-                      <span className={`mt-1.5 h-2 w-2 flex-none rounded-full ${n.read ? 'bg-tea/25' : 'bg-caribbean shadow-[0_0_8px_rgba(0,230,188,0.6)]'}`} />
-                      <div className="flex-1">
-                        <p className={`text-sm leading-snug ${n.read ? 'text-tea/50' : 'text-tea/85'}`}>{n.message}</p>
-                        <div className="mt-0.5 flex items-center gap-3">
-                          <p className="font-mono text-xs text-tea/40">{hace(n.createdAt)}</p>
-                          {!n.read && <button onClick={() => marcar(n.id)} className="font-mono text-[0.65rem] uppercase tracking-wide text-caribbean/70 hover:text-caribbean">marcar leída</button>}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-          </Card>
-        </Reveal>
-      </div>
+      <Seccion titulo="Lo último que publicaste" accion={<Link to="/panel/publicaciones" className={enlaceSec}>Tus publicaciones</Link>}>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-tea/10 bg-jungle p-5">
+          {ultima ? (
+            <Link to={`/publicaciones/${ultima.id}`} className="min-w-0">
+              <p className="truncate font-display text-lg font-semibold uppercase tracking-wide text-cream hover:text-caribbean">{ultima.title}</p>
+              <p className="text-sm text-tea/70">{new Date(ultima.createdAt).toLocaleDateString('es-PA', { day: 'numeric', month: 'long' })}</p>
+            </Link>
+          ) : (
+            <p className="text-tea/80">Aún no has publicado en el Mural.</p>
+          )}
+          <Link to="/panel/publicaciones" className="inline-flex min-h-11 items-center rounded-full bg-caribbean px-5 font-display text-sm font-semibold uppercase tracking-[0.14em] text-jungle transition hover:-translate-y-0.5">
+            Publicar algo
+          </Link>
+        </div>
+      </Seccion>
     </>
   )
 }

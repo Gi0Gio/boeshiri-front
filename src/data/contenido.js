@@ -45,14 +45,8 @@ export const publicaciones = [
   },
 ]
 
-export const colaboradores = [
-  'Kara Coffe',
-  'Tu negocio aquí',
-  'Café aliado',
-  'Estudio creativo',
-  'Marca local',
-  'Espacio cultural',
-]
+/** Solo aliados reales: un nombre de relleno aquí se publica como si lo fuera. */
+export const colaboradores = ['Kara Coffe']
 
 /* ─────────────────────────────────────────────────────────────
  * SOBRE — misión, visión, valores, historia y equipo

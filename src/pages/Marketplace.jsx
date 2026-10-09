@@ -79,7 +79,7 @@ export default function Marketplace() {
             <div className="inline-flex rounded-full bg-jungle/8 p-1">
               {KINDS.map((k) => (
                 <button key={k.id} onClick={() => { setKind(k.id); setCat('Todo') }}
-                  className={`rounded-full px-6 py-2 font-display text-xs font-semibold uppercase tracking-[0.15em] transition ${kind === k.id ? 'bg-jungle text-tea' : 'text-jungle/55 hover:text-jungle'}`}>
+                  className={`min-h-11 rounded-full px-6 py-2 font-display text-xs font-semibold uppercase tracking-[0.15em] transition ${kind === k.id ? 'bg-jungle text-tea' : 'text-jungle/70 hover:text-jungle'}`}>
                   {k.label}
                 </button>
               ))}
@@ -89,16 +89,17 @@ export default function Marketplace() {
             <div className="flex flex-wrap gap-2">
               {categorias.map((c) => (
                 <button key={c} onClick={() => setCat(c)}
-                  className={`rounded-full px-4 py-2 font-display text-xs font-semibold uppercase tracking-[0.12em] transition ${cat === c ? 'bg-jungle text-tea' : 'bg-jungle/8 text-jungle/60 hover:bg-tea'}`}>
+                  className={`min-h-11 rounded-full px-4 py-2 font-display text-xs font-semibold uppercase tracking-[0.12em] transition ${cat === c ? 'bg-jungle text-tea' : 'bg-jungle/8 text-jungle/70 hover:bg-tea'}`}>
                   {c}
                 </button>
               ))}
             </div>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre…"
-              className="w-full rounded-full border border-rainforest/20 bg-white px-5 py-2.5 text-sm text-jungle placeholder:text-jungle/40 focus:border-caribbean focus:outline-none focus:ring-2 focus:ring-caribbean/25 md:w-64" />
+            {/* text-base: por debajo de 16px, iOS hace zoom al enfocar el campo. */}
+            <input type="search" aria-label="Buscar en el marketplace" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre…"
+              className="min-h-11 w-full rounded-full border border-rainforest/20 bg-white px-5 py-2.5 text-base text-jungle placeholder:text-jungle/40 focus:border-caribbean focus:outline-none focus:ring-2 focus:ring-caribbean/25 md:w-64" />
           </div>
 
-          {loading && <p className="py-16 text-center text-sm text-jungle/50">Cargando productos…</p>}
+          {loading && <p className="py-16 text-center text-sm text-jungle/70">Cargando productos…</p>}
           {error && <p className="py-16 text-center text-sm text-candy">No se pudo cargar el marketplace.</p>}
 
           {!loading && !error && (
@@ -111,22 +112,22 @@ export default function Marketplace() {
                       {p.coverImage && <img src={p.coverImage} alt={p.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />}
                       {!p.coverImage && <FrogIcon className="pointer-events-none absolute -bottom-6 -right-4 h-32 w-32 text-white/15" />}
                       <span className="relative flex items-center gap-1.5">
-                        <span className="rounded-full bg-white/85 px-3 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-jungle">{p.category}</span>
-                        {p.kind === 'Service' && <span className="rounded-full bg-caribbean px-3 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-jungle">Servicio</span>}
+                        <span className="rounded-full bg-white/85 px-3 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] text-jungle">{p.category}</span>
+                        {p.kind === 'Service' && <span className="rounded-full bg-caribbean px-3 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] text-jungle">Servicio</span>}
                       </span>
-                      {p.status === 'Sold' && <span className="relative rounded-full bg-jungle/80 px-3 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-tea">Vendido</span>}
+                      {p.status === 'Sold' && <span className="relative rounded-full bg-jungle/80 px-3 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] text-tea">Vendido</span>}
                     </div>
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-3">
                         <h3 className="font-display text-lg font-semibold uppercase leading-tight tracking-wide text-jungle">{p.name}</h3>
                         <span className="font-display text-lg font-semibold text-rainforest">{fmtPrecio(p)}</span>
                       </div>
-                      <p className="mt-2 text-xs uppercase tracking-[0.12em] text-jungle/50">{p.sellerName}</p>
+                      <p className="mt-2 text-xs uppercase tracking-[0.12em] text-jungle/70">{p.sellerName}</p>
                     </div>
                   </Reveal>
                 ))}
               </div>
-              {lista.length === 0 && <p className="py-16 text-center text-sm text-jungle/50">{productos.length === 0 ? 'Aún no hay productos publicados.' : 'No hay productos que coincidan.'}</p>}
+              {lista.length === 0 && <p className="py-16 text-center text-sm text-jungle/70">{productos.length === 0 ? 'Aún no hay productos publicados.' : 'No hay productos que coincidan.'}</p>}
             </>
           )}
         </div>

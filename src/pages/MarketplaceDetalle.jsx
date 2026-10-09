@@ -55,7 +55,7 @@ export default function MarketplaceDetalle() {
     },
   })
 
-  if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/50">Cargando…</section>
+  if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/70">Cargando…</section>
 
   // Un anuncio borrado, oculto o inexistente es un 404 como cualquier otro: se
   // enseña la misma página, no un aviso suelto ni el error crudo de la API.
@@ -104,8 +104,8 @@ export default function MarketplaceDetalle() {
 
           <Reveal delay={120}>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-tea px-3 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-jungle">{p.category}</span>
-              {p.kind === 'Service' && <span className="rounded-full bg-rainforest px-3 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-cream">Servicio</span>}
+              <span className="rounded-full bg-tea px-3 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] text-jungle">{p.category}</span>
+              {p.kind === 'Service' && <span className="rounded-full bg-rainforest px-3 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] text-cream">Servicio</span>}
             </div>
             <h1 className="mt-4 font-display text-4xl font-semibold uppercase leading-tight tracking-wide text-jungle">{p.name}</h1>
             {/* Los servicios pueden traer rango: su costo depende del alcance. */}
@@ -115,7 +115,7 @@ export default function MarketplaceDetalle() {
                 : p.price > 0 ? `$${p.price}` : 'A convenir'}
             </p>
             {p.description && <p className="mt-5 whitespace-pre-wrap leading-relaxed text-jungle/75">{p.description}</p>}
-            {p.deliveryLocation && <p className="mt-4 text-sm uppercase tracking-[0.12em] text-jungle/50">📍 {p.kind === 'Service' ? p.deliveryLocation : `Entrega en ${p.deliveryLocation}`}</p>}
+            {p.deliveryLocation && <p className="mt-4 text-sm uppercase tracking-[0.12em] text-jungle/70">{p.kind === 'Service' ? p.deliveryLocation : `Entrega en ${p.deliveryLocation}`}</p>}
 
             <div className="mt-8 rounded-2xl border border-rainforest/15 bg-white p-6">
               <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-rainforest">Vendido por</p>
@@ -146,11 +146,11 @@ export default function MarketplaceDetalle() {
               {p.contact?.socialLinks?.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {p.contact.socialLinks.map((l, i) => (
-                    <a key={i} href={socialHref(l.type, l.value)} target="_blank" rel="noopener noreferrer" className="rounded-full bg-rainforest/10 px-3 py-1 font-mono text-[0.7rem] text-rainforest hover:bg-rainforest/20">{l.value}</a>
+                    <a key={i} href={socialHref(l.type, l.value)} target="_blank" rel="noopener noreferrer" className="rounded-full bg-rainforest/10 px-3 py-1 font-mono text-xs text-rainforest hover:bg-rainforest/20">{l.value}</a>
                   ))}
                 </div>
               )}
-              <p className="mt-4 text-xs text-jungle/45">El contacto se toma del perfil del miembro. Boesh Irí no procesa pagos.</p>
+              <p className="mt-4 text-xs text-jungle/70">El contacto se toma del perfil del miembro. Boesh Irí no procesa pagos.</p>
             </div>
           </Reveal>
         </div>

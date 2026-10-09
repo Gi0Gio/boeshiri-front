@@ -50,7 +50,7 @@ export default function CompartirBoton({ tipo, id, titulo, variant = 'publico', 
         type="button"
         onClick={compartir}
         className={esPanel
-          ? 'text-xs font-semibold uppercase tracking-wide text-caribbean/80 transition hover:text-caribbean'
+          ? 'inline-flex min-h-11 items-center text-sm font-semibold text-caribbean transition hover:underline'
           : 'inline-flex items-center gap-2 rounded-full border border-rainforest/30 px-5 py-2.5 font-display text-xs font-semibold uppercase tracking-[0.15em] text-rainforest transition hover:border-rainforest hover:bg-rainforest hover:text-cream'}
       >
         {!esPanel && (
@@ -77,7 +77,7 @@ export default function CompartirBoton({ tipo, id, titulo, variant = 'publico', 
           </a>
 
           <div className={`mt-2 border-t pt-2 ${esPanel ? "border-tea/10" : "border-rainforest/10"}`}>
-            <p className={`px-3 pb-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] ${esPanel ? "text-tea/35" : "text-jungle/40"}`}>
+            <p className={`px-3 pb-1 font-mono text-xs uppercase tracking-[0.12em] ${esPanel ? "text-tea/35" : "text-jungle/70"}`}>
               Descargar imagen
             </p>
             {/* Dos formatos porque son dos usos distintos: el cuadrado va en chats

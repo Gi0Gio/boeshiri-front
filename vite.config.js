@@ -53,7 +53,7 @@ export default defineConfig(({ command, mode }) => {
         },
         // Igual que en _redirects: la sesión va por el mismo origen para que la
         // cookie de renovación sea de primera parte.
-        '^/auth/(login|renovar|salir)$': {
+        '^/auth/(login|renovar|salir|cambiar-contrasena)$': {
           target: env.VITE_API_URL || 'http://localhost:8080',
           changeOrigin: true,
         },

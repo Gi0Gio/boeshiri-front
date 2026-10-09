@@ -81,7 +81,9 @@ export default function Sobre() {
             <span className="font-display text-sm uppercase tracking-[0.3em] text-caribbean">
               Misión
             </span>
-            <p className="mt-5 font-display text-2xl font-medium leading-snug text-cream md:text-3xl">
+            {/* Párrafo largo: va en la fuente de lectura. Oswald es condensada y
+                pensada para titulares; en tres o cuatro líneas cansa. */}
+            <p className="mt-5 text-xl leading-relaxed text-cream md:text-2xl">
               {misionVision.mision}
             </p>
           </Reveal>
@@ -92,7 +94,7 @@ export default function Sobre() {
             <span className="font-display text-sm uppercase tracking-[0.3em] text-rainforest">
               Visión
             </span>
-            <p className="mt-5 font-display text-2xl font-medium leading-snug text-jungle md:text-3xl">
+            <p className="mt-5 text-xl leading-relaxed text-jungle md:text-2xl">
               {misionVision.vision}
             </p>
           </Reveal>
@@ -118,7 +120,7 @@ export default function Sobre() {
                 delay={i * 110}
                 className="group rounded-2xl bg-white p-7 shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(0,37,32,0.14)]"
               >
-                <FrogIcon className="h-9 w-9 text-tea transition-colors group-hover:text-caribbean" />
+                <FrogIcon className="h-9 w-9 text-rainforest transition-colors group-hover:text-caribbean" />
                 <h3 className="mt-5 font-display text-xl font-semibold uppercase tracking-wide text-rainforest">
                   {v.titulo}
                 </h3>
@@ -176,26 +178,26 @@ export default function Sobre() {
               <h2 className="mt-3 font-display text-4xl font-semibold uppercase tracking-wide text-jungle md:text-5xl">
                 Junta Directiva
               </h2>
-              <p className="mt-4 max-w-xl leading-relaxed text-jungle/60">
+              <p className="mt-4 max-w-xl leading-relaxed text-jungle/70">
                 Quienes hoy sostienen las decisiones del colectivo. Los nombres salen de los perfiles
                 reales: cuando la Junta cambia, esta sección cambia con ella.
               </p>
             </div>
             <Link
               to="/comunidad"
-              className="font-display text-sm uppercase tracking-[0.2em] text-rainforest underline-offset-8 transition hover:text-jungle hover:underline"
+              className="inline-flex min-h-11 items-center font-display text-sm uppercase tracking-[0.2em] text-rainforest underline-offset-8 transition hover:text-jungle hover:underline"
             >
               Ver toda la comunidad →
             </Link>
           </Reveal>
 
-          {loadingJunta && <p className="mt-14 text-jungle/50">Cargando la Junta…</p>}
+          {loadingJunta && <p className="mt-14 text-jungle/70">Cargando la Junta…</p>}
 
           {/* Sin Junta cargada la página no se rompe: se enseña la puerta a la comunidad. */}
           {!loadingJunta && junta.length === 0 && (
             <Reveal className="mt-14 rounded-3xl border border-rainforest/20 bg-white p-10 text-center">
               <FrogIcon className="mx-auto h-16 w-16 text-rainforest/40" />
-              <p className="mt-5 text-jungle/60">
+              <p className="mt-5 text-jungle/70">
                 Aún no hemos publicado la composición de la Junta. Mientras tanto, puedes conocer a
                 todo el colectivo en <Link to="/comunidad" className="text-rainforest underline underline-offset-4">Comunidad</Link>.
               </p>
@@ -223,13 +225,6 @@ export default function Sobre() {
                         </span>
                       </>
                     )}
-                    {/* Opaca a propósito: encima de una foto clara, un fondo
-                        translúcido deja el cargo ilegible. */}
-                    {cargoDe(m) && (
-                      <span className="absolute bottom-4 left-4 rounded-full bg-jungle px-3 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-tea shadow-lg">
-                        {cargoDe(m)}
-                      </span>
-                    )}
                   </div>
                   <div className="p-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rainforest">
@@ -239,7 +234,7 @@ export default function Sobre() {
                       {m.fullName}
                     </h3>
                     {m.discipline && (
-                      <p className="mt-1 text-xs text-jungle/50">{m.discipline}</p>
+                      <p className="mt-1 text-xs text-jungle/70">{m.discipline}</p>
                     )}
                   </div>
                 </Reveal>

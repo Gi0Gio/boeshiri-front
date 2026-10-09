@@ -116,7 +116,7 @@ export default function AdminMiembros() {
 
   return (
     <>
-      <PageHeader eyebrow="Administración" title="Gestión de miembros" description="Aprueba postulantes (Junta o Recursos Humanos) y administra el estado de cada miembro." />
+      <PageHeader eyebrow="Administración" title="Personas" description="Aprueba postulantes (Junta o Recursos Humanos) y administra el estado de cada miembro." />
 
       <PillTabs
         tabs={[{ id: 'Miembros', label: 'Miembros' }, { id: 'Postulantes', label: 'Postulantes', badge: listaPost.length || undefined }]}
@@ -126,9 +126,9 @@ export default function AdminMiembros() {
 
       {tab === 'Miembros' ? (
         <>
-          {lm && <p className="text-tea/50">Cargando miembros…</p>}
+          {lm && <p className="text-tea/70">Cargando miembros…</p>}
           {em && <p className="text-candy">No se pudo cargar el directorio.</p>}
-          {!lm && !em && listaMiembros.length === 0 && <Card><p className="text-sm text-tea/55">Aún no hay miembros.</p></Card>}
+          {!lm && !em && listaMiembros.length === 0 && <Card><p className="text-sm text-tea/70">Aún no hay miembros.</p></Card>}
 
           {/* Directorio administrativo: estado editable + roles (RF-ADM-03). */}
           {!lm && !em && listaMiembros.length > 0 && puedeGestionarEstado && (
@@ -145,7 +145,7 @@ export default function AdminMiembros() {
                       <Tr key={m.id}>
                         <Td>
                           <Link to={`/perfil/${m.id}`} target="_blank" className="font-medium text-tea hover:text-caribbean">{m.fullName}</Link>
-                          <span className="block font-mono text-xs text-tea/45">{m.email}</span>
+                          <span className="block font-mono text-xs text-tea/70">{m.email}</span>
                         </Td>
                         <Td><Chip tone={meta.tone}>{meta.label}</Chip></Td>
                         <Td className="hidden md:table-cell">
@@ -154,7 +154,7 @@ export default function AdminMiembros() {
                             {(m.roles ?? []).length === 0 && <span className="text-xs text-tea/35">—</span>}
                           </div>
                         </Td>
-                        <Td className="hidden lg:table-cell font-mono text-xs text-tea/45">{m.statusChangedAt ? fmtFecha(m.statusChangedAt) : '—'}</Td>
+                        <Td className="hidden lg:table-cell font-mono text-xs text-tea/70">{m.statusChangedAt ? fmtFecha(m.statusChangedAt) : '—'}</Td>
                         <Td>
                           {esYo ? (
                             <span className="font-mono text-xs text-tea/35">Tu cuenta</span>
@@ -177,7 +177,7 @@ export default function AdminMiembros() {
                   })}
                 </tbody>
               </Table>
-              <p className="mt-4 font-mono text-xs text-tea/40">Suspendido, Retirado y Expulsado impiden iniciar sesión. Los roles se asignan en «Sistema → Roles y permisos».</p>
+              <p className="mt-4 font-mono text-xs text-tea/70">Suspendido, Retirado y Expulsado impiden iniciar sesión. Los roles se asignan en «Sistema → Roles y permisos».</p>
             </Reveal>
           )}
 
@@ -192,26 +192,26 @@ export default function AdminMiembros() {
                   {listaMiembros.map((m) => (
                     <Tr key={m.id}>
                       <Td className="font-medium text-tea">{m.fullName}</Td>
-                      <Td className="hidden sm:table-cell text-tea/55">{m.discipline || '—'}</Td>
+                      <Td className="hidden sm:table-cell text-tea/70">{m.discipline || '—'}</Td>
                       <Td className="hidden md:table-cell"><div className="flex flex-wrap gap-1">{(m.tags ?? []).map((t) => <Chip key={t} tone="gris">{t}</Chip>)}</div></Td>
-                      <Td className="text-right"><Link to={`/perfil/${m.id}`} target="_blank" className="text-xs font-semibold uppercase tracking-wide text-caribbean/80 hover:text-caribbean">Ver perfil</Link></Td>
+                      <Td className="text-right"><Link to={`/perfil/${m.id}`} target="_blank" className="inline-flex min-h-11 items-center text-sm font-semibold text-caribbean hover:underline">Ver perfil</Link></Td>
                     </Tr>
                   ))}
                 </tbody>
               </Table>
-              <p className="mt-4 font-mono text-xs text-tea/40">Solo la Junta Directiva puede cambiar el estado de un miembro.</p>
+              <p className="mt-4 font-mono text-xs text-tea/70">Solo la Junta Directiva puede cambiar el estado de un miembro.</p>
             </Reveal>
           )}
         </>
       ) : (
         <>
           {!puedeDecidir ? (
-            <Card><p className="text-sm text-tea/60">Solo la Junta o Recursos Humanos pueden revisar postulantes.</p></Card>
+            <Card><p className="text-sm text-tea/70">Solo la Junta o Recursos Humanos pueden revisar postulantes.</p></Card>
           ) : (
             <>
-              {lp && <p className="text-tea/50">Cargando postulantes…</p>}
+              {lp && <p className="text-tea/70">Cargando postulantes…</p>}
               {ep && <p className="text-candy">No se pudieron cargar los postulantes.</p>}
-              {!lp && !ep && listaPost.length === 0 && <Card><p className="text-sm text-tea/55">No hay postulantes pendientes.</p></Card>}
+              {!lp && !ep && listaPost.length === 0 && <Card><p className="text-sm text-tea/70">No hay postulantes pendientes.</p></Card>}
               {!lp && !ep && listaPost.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">
                   {listaPost.map((p, i) => (
@@ -220,8 +220,8 @@ export default function AdminMiembros() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <h3 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">{p.fullName}</h3>
-                            <p className="mt-1 break-all font-mono text-xs text-tea/50">{p.email}{p.phone ? ` · ${p.phone}` : ''}</p>
-                            {p.discipline && <p className="mt-1 font-mono text-xs text-tea/40">{p.discipline}</p>}
+                            <p className="mt-1 break-all font-mono text-xs text-tea/70">{p.email}{p.phone ? ` · ${p.phone}` : ''}</p>
+                            {p.discipline && <p className="mt-1 font-mono text-xs text-tea/70">{p.discipline}</p>}
                           </div>
                           <div className="flex flex-none flex-col items-end gap-1.5">
                             <Chip tone="tea">{fmtFecha(p.registeredAt)}</Chip>
@@ -255,7 +255,7 @@ export default function AdminMiembros() {
                       </Card>
                     </Reveal>
                   ))}
-                  <p className="font-mono text-xs text-tea/40 md:col-span-2">Un correo rechazado no puede volver a postularse hasta pasado 1 mes.</p>
+                  <p className="font-mono text-xs text-tea/70 md:col-span-2">Un correo rechazado no puede volver a postularse hasta pasado 1 mes.</p>
                 </div>
               )}
             </>

@@ -46,7 +46,7 @@ export default function PublicacionDetalle() {
     },
   })
 
-  if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/50">Cargando…</section>
+  if (loading) return <section className="flex min-h-screen items-center justify-center bg-cream pt-16 text-jungle/70">Cargando…</section>
 
   if (error) {
     const noAutorizado = error.status === 401 || error.status === 403
@@ -57,7 +57,7 @@ export default function PublicacionDetalle() {
           <h1 className="mt-6 font-display text-3xl font-semibold uppercase tracking-wide text-jungle">
             {noAutorizado ? 'Contenido para miembros' : 'Publicación no disponible'}
           </h1>
-          <p className="mt-3 text-jungle/60">
+          <p className="mt-3 text-jungle/70">
             {noAutorizado && !user
               ? 'Inicia sesión como miembro para ver esta publicación.'
               : 'Puede haber sido ocultada o eliminada.'}
@@ -83,12 +83,12 @@ export default function PublicacionDetalle() {
         <Reveal className="mt-6">
           <div className="flex flex-wrap items-center gap-3">
             {/* La primera etiqueta acompaña al tipo: "Artículo · Poesía". */}
-            <span className="rounded-full bg-jungle px-3.5 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-tea">
+            <span className="rounded-full bg-jungle px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.18em] text-tea">
               {TIPO_LABEL[p.type] ?? p.type}
               {p.tags?.[0] && <span className="opacity-65"> · {p.tags[0]}</span>}
             </span>
-            {p.visibility === 'Members' && <span className="rounded-full bg-terracotta px-3.5 py-1 font-display text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">Solo miembros</span>}
-            <span className="text-xs uppercase tracking-wide text-jungle/50">
+            {p.visibility === 'Members' && <span className="rounded-full bg-terracotta px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.18em] text-jungle">Solo miembros</span>}
+            <span className="text-xs uppercase tracking-wide text-jungle/70">
               {fmtFecha(p.createdAt)}{p.editedAt && ' · editada'}
               {p.readingMinutes > 0 && ` · ${p.readingMinutes} min de lectura`}
             </span>
@@ -136,7 +136,7 @@ export default function PublicacionDetalle() {
         {/* Enlaces de referencia */}
         {p.links?.length > 0 && (
           <Reveal className="mt-10 border-t border-rainforest/15 pt-6">
-            <p className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-rainforest">Referencias</p>
+            <p className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-rainforest">Referencias</p>
             <ul className="mt-3 space-y-2">
               {p.links.map((l, i) => (
                 <li key={i}>
@@ -151,7 +151,7 @@ export default function PublicacionDetalle() {
         {p.tags?.length > 0 && (
           <div className="mt-10 flex flex-wrap gap-2">
             {p.tags.map((t) => (
-              <span key={t} className="rounded-full bg-rainforest/10 px-3 py-1 font-mono text-[0.65rem] uppercase tracking-wide text-rainforest">#{t}</span>
+              <span key={t} className="rounded-full bg-rainforest/10 px-3 py-1 font-mono text-xs uppercase tracking-wide text-rainforest">#{t}</span>
             ))}
           </div>
         )}

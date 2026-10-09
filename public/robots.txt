@@ -9,6 +9,8 @@ Allow: /
 Disallow: /panel
 Disallow: /login
 Disallow: /verificar
+Disallow: /recuperar
+Disallow: /restablecer
 
 # Páginas fijas del sitio (archivo estático) y contenido vivo (lo genera la API,
 # proxied bajo este dominio: un sitemap solo vale para el host que lo sirve).

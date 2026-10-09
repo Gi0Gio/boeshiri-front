@@ -18,6 +18,7 @@
 /auth/login    https://boeshiri-api-production.up.railway.app/auth/login    200
 /auth/renovar  https://boeshiri-api-production.up.railway.app/auth/renovar  200
 /auth/salir    https://boeshiri-api-production.up.railway.app/auth/salir    200
+/auth/cambiar-contrasena  https://boeshiri-api-production.up.railway.app/auth/cambiar-contrasena  200
 
 # Fallback de la SPA: cualquier otra ruta la resuelve React Router.
 /*  /index.html  200

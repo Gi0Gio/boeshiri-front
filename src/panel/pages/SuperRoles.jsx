@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react'
-import { PageHeader, Card, Chip, Btn, Reveal, inputCls } from '../ui'
+import { PageHeader, Card, Chip, Btn, Reveal, inputCls, tablaColumnaFija } from '../ui'
 import { rolesApi } from '../../api/roles'
 import { useFetch } from '../../hooks/useFetch'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
+import Ico from '../Ico'
 
 /** Chip de rol con su color (hex de la BD) o un color por defecto. */
 function RolChip({ name, color }) {
   const bg = color && color.startsWith('#') ? color : '#00735e'
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-cream" style={{ backgroundColor: bg + '33', border: `1px solid ${bg}` }}>
+    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] text-cream" style={{ backgroundColor: bg + '33', border: `1px solid ${bg}` }}>
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: bg }} />{name}
     </span>
   )
@@ -141,7 +142,7 @@ export default function SuperRoles() {
         eyebrow="Sistema · Super Admin"
         title="Roles y permisos"
         description="Los permisos se asignan a los roles; los usuarios acumulan permisos al sumar roles (modelo aditivo tipo Discord)."
-        actions={<Btn onClick={abrirNuevo}>+ Nuevo rol</Btn>}
+        actions={<Btn onClick={abrirNuevo}><Ico name="mas" className="h-4 w-4" />Nuevo rol</Btn>}
       />
 
       {/* Editor de rol */}
@@ -154,7 +155,7 @@ export default function SuperRoles() {
 
             <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_auto]">
               <div>
-                <label className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-caribbean">Nombre</label>
+                <label className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-caribbean">Nombre</label>
                 <input
                   className={`${inputCls} mt-1.5`}
                   value={editando.name}
@@ -164,7 +165,7 @@ export default function SuperRoles() {
                 />
               </div>
               <div>
-                <label className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-caribbean">Color</label>
+                <label className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-caribbean">Color</label>
                 <div className="mt-1.5 flex gap-2">
                   {COLORES.map((c) => (
                     <button
@@ -181,8 +182,8 @@ export default function SuperRoles() {
             </div>
 
             <div className="mt-5">
-              <label className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-caribbean">
-                Permisos <span className="font-normal normal-case tracking-normal text-tea/40">({editando.permissions.length} de {listaPerm.length})</span>
+              <label className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-caribbean">
+                Permisos <span className="font-normal normal-case tracking-normal text-tea/70">({editando.permissions.length} de {listaPerm.length})</span>
               </label>
               {/* El comodín no se ofrece: concederlo crearía un segundo Super
                   Administrador saltándose el modelo, y el backend lo rechaza. */}
@@ -197,10 +198,10 @@ export default function SuperRoles() {
                       title={p.description || ''}
                       className={`flex items-start gap-2 rounded-lg px-3 py-2 text-left transition ${activo ? 'bg-caribbean/12' : 'hover:bg-tea/5'}`}
                     >
-                      <span className={`mt-0.5 flex h-4 w-4 flex-none items-center justify-center rounded text-[0.6rem] font-bold ${activo ? 'bg-caribbean text-jungle' : 'bg-tea/12 text-transparent'}`}>✓</span>
+                      <span className={`mt-0.5 flex h-4 w-4 flex-none items-center justify-center rounded text-xs font-bold ${activo ? 'bg-caribbean text-jungle' : 'bg-tea/12 text-transparent'}`}>✓</span>
                       <span className="min-w-0">
-                        <span className={`block font-mono text-xs ${activo ? 'text-cream' : 'text-tea/60'}`}>{p.key}</span>
-                        {p.description && <span className="block text-[0.7rem] leading-snug text-tea/35">{p.description}</span>}
+                        <span className={`block font-mono text-xs ${activo ? 'text-cream' : 'text-tea/70'}`}>{p.key}</span>
+                        {p.description && <span className="block text-xs leading-snug text-tea/35">{p.description}</span>}
                       </span>
                     </button>
                   )
@@ -219,7 +220,7 @@ export default function SuperRoles() {
       {(er || eu) && <p className="mb-6 text-candy">No se pudo cargar la información de roles (¿tienes permiso de Super Admin?).</p>}
 
       {/* Roles */}
-      {lr ? <p className="text-tea/50">Cargando roles…</p> : (
+      {lr ? <p className="text-tea/70">Cargando roles…</p> : (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {listaRoles.map((r, i) => (
             <Reveal key={r.id} delay={(i % 3) * 70}>
@@ -227,7 +228,7 @@ export default function SuperRoles() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <RolChip name={r.name} color={r.color} />
-                    <p className="mt-2 font-mono text-xs text-tea/45">
+                    <p className="mt-2 font-mono text-xs text-tea/70">
                       {r.userCount} usuarios · {r.permissions.includes('*') ? 'todos los permisos' : `${r.permissions.length} permisos`}
                     </p>
                   </div>
@@ -237,7 +238,7 @@ export default function SuperRoles() {
                 {/* Los de sistema no se editan: la semilla repondría sus permisos
                     al reiniciar, así que el cambio sería una ilusión. */}
                 {r.isSystem ? (
-                  <p className="mt-3 font-mono text-[0.65rem] text-tea/25">Definido por el sistema</p>
+                  <p className="mt-3 font-mono text-xs text-tea/25">Definido por el sistema</p>
                 ) : (
                   <div className="mt-3 flex gap-3 text-xs font-semibold uppercase tracking-wide">
                     <button onClick={() => abrirEdicion(r)} className="text-caribbean/80 hover:text-caribbean">Editar</button>
@@ -263,21 +264,21 @@ export default function SuperRoles() {
           >
             <span>
               <span className="font-display text-sm font-semibold uppercase tracking-wide text-cream">Matriz de permisos</span>
-              <span className="mt-0.5 block font-mono text-xs text-tea/45">
+              <span className="mt-0.5 block font-mono text-xs text-tea/70">
                 {listaPerm.length} permisos × {listaRoles.length} roles
               </span>
             </span>
-            <span className={`flex-none font-mono text-xs uppercase tracking-[0.12em] text-caribbean transition-transform ${verMatriz ? 'rotate-180' : ''}`}>▾</span>
+            <Ico name="abajo" className={`h-5 w-5 flex-none text-caribbean transition-transform ${verMatriz ? 'rotate-180' : ''}`} />
           </button>
 
           {verMatriz && (
             <Reveal className="mt-3">
               <div className="overflow-x-auto rounded-2xl border border-tea/10 bg-jungle">
-                <table className="w-full min-w-[640px] text-left text-sm">
+                <table className={`w-full min-w-[640px] text-left text-sm ${tablaColumnaFija}`}>
                   <thead>
                     <tr>
-                      <th className="border-b border-tea/10 bg-black/20 px-5 py-3 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-tea/45">Permiso</th>
-                      {listaRoles.map((r) => <th key={r.id} className="border-b border-tea/10 bg-black/20 px-3 py-3 text-center font-mono text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-tea/45">{r.name.split(' ')[0]}</th>)}
+                      <th className="border-b border-tea/10 bg-black/20 px-5 py-3 font-mono text-xs font-semibold uppercase tracking-[0.1em] text-tea/70">Permiso</th>
+                      {listaRoles.map((r) => <th key={r.id} className="border-b border-tea/10 bg-black/20 px-3 py-3 text-center font-mono text-xs font-semibold uppercase tracking-[0.08em] text-tea/70">{r.name.split(' ')[0]}</th>)}
                     </tr>
                   </thead>
                   <tbody>
@@ -294,7 +295,7 @@ export default function SuperRoles() {
                   </tbody>
                 </table>
               </div>
-              <p className="mt-3 text-xs text-tea/45">El comodín «*» del Super Administrador concede todos los permisos. Editar la matriz por rol llegará en una próxima iteración.</p>
+              <p className="mt-3 text-xs text-tea/70">El comodín «*» del Super Administrador concede todos los permisos. Editar la matriz por rol llegará en una próxima iteración.</p>
             </Reveal>
           )}
         </div>
@@ -322,7 +323,7 @@ export default function SuperRoles() {
                 key={f.id || 'todos'}
                 type="button"
                 onClick={() => setFiltroRol(f.id)}
-                className={`rounded-full px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${filtroRol === f.id ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/55 hover:bg-tea/15 hover:text-tea'}`}
+                className={`rounded-full px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${filtroRol === f.id ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/70 hover:bg-tea/15 hover:text-tea'}`}
               >
                 {f.label}
               </button>
@@ -330,14 +331,14 @@ export default function SuperRoles() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="font-mono text-xs text-tea/40">
+            <p className="font-mono text-xs text-tea/70">
               {filtrados.length} de {activos.length} miembros{verNoActivos ? '' : ' activos'}
             </p>
             {(ocultos > 0 || verNoActivos) && (
               <button
                 type="button"
                 onClick={() => setVerNoActivos((v) => !v)}
-                className="font-mono text-xs text-tea/45 underline-offset-4 transition hover:text-caribbean hover:underline"
+                className="font-mono text-xs text-tea/70 underline-offset-4 transition hover:text-caribbean hover:underline"
               >
                 {verNoActivos ? 'Ocultar los no activos' : `Mostrar ${ocultos} no activos`}
               </button>
@@ -345,10 +346,10 @@ export default function SuperRoles() {
           </div>
         </div>
 
-        {lu ? <p className="mt-4 text-tea/50">Cargando miembros…</p> : (
+        {lu ? <p className="mt-4 text-tea/70">Cargando miembros…</p> : (
           <div className="mt-4 space-y-3">
             {filtrados.length === 0 && (
-              <Card><p className="text-sm text-tea/55">Ningún miembro coincide con la búsqueda.</p></Card>
+              <Card><p className="text-sm text-tea/70">Ningún miembro coincide con la búsqueda.</p></Card>
             )}
 
             {filtrados.map((u) => {
@@ -358,7 +359,7 @@ export default function SuperRoles() {
                 <Card key={u.id} className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="font-display text-sm font-semibold uppercase tracking-wide text-cream">{u.fullName}</p>
-                    <p className="break-all font-mono text-xs text-tea/45">{u.email} · {ESTADO_ES[u.status] ?? u.status}</p>
+                    <p className="break-all font-mono text-xs text-tea/70">{u.email} · {ESTADO_ES[u.status] ?? u.status}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       {u.roles.length === 0 && <span className="font-mono text-xs text-tea/35">Sin roles</span>}
                       {u.roles.map((r) => (
@@ -384,11 +385,11 @@ export default function SuperRoles() {
                       className="flex-none rounded-lg border border-tea/15 bg-jungle-deep/60 px-3 py-2 font-mono text-xs text-tea focus:border-caribbean focus:outline-none disabled:opacity-50"
                       aria-label={`Añadir rol a ${u.fullName}`}
                     >
-                      <option value="">{busy === u.id ? 'Guardando…' : '+ Añadir rol…'}</option>
+                      <option value="">{busy === u.id ? 'Guardando…' : 'Añadir rol…'}</option>
                       {disponibles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </select>
                   ) : (
-                    <span className="flex-none font-mono text-xs text-tea/30">Tiene todos los roles</span>
+                    <span className="flex-none font-mono text-xs text-tea/70">Tiene todos los roles</span>
                   )}
                 </Card>
               )

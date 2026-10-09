@@ -7,6 +7,7 @@ import { useFetch } from '../../hooks/useFetch'
 import { useSession } from '../../auth/SessionContext'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
+import Ico from '../Ico'
 
 /**
  * Los estantes se derivan de los dos campos que ya tiene la API —`library`
@@ -71,8 +72,8 @@ const TONO_EXT = {
   CSV: 'bg-rainforest/30 text-tea border-tea/20',
   PPT: 'bg-candy/15 text-candy border-candy/25',
   PPTX: 'bg-candy/15 text-candy border-candy/25',
-  ZIP: 'bg-tea/10 text-tea/60 border-tea/20',
-  RAR: 'bg-tea/10 text-tea/60 border-tea/20',
+  ZIP: 'bg-tea/10 text-tea/70 border-tea/20',
+  RAR: 'bg-tea/10 text-tea/70 border-tea/20',
   PNG: 'bg-tea/15 text-tea border-tea/25',
   JPG: 'bg-tea/15 text-tea border-tea/25',
   SVG: 'bg-tea/15 text-tea border-tea/25',
@@ -97,9 +98,9 @@ const fmtFecha = (iso) =>
 function TipoBloque({ doc }) {
   const ext = extDe(doc)
   return (
-    <div className={`flex h-16 w-16 flex-none flex-col items-center justify-center rounded-xl border ${TONO_EXT[ext] ?? 'bg-tea/8 text-tea/50 border-tea/15'}`}>
+    <div className={`flex h-16 w-16 flex-none flex-col items-center justify-center rounded-xl border ${TONO_EXT[ext] ?? 'bg-tea/8 text-tea/70 border-tea/15'}`}>
       <span className="font-display text-sm font-semibold uppercase tracking-wide">{ext}</span>
-      <span className="mt-0.5 font-mono text-[0.6rem] opacity-70">{fmtSize(doc.sizeBytes)}</span>
+      <span className="mt-0.5 font-mono text-xs opacity-70">{fmtSize(doc.sizeBytes)}</span>
     </div>
   )
 }
@@ -248,13 +249,13 @@ export default function Documentos() {
     <>
       <PageHeader
         eyebrow="Miembro"
-        title="Documentos y biblioteca"
+        title="Documentos"
         description="Los archivos que el colectivo comparte para apoyarse."
-        actions={puedeSubir && <Btn tone="candy" onClick={() => (abierto ? cerrar() : abrirFormulario())}>{abierto ? 'Cerrar' : '+ Subir documento'}</Btn>}
+        actions={puedeSubir && <Btn onClick={() => (abierto ? cerrar() : abrirFormulario())}>{abierto ? 'Cerrar' : <><Ico name="mas" className="h-4 w-4" />Subir documento</>}</Btn>}
       />
 
       <div className="-mt-4 mb-6 flex items-center gap-2">
-        <span className="font-mono text-xs text-tea/45">Para qué sirve esta sección</span>
+        <span className="font-mono text-xs text-tea/70">Para qué sirve esta sección</span>
         <InfoTooltip label="Para qué sirve la biblioteca de documentos">
           Aquí vive lo que el colectivo comparte para apoyarse: guías de uso de la tipografía,
           plantillas de cartas, formatos para proponer un evento.
@@ -273,7 +274,7 @@ export default function Documentos() {
               <div>
                 <label className={labelCls}>Archivo</label>
                 <input type="file" onChange={onFile} className="mt-1.5 block w-full text-sm text-tea/70 file:mr-4 file:rounded-full file:border-0 file:bg-caribbean file:px-4 file:py-2 file:font-mono file:text-xs file:font-semibold file:uppercase file:tracking-wide file:text-jungle hover:file:bg-caribbean/80" />
-                {file && <p className="mt-1.5 font-mono text-[0.65rem] text-tea/40">{file.name} · {fmtSize(file.size)}</p>}
+                {file && <p className="mt-1.5 font-mono text-xs text-tea/70">{file.name} · {fmtSize(file.size)}</p>}
               </div>
 
               {/* Una sola pregunta en vez de "biblioteca" + "nivel de acceso":
@@ -295,7 +296,7 @@ export default function Documentos() {
                       <span className={`mt-0.5 h-4 w-4 flex-none rounded-full border-2 ${form.estante === e.id ? 'border-caribbean bg-caribbean' : 'border-tea/30'}`} />
                       <span>
                         <span className="block font-display text-sm font-semibold uppercase tracking-wide text-cream">{e.opcion}</span>
-                        <span className="mt-0.5 block text-xs leading-relaxed text-tea/50">{e.detalle}</span>
+                        <span className="mt-0.5 block text-xs leading-relaxed text-tea/70">{e.detalle}</span>
                       </span>
                     </button>
                   ))}
@@ -341,28 +342,28 @@ export default function Documentos() {
                   key={f.id || 'todas'}
                   type="button"
                   onClick={() => setFiltroCat(f.id)}
-                  className={`rounded-full px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${filtroCat === f.id ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/55 hover:bg-tea/15 hover:text-tea'}`}
+                  className={`rounded-full px-3.5 py-1.5 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition ${filtroCat === f.id ? 'bg-caribbean text-jungle' : 'bg-tea/8 text-tea/70 hover:bg-tea/15 hover:text-tea'}`}
                 >
                   {f.label}
                 </button>
               ))}
             </div>
           )}
-          {hayFiltro && <p className="mt-3 font-mono text-xs text-tea/40">{lista.length} de {todos.length} documentos</p>}
+          {hayFiltro && <p className="mt-3 font-mono text-xs text-tea/70">{lista.length} de {todos.length} documentos</p>}
         </div>
       )}
 
-      {loading && <p className="text-tea/50">Cargando documentos…</p>}
+      {loading && <p className="text-tea/70">Cargando documentos…</p>}
       {error && (noAutorizado
-        ? <Card><p className="text-sm text-tea/60">Tu rol no tiene acceso a la biblioteca.</p></Card>
+        ? <Card><p className="text-sm text-tea/70">Tu rol no tiene acceso a la biblioteca.</p></Card>
         : <p className="text-candy">No se pudieron cargar los documentos.</p>)}
 
       {!loading && !error && todos.length === 0 && (
-        <Card><p className="text-sm text-tea/55">Aún no hay documentos en la biblioteca.{puedeSubir && ' Usa «+ Subir documento».'}</p></Card>
+        <Card><p className="text-sm text-tea/70">Aún no hay documentos en la biblioteca.{puedeSubir && ' Usa «+ Subir documento».'}</p></Card>
       )}
 
       {!loading && !error && todos.length > 0 && lista.length === 0 && (
-        <Card><p className="text-sm text-tea/55">Ningún documento coincide con la búsqueda.</p></Card>
+        <Card><p className="text-sm text-tea/70">Ningún documento coincide con la búsqueda.</p></Card>
       )}
 
       {!loading && !error && lista.length > 0 && (
@@ -380,11 +381,11 @@ export default function Documentos() {
                     <h2 className="font-display text-xl font-semibold uppercase tracking-wide text-cream">{estante.titulo}</h2>
                     <Chip tone={estante.tono}>{estante.para}</Chip>
                   </div>
-                  <span className="font-mono text-xs text-tea/40">
+                  <span className="font-mono text-xs text-tea/70">
                     {docs.length} {docs.length === 1 ? 'archivo' : 'archivos'}
                   </span>
                 </div>
-                <p className="mb-5 text-xs leading-relaxed text-tea/45">{estante.detalle}</p>
+                <p className="mb-5 text-xs leading-relaxed text-tea/70">{estante.detalle}</p>
 
                 {docs.length === 0 ? (
                   <p className="rounded-xl border border-dashed border-tea/12 px-4 py-6 text-center text-xs text-tea/35">
@@ -398,9 +399,9 @@ export default function Documentos() {
                           <TipoBloque doc={d} />
 
                           <div className="min-w-0 flex-1">
-                            <p className="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-caribbean/80">{d.category}</p>
+                            <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-caribbean/80">{d.category}</p>
                             <h3 className="mt-1 truncate font-display text-base font-semibold uppercase tracking-wide text-cream">{d.name}</h3>
-                            <p className="mt-1 font-mono text-[0.65rem] text-tea/40">
+                            <p className="mt-1 font-mono text-xs text-tea/70">
                               {d.authorName} · {fmtFecha(d.createdAt)}
                               {d.updatedAt && ` · actualizado ${fmtFecha(d.updatedAt)}`}
                             </p>

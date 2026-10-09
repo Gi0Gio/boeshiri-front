@@ -1,14 +1,14 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
 import { contactApi } from '../api/contact'
 import { useToast } from '../components/Toast'
 import { useSeo } from '../hooks/useSeo'
 
+/** Solo canales que existen: WhatsApp e Instagram se añaden cuando haya cuentas oficiales. */
 const canales = [
   { etiqueta: 'Correo', valor: 'hola@boeshiri.org', href: 'mailto:hola@boeshiri.org' },
-  { etiqueta: 'WhatsApp', valor: '+507 0000-0000', href: null },
-  { etiqueta: 'Instagram', valor: '@boeshiri', href: null },
   { etiqueta: 'Ubicación', valor: 'David, Chiriquí — Panamá', href: null },
 ]
 
@@ -25,7 +25,11 @@ export default function Contacto() {
   })
 
   const [enviado, setEnviado] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
+  // `?asunto=` preselecciona el motivo cuando se llega desde otra página
+  // (p. ej. «Proponer un evento» en /eventos). Solo se aceptan los de la lista.
+  const [params] = useSearchParams()
+  const asuntoInicial = asuntos.includes(params.get('asunto')) ? params.get('asunto') : ''
+  const [form, setForm] = useState({ name: '', email: '', subject: asuntoInicial, message: '' })
   const [busy, setBusy] = useState(false)
   const toast = useToast()
 
@@ -84,9 +88,6 @@ export default function Contacto() {
             <h2 className="relative font-display text-2xl font-semibold uppercase tracking-wide text-cream">
               Canales directos
             </h2>
-            <p className="relative mt-3 text-sm leading-relaxed text-tea/70">
-              Datos de ejemplo — se reemplazarán por los oficiales del colectivo.
-            </p>
             <ul className="relative mt-8 space-y-6">
               {canales.map((c) => (
                 <li key={c.etiqueta}>
@@ -96,7 +97,7 @@ export default function Contacto() {
                   {c.href ? (
                     <a
                       href={c.href}
-                      className="mt-1 block text-lg text-cream transition-colors hover:text-caribbean"
+                      className="mt-1 inline-flex min-h-11 items-center text-lg text-cream transition-colors hover:text-caribbean"
                     >
                       {c.valor}
                     </a>
@@ -117,8 +118,7 @@ export default function Contacto() {
                   ¡Mensaje enviado!
                 </h2>
                 <p className="mt-3 max-w-sm leading-relaxed text-jungle/70">
-                  Gracias por escribir. Te responderemos al correo que nos dejaste. (Demo — aún no se
-                  envía nada de verdad.)
+                  Gracias por escribir. Te responderemos al correo que nos dejaste.
                 </p>
                 <button
                   type="button"

@@ -35,12 +35,12 @@ export default function NotFound({
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link
               to={volverA}
-              className="rounded-full border border-caribbean px-6 py-2.5 font-display text-sm uppercase tracking-[0.18em] text-caribbean transition hover:bg-caribbean hover:text-jungle"
+              className="inline-flex min-h-11 items-center rounded-full border border-caribbean px-6 py-2.5 font-display text-sm uppercase tracking-[0.18em] text-caribbean transition hover:bg-caribbean hover:text-jungle"
             >
               {volverTexto}
             </Link>
             {volverA !== '/' && (
-              <Link to="/" className="font-display text-sm uppercase tracking-[0.18em] text-tea/60 transition hover:text-tea">
+              <Link to="/" className="font-display text-sm uppercase tracking-[0.18em] text-tea/70 transition hover:text-tea">
                 Ir al inicio
               </Link>
             )}

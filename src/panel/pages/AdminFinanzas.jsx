@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Ico from '../Ico'
 import { PageHeader, Card, Stat, Chip, Btn, Reveal, Table, Th, Td, Tr, inputCls, labelCls } from '../ui'
 import { financeApi } from '../../api/finance'
 import { useFetch } from '../../hooks/useFetch'
@@ -7,8 +8,14 @@ import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
 
 const money = (n) => `$${Number(n || 0).toLocaleString('es-PA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-const fmtFecha = (iso) => new Date(iso).toLocaleDateString('es-PA', { day: 'numeric', month: 'short', year: 'numeric' })
-const hoyInput = () => new Date().toISOString().slice(0, 10)
+// Un movimiento tiene día, no hora. Se guarda a mediodía UTC y se lee en UTC: antes
+// «8 de octubre» se enviaba como medianoche UTC y en Panamá (UTC−5) se veía el 7.
+const fmtFecha = (iso) => new Date(iso).toLocaleDateString('es-PA', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+// Fecha LOCAL de hoy: toISOString() da la de UTC, que desde las 7 p. m. ya es mañana.
+const hoyInput = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 const BLANK = { date: hoyInput(), concept: '', type: 'Income', amount: '' }
 
 export default function AdminFinanzas() {
@@ -37,7 +44,7 @@ export default function AdminFinanzas() {
     const amount = Number(form.amount)
     if (!form.concept.trim() || !(amount > 0)) { setMsg({ ok: false, text: 'Concepto y monto (> 0) son obligatorios.' }); return }
     setSaving(true); setMsg(null)
-    const body = { date: new Date(form.date).toISOString(), concept: form.concept.trim(), type: form.type, amount }
+    const body = { date: `${form.date}T12:00:00Z`, concept: form.concept.trim(), type: form.type, amount }
     try {
       if (editId) await financeApi.updateMovement(editId, body)
       else await financeApi.createMovement(body)
@@ -48,15 +55,21 @@ export default function AdminFinanzas() {
   }
 
   async function eliminar(id) {
-    if (!(await confirm({ message: '¿Eliminar este movimiento?', danger: true, confirmLabel: 'Eliminar' }))) return
+    // La API no borra: anula. El movimiento deja de sumar, pero queda registrado.
+    if (!(await confirm({
+      title: '¿Anular este movimiento?',
+      message: 'Deja de contar en el balance. Queda registrado quién lo anuló y cuándo.',
+      danger: true,
+      confirmLabel: 'Anular',
+    }))) return
     try { await financeApi.deleteMovement(id); reload() }
-    catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo eliminar.' }) }
+    catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo anular.' }) }
   }
 
   if (!puedeVer) return (
     <>
       <PageHeader eyebrow="Administración" title="Finanzas" description="La Junta ve el balance general; solo el Tesorero puede modificarlo." />
-      <Card><p className="text-sm text-tea/60">Tu rol no tiene acceso a las finanzas.</p></Card>
+      <Card><p className="text-sm text-tea/70">Tu rol no tiene acceso a las finanzas.</p></Card>
     </>
   )
 
@@ -68,7 +81,7 @@ export default function AdminFinanzas() {
         eyebrow="Administración"
         title="Finanzas"
         description="La Junta ve el balance general; solo el Tesorero puede modificarlo."
-        actions={puedeEditar && <Btn tone="candy" onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : '+ Registrar movimiento'}</Btn>}
+        actions={puedeEditar && <Btn onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : <><Ico name="mas" className="h-4 w-4" />Registrar movimiento</>}</Btn>}
       />
 
       {!puedeEditar && <p className="mb-6 rounded-xl border border-terracotta/25 bg-terracotta/[0.08] px-4 py-3 text-sm text-tea/75">🔒 Estás en <strong>modo lectura</strong>. Editar el balance requiere el rol de <strong>Tesorero</strong>.</p>}
@@ -103,7 +116,7 @@ export default function AdminFinanzas() {
         </Reveal>
       )}
 
-      {loading && <p className="text-tea/50">Cargando finanzas…</p>}
+      {loading && <p className="text-tea/70">Cargando finanzas…</p>}
       {error && <p className="text-candy">No se pudo cargar el balance.</p>}
 
       {!loading && !error && data && (
@@ -120,10 +133,10 @@ export default function AdminFinanzas() {
                 <Tr className="hover:bg-transparent"><Th>Fecha</Th><Th>Concepto</Th><Th>Tipo</Th><Th className="text-right">Monto</Th>{puedeEditar && <Th> </Th>}</Tr>
               </thead>
               <tbody>
-                {movimientos.length === 0 && <Tr><Td className="text-tea/45" colSpan={puedeEditar ? 5 : 4}>Aún no hay movimientos.</Td></Tr>}
+                {movimientos.length === 0 && <Tr><Td className="text-tea/70" colSpan={puedeEditar ? 5 : 4}>Aún no hay movimientos.</Td></Tr>}
                 {movimientos.map((m) => (
                   <Tr key={m.id}>
-                    <Td className="font-mono text-xs text-tea/45">{fmtFecha(m.date)}</Td>
+                    <Td className="font-mono text-xs text-tea/70">{fmtFecha(m.date)}</Td>
                     <Td className="text-tea">{m.concept}</Td>
                     <Td><Chip tone={m.type === 'Income' ? 'caribbean' : 'terracotta'}>{m.type === 'Income' ? 'Ingreso' : 'Egreso'}</Chip></Td>
                     <Td className={`text-right font-mono font-semibold ${m.type === 'Income' ? 'text-caribbean' : 'text-candy'}`}>{m.type === 'Income' ? '+' : '−'}{money(m.amount)}</Td>
@@ -131,7 +144,7 @@ export default function AdminFinanzas() {
                       <Td className="text-right">
                         <div className="flex justify-end gap-3 text-xs font-semibold uppercase tracking-wide">
                           <button onClick={() => editar(m)} className="text-caribbean/80 hover:text-caribbean">Editar</button>
-                          <button onClick={() => eliminar(m.id)} className="text-candy hover:underline">Eliminar</button>
+                          <button onClick={() => eliminar(m.id)} className="text-candy hover:underline">Anular</button>
                         </div>
                       </Td>
                     )}

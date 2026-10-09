@@ -1,167 +1,184 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PageHeader, Card, Chip, Reveal } from '../ui'
+import { PageHeader } from '../ui'
 import { groupsApi } from '../../api/groups'
 import { useFetch } from '../../hooks/useFetch'
+import { useSession } from '../../auth/SessionContext'
 import { useToast } from '../../components/Toast'
-import { gradientFor } from '../../utils/gradient'
+import { useColoresGrupos, varsDeColor } from '../colores'
+import { useMisTareas } from '../tareas'
+import Ico from '../Ico'
 
-const rolLabel = { Coordinator: 'Coordinador', Leader: 'Líder', Member: 'Miembro' }
-const rolTono = { Coordinator: 'caribbean', Leader: 'terracotta', Member: 'gris' }
+const rolLabel = { Coordinator: 'Coordinas', Leader: 'Lideras', Member: 'Participas' }
+
+/** Cuántas tareas tuyas hay en un grupo, dicho como se diría. */
+function textoTareas(n) {
+  if (n === 0) return 'Al día'
+  return `${n} ${n === 1 ? 'tarea tuya' : 'tareas tuyas'}`
+}
 
 /**
- * Tarjeta de un grupo propio. Los equipos enlazan a su comisión madre, y ahora
- * dicen cuál es: «Ver comisión madre →» obligaba a entrar para averiguarlo.
- *
- * `comision` es la entrada del listado que ya se descarga en esta página —la
- * propia si es comisión, la madre si es equipo—, así que el contexto extra no
- * cuesta ninguna petición.
+ * Ficha de una comisión con sus equipos colgando debajo. Lleva el color de la
+ * comisión de punta a punta, y el equipo lo hereda: así se ve de dónde cuelga
+ * sin tener que leerlo. Solo dice lo que se mira al entrar: tu papel, tus tareas
+ * y quién coordina.
  */
-function TarjetaGrupo({ g, i, comision }) {
-  const destino = g.type === 'Commission' ? g.id : g.parentCommissionId
-  const esComision = g.type === 'Commission'
-
+function FichaComision({ g, info, equipos, tareasDe, color }) {
   return (
-    <Reveal delay={(i % 3) * 90} className="h-full">
-      <Link
-        to={destino ? `/panel/grupos/${destino}` : '#'}
-        className="flex h-full flex-col overflow-hidden rounded-2xl border border-tea/10 bg-jungle transition hover:-translate-y-1 hover:border-caribbean/40 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
-      >
-        <div className="h-1.5 w-full" style={{ background: gradientFor(destino || g.id) }} />
-        <div className="flex flex-1 flex-col p-6">
-          <Chip tone={rolTono[g.role] ?? 'gris'}>{rolLabel[g.role] ?? g.role}</Chip>
-          <h3 className="mt-4 font-display text-lg font-semibold uppercase leading-tight tracking-wide text-cream">{g.name}</h3>
-
-          {!esComision && comision && (
-            <p className="mt-2 font-mono text-xs text-tea/45">En {comision.name}</p>
-          )}
-          {esComision && comision && (
-            <p className="mt-2 font-mono text-xs text-tea/45">
-              {comision.coordinatorName || 'Sin coordinador'} · {comision.memberCount} integrantes
-            </p>
-          )}
-
-          <span className="mt-auto pt-4 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-caribbean">
-            {esComision ? 'Ver comisión →' : 'Ver comisión madre →'}
-          </span>
+    <li style={varsDeColor(color)} className="overflow-hidden rounded-3xl border border-[var(--g-solido)]/40 bg-[var(--g-tinte)]">
+      <Link to={`/panel/grupos/${g.id}`} className="block p-5 transition hover:brightness-[0.98]">
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="font-display text-2xl font-semibold uppercase leading-tight tracking-wide text-[var(--g-tinta)]">{g.name}</h2>
+          <span className="mt-1 flex-none rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-[var(--g-tinta)]">{rolLabel[g.role] ?? g.role}</span>
         </div>
+        <p className="mt-3 text-lg font-semibold text-[#002420]">{textoTareas(tareasDe(g.id))}</p>
+        {info && (
+          <p className="mt-1 text-sm text-[#002420]/80">
+            {g.role === 'Coordinator' ? 'La coordinas tú' : info.coordinatorName ? `Coordina ${info.coordinatorName}` : 'Sin coordinador'} · {info.memberCount} {info.memberCount === 1 ? 'persona' : 'personas'}
+          </p>
+        )}
       </Link>
-    </Reveal>
+      {equipos.length > 0 && (
+        <ul className="border-t border-[var(--g-solido)]/30 bg-white/50">
+          {equipos.map((t) => (
+            <li key={t.id} className="border-b border-[var(--g-solido)]/20 last:border-0">
+              {/* Un equipo no tiene página propia: su tablero vive en la de la comisión. */}
+              <Link to={`/panel/grupos/${g.id}`} className="flex min-h-14 items-center justify-between gap-3 px-5 py-2 transition hover:bg-white/60">
+                <span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--g-tinta)]">Equipo · {rolLabel[t.role]}</span>
+                  <span className="block font-semibold text-[#002420]">{t.name}</span>
+                </span>
+                <span className="flex-none text-sm text-[#002420]/80">{textoTareas(tareasDe(t.id))}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
   )
 }
 
 export default function Grupos() {
+  const { user } = useSession()
+  const colorDe = useColoresGrupos()
   const [version, setVersion] = useState(0)
   const reload = () => setVersion((v) => v + 1)
-  const { data: mios, loading: lm } = useFetch(() => groupsApi.mine(), [version])
+  const { data: mios, loading: lm, error: em } = useFetch(() => groupsApi.mine(), [version])
   const { data: comisiones, loading: lc } = useFetch(() => groupsApi.commissions(), [version])
+  const { tareas } = useMisTareas(mios, user.id, version)
   const toast = useToast()
-  const setMsg = (m) => { if (m) m.ok ? toast.success(m.text) : toast.error(m.text) }
   const [busy, setBusy] = useState(null)
-  // Postularse es algo puntual; lo habitual es entrar a tus grupos. Va plegado
-  // para no empujar hacia abajo lo que se usa a diario.
-  const [verPostular, setVerPostular] = useState(false)
+  // Unirse es puntual; lo diario es entrar a tus grupos. Va plegado al final.
+  const [verUnirse, setVerUnirse] = useState(false)
 
   const misGrupos = mios ?? []
-  const misComisiones = misGrupos.filter((g) => g.type === 'Commission')
-  const misEquipos = misGrupos.filter((g) => g.type === 'Team')
-  const idsMisComisiones = new Set(misComisiones.map((g) => g.id))
-
-  const disponibles = (comisiones ?? []).filter((c) => !idsMisComisiones.has(c.id))
   const porId = new Map((comisiones ?? []).map((c) => [c.id, c]))
-  // Para un equipo, la comisión relevante es la madre; para una comisión, ella misma.
-  const contextoDe = (g) => porId.get(g.type === 'Commission' ? g.id : g.parentCommissionId)
+  const misComisiones = misGrupos.filter((g) => g.type === 'Commission')
+  const idsMias = new Set(misComisiones.map((g) => g.id))
+  const misEquipos = misGrupos.filter((g) => g.type === 'Team')
+  // Un equipo cuya comisión no es tuya se muestra aparte, con el color de su madre.
+  const equiposSueltos = misEquipos.filter((t) => !idsMias.has(t.parentCommissionId))
+  const disponibles = (comisiones ?? []).filter((c) => !idsMias.has(c.id))
+  const tareasDe = (id) => tareas.filter((t) => t.grupo.id === id).length
 
   async function solicitar(id) {
-    setBusy(id); setMsg(null)
+    setBusy(id)
     try {
       const r = await groupsApi.requestJoin(id)
-      setMsg({ ok: true, text: r?.mensaje || 'Solicitud enviada. El coordinador la revisará.' })
+      toast.success(r?.mensaje || 'Solicitud enviada. Quien coordina la revisará.')
       reload()
     } catch (e) {
-      setMsg({ ok: false, text: e.message || 'No se pudo enviar la solicitud.' })
+      toast.error(e.message || 'No se pudo enviar la solicitud.')
     } finally { setBusy(null) }
   }
 
   return (
     <>
       <PageHeader
-        eyebrow="Miembro"
-        title="Mis grupos"
-        description="Comisiones (permanentes) y equipos (temporales). Entra a un grupo para ver su tablero de tareas y sus integrantes."
+        title="Tus grupos"
+        description="Las comisiones son permanentes; los equipos se arman dentro de una comisión para algo concreto."
       />
 
-      {lm ? <p className="text-tea/50">Cargando…</p> : (
-        <>
-          {/* ── Comisiones ─────────────────────────────────── */}
-          <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">
-            Mis comisiones <span className="font-mono text-sm font-normal text-tea/40">({misComisiones.length})</span>
-          </h2>
-          {misComisiones.length === 0 ? (
-            <Card className="mt-3"><p className="text-sm text-tea/55">Aún no perteneces a ninguna comisión. Puedes postularte abajo.</p></Card>
-          ) : (
-            <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {misComisiones.map((g, i) => <TarjetaGrupo key={g.id} g={g} i={i} comision={contextoDe(g)} />)}
-            </div>
-          )}
-
-          {/* ── Equipos ────────────────────────────────────── */}
-          <h2 className="mt-10 font-display text-lg font-semibold uppercase tracking-wide text-cream">
-            Mis equipos <span className="font-mono text-sm font-normal text-tea/40">({misEquipos.length})</span>
-          </h2>
-          {misEquipos.length === 0 ? (
-            <Card className="mt-3"><p className="text-sm text-tea/55">No estás en ningún equipo. Los crea el coordinador de cada comisión.</p></Card>
-          ) : (
-            <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {misEquipos.map((g, i) => <TarjetaGrupo key={g.id} g={g} i={i} comision={contextoDe(g)} />)}
-            </div>
-          )}
-        </>
+      {lm ? (
+        <p className="text-tea/70">Cargando…</p>
+      ) : em ? (
+        <div className="rounded-2xl border border-candy/30 bg-jungle p-5">
+          <p className="text-tea">No se pudieron cargar tus grupos.</p>
+          <button type="button" onClick={reload} className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-caribbean hover:underline">Reintentar</button>
+        </div>
+      ) : misGrupos.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-tea/20 p-6">
+          <p className="font-display text-xl font-semibold uppercase tracking-wide text-cream">Aún no estás en ningún grupo</p>
+          <p className="mt-2 text-tea/80">Pide entrar a una comisión: quien la coordina recibe tu solicitud.</p>
+          <button type="button" onClick={() => setVerUnirse(true)} className="mt-4 inline-flex min-h-11 items-center rounded-full bg-caribbean px-5 font-display text-sm font-semibold uppercase tracking-[0.14em] text-jungle">
+            Ver comisiones
+          </button>
+        </div>
+      ) : (
+        <ul className="space-y-4">
+          {misComisiones.map((g) => (
+            <FichaComision
+              key={g.id}
+              g={g}
+              info={porId.get(g.id)}
+              equipos={misEquipos.filter((t) => t.parentCommissionId === g.id)}
+              tareasDe={tareasDe}
+              color={colorDe(g)}
+            />
+          ))}
+          {equiposSueltos.map((t) => {
+            const madre = porId.get(t.parentCommissionId)
+            return (
+              <li key={t.id} style={varsDeColor(colorDe(t))} className="overflow-hidden rounded-3xl border border-[var(--g-solido)]/40 bg-[var(--g-tinte)]">
+                <Link to={`/panel/grupos/${t.parentCommissionId}`} className="block p-5">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--g-tinta)]">Equipo · {rolLabel[t.role]}{madre ? ` · en ${madre.name}` : ''}</span>
+                  <h2 className="mt-1 font-display text-2xl font-semibold uppercase leading-tight tracking-wide text-[var(--g-tinta)]">{t.name}</h2>
+                  <p className="mt-2 font-semibold text-[#002420]">{textoTareas(tareasDe(t.id))}</p>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
       )}
 
-      {/* ── Postularme a una comisión (plegable) ──────────── */}
-      <div className="mt-10">
+      {/* ── Unirse a otra comisión (plegable) ── */}
+      <section className="mt-10">
         <button
           type="button"
-          onClick={() => setVerPostular((v) => !v)}
-          aria-expanded={verPostular}
-          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-tea/10 bg-jungle px-5 py-4 text-left transition hover:border-caribbean/40"
+          onClick={() => setVerUnirse((v) => !v)}
+          aria-expanded={verUnirse}
+          className="flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-tea/10 bg-jungle px-5 text-left transition hover:border-caribbean/40"
         >
-          <span>
-            <span className="font-display text-sm font-semibold uppercase tracking-wide text-cream">Postularme a una comisión</span>
-            <span className="mt-0.5 block font-mono text-xs text-tea/45">
-              {lc ? 'Cargando…' : `${disponibles.length} disponibles`}
-            </span>
+          <span className="font-semibold text-cream">
+            Unirme a otra comisión
+            <span className="ml-2 font-normal text-tea/70">{lc ? '' : `· ${disponibles.length} ${disponibles.length === 1 ? 'disponible' : 'disponibles'}`}</span>
           </span>
-          <span className={`flex-none font-mono text-xs text-caribbean transition-transform ${verPostular ? 'rotate-180' : ''}`}>▾</span>
+          <Ico name="abajo" className={`h-5 w-5 flex-none text-caribbean transition-transform ${verUnirse ? 'rotate-180' : ''}`} />
         </button>
 
-        {verPostular && (
-          <Reveal className="mt-3">
-            {disponibles.length === 0 ? (
-              <Card><p className="text-sm text-tea/55">Ya perteneces a todas las comisiones del colectivo.</p></Card>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {disponibles.map((c) => (
-                  <Card key={c.id} className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <Link to={`/panel/grupos/${c.id}`} className="font-display text-base font-semibold uppercase tracking-wide text-cream hover:text-caribbean">{c.name}</Link>
-                      <p className="mt-1 font-mono text-xs text-tea/45">{c.coordinatorName || 'Sin coordinador'} · {c.memberCount} miembros</p>
-                    </div>
-                    <button
-                      onClick={() => solicitar(c.id)}
-                      disabled={busy === c.id}
-                      className="flex-none rounded-full border border-tea/25 px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wide text-tea transition hover:border-caribbean hover:text-caribbean disabled:opacity-50"
-                    >
-                      {busy === c.id ? '…' : 'Postularme'}
-                    </button>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </Reveal>
+        {verUnirse && (
+          <ul className="mt-3 space-y-2.5">
+            {disponibles.length === 0 && <li className="rounded-2xl border border-tea/10 bg-jungle p-5 text-tea/80">Ya estás en todas las comisiones del colectivo.</li>}
+            {disponibles.map((c) => (
+              <li key={c.id} style={varsDeColor(colorDe(c))} className="flex items-center gap-4 rounded-2xl border border-tea/10 bg-jungle p-4">
+                <span className="h-3 w-3 flex-none rounded-full bg-[var(--g-solido)]" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-cream">{c.name}</p>
+                  <p className="text-sm text-tea/70">{c.coordinatorName ? `Coordina ${c.coordinatorName}` : 'Sin coordinador'} · {c.memberCount} {c.memberCount === 1 ? 'persona' : 'personas'}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => solicitar(c.id)}
+                  disabled={busy === c.id}
+                  className="min-h-11 flex-none rounded-full border border-caribbean/40 px-4 text-sm font-semibold text-caribbean transition hover:bg-caribbean hover:text-jungle disabled:opacity-50"
+                >
+                  {busy === c.id ? '…' : 'Pedir entrar'}
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
-      </div>
+      </section>
     </>
   )
 }

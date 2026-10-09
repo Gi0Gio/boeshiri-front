@@ -56,6 +56,13 @@ export function SessionProvider({ children }) {
     return me
   }, [])
 
+  /** Vuelve a pedir /auth/yo (tras un cambio de estado de la propia cuenta). */
+  const recargar = useCallback(async () => {
+    const me = await authApi.me()
+    setUser(me)
+    return me
+  }, [])
+
   const logout = useCallback(() => {
     setUser(null)
     authApi.logout()
@@ -69,7 +76,7 @@ export function SessionProvider({ children }) {
   const rol = user ? deriveRol(permisos) : null
 
   return (
-    <SessionContext.Provider value={{ user, rol, permisos, hasPermission, login, logout, loading }}>
+    <SessionContext.Provider value={{ user, rol, permisos, hasPermission, login, logout, recargar, setUser, loading }}>
       {children}
     </SessionContext.Provider>
   )

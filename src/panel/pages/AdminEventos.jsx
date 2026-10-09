@@ -5,6 +5,7 @@ import { useFetch } from '../../hooks/useFetch'
 import ImageUpload from '../../components/ImageUpload'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
+import Ico from '../Ico'
 
 const TABS = [{ id: 'All', label: 'Todos' }, { id: 'Upcoming', label: 'Próximos' }, { id: 'Past', label: 'Pasados' }]
 const BLANK = { category: '', title: '', description: '', date: '', location: '', cost: '', visibility: 'Public', images: [] }
@@ -86,9 +87,9 @@ export default function AdminEventos() {
     <>
       <PageHeader
         eyebrow="Administración"
-        title="Gestión de eventos"
+        title="Agenda"
         description="Crea, oculta y elimina eventos. Un evento tiene lugar, costo, imágenes, visibilidad y registro de asistencia."
-        actions={<Btn tone="candy" onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : '+ Nuevo evento'}</Btn>}
+        actions={<Btn onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : <><Ico name="mas" className="h-4 w-4" />Nuevo evento</>}</Btn>}
       />
 
 
@@ -145,9 +146,9 @@ export default function AdminEventos() {
 
       <PillTabs tabs={TABS} active={tab} onChange={setTab} />
 
-      {loading && <p className="text-tea/50">Cargando eventos…</p>}
+      {loading && <p className="text-tea/70">Cargando eventos…</p>}
       {error && <p className="text-candy">No se pudieron cargar los eventos.</p>}
-      {!loading && !error && eventos.length === 0 && <Card><p className="text-sm text-tea/55">No hay eventos en esta vista.</p></Card>}
+      {!loading && !error && eventos.length === 0 && <Card><p className="text-sm text-tea/70">No hay eventos en esta vista.</p></Card>}
 
       {!loading && !error && eventos.length > 0 && (
         <Reveal>
@@ -159,8 +160,8 @@ export default function AdminEventos() {
               {eventos.map((e) => (
                 <Tr key={e.id}>
                   <Td className="font-medium text-tea">{e.title}</Td>
-                  <Td className="hidden sm:table-cell text-tea/55">{e.category}</Td>
-                  <Td className="font-mono text-xs text-tea/50">{fmtFecha(e.date)}</Td>
+                  <Td className="hidden sm:table-cell text-tea/70">{e.category}</Td>
+                  <Td className="font-mono text-xs text-tea/70">{fmtFecha(e.date)}</Td>
                   <Td>
                     <div className="flex flex-wrap gap-1">
                       <Chip tone={e.status === 'Published' ? 'caribbean' : 'gris'}>{e.status === 'Published' ? 'Visible' : 'Oculto'}</Chip>
@@ -168,12 +169,12 @@ export default function AdminEventos() {
                       {e.visibility === 'Members' && <Chip tone="terracotta">Miembros</Chip>}
                     </div>
                   </Td>
-                  <Td className="hidden lg:table-cell font-mono text-xs text-tea/50">
+                  <Td className="hidden lg:table-cell font-mono text-xs text-tea/70">
                     {asistId === e.id ? (
                       <span className="flex items-center gap-1">
                         <input type="number" min="0" value={asistCount} onChange={(ev) => setAsistCount(ev.target.value)} className="w-16 rounded border border-tea/20 bg-jungle-deep/60 px-2 py-1 text-tea" autoFocus />
                         <button onClick={() => guardarAsistencia(e.id)} className="text-caribbean hover:underline">✓</button>
-                        <button onClick={() => setAsistId(null)} className="text-tea/40 hover:text-candy">✕</button>
+                        <button onClick={() => setAsistId(null)} className="text-tea/70 hover:text-candy">✕</button>
                       </span>
                     ) : (
                       <button onClick={() => { setAsistId(e.id); setAsistCount(String(e.attendanceCount || '')) }} className="hover:text-caribbean">{e.attendanceCount || 0} ✎</button>

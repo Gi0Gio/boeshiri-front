@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
@@ -18,10 +19,16 @@ function parts(iso) {
     fecha: d.toLocaleDateString('es-PA', { day: '2-digit', month: 'short', year: 'numeric' }),
   }
 }
+/**
+ * Las cifras se celebran a partir de aquí. Con uno o dos eventos, una banda
+ * con «1 eventos realizados» en grande resta en vez de sumar.
+ */
+const MIN_EVENTOS_PARA_CIFRAS = 3
+
 const entrada = (cost) => (cost > 0 ? `$${cost}` : 'Entrada libre')
 
 const chipCategoria = {
-  Música: 'bg-terracotta text-white',
+  Música: 'bg-terracotta text-jungle',
   Exposición: 'bg-caribbean text-jungle',
   Taller: 'bg-rainforest text-white',
   Comunidad: 'bg-candy text-white',
@@ -44,13 +51,19 @@ export default function Eventos() {
     descripcion: 'Talleres, exposiciones, conciertos y encuentros del colectivo Boesh Irí en Chiriquí, Panamá.',
   })
 
-  const { data: prox, loading: lp } = useFetch(() => eventsApi.list('Upcoming'))
-  const { data: pasados, loading: lh } = useFetch(() => eventsApi.list('Past'))
+  // Cambiar `intento` vuelve a pedir ambas listas: es el botón «Reintentar».
+  const [intento, setIntento] = useState(0)
+  const { data: prox, loading: lp, error: ep } = useFetch(() => eventsApi.list('Upcoming'), [intento])
+  const { data: pasados, loading: lh, error: eh } = useFetch(() => eventsApi.list('Past'), [intento])
   const proximos = prox ?? []
   const historial = pasados ?? []
   const destacado = proximos[0]
   const resto = proximos.slice(1)
   const asistentesTotal = historial.reduce((a, e) => a + (e.attendanceCount || 0), 0)
+  // Un fallo de red no es «no hay eventos»: si cualquiera de las dos listas
+  // falla, la página lo dice en vez de mostrar una agenda vacía y cifras en cero.
+  const fallo = ep || eh
+  const sinNada = !lp && !lh && !fallo && proximos.length === 0 && historial.length === 0
 
   return (
     <>
@@ -63,6 +76,61 @@ export default function Eventos() {
         </div>
       </section>
 
+      {fallo ? (
+        <EstadoAgenda
+          titulo="No pudimos cargar la agenda"
+          texto="Puede ser la conexión o un problema de nuestro lado. Vuelve a intentarlo en un momento."
+        >
+          <button
+            type="button"
+            onClick={() => setIntento((n) => n + 1)}
+            className="min-h-11 rounded-full bg-jungle px-7 py-3 font-display text-sm font-semibold uppercase tracking-[0.18em] text-cream transition hover:bg-rainforest"
+          >
+            Reintentar
+          </button>
+        </EstadoAgenda>
+      ) : sinNada ? (
+        <EstadoAgenda
+          titulo="Todavía no hay fechas anunciadas"
+          texto="Cuando el colectivo anuncie un evento aparecerá aquí, con lugar, hora y entrada. Mientras, mira lo que está publicando la comunidad."
+        >
+          <Link
+            to="/explorar"
+            className="inline-flex min-h-11 items-center rounded-full bg-jungle px-7 py-3 font-display text-sm font-semibold uppercase tracking-[0.18em] text-cream transition hover:bg-rainforest"
+          >
+            Ver el Mural
+          </Link>
+          <Link
+            to="/contacto?asunto=Proponer%20un%20evento"
+            className="inline-flex min-h-11 items-center rounded-full border border-rainforest px-7 py-3 font-display text-sm font-semibold uppercase tracking-[0.18em] text-rainforest transition hover:bg-rainforest hover:text-cream"
+          >
+            Proponer un evento
+          </Link>
+        </EstadoAgenda>
+      ) : (
+        <ConEventos {...{ lp, lh, destacado, resto, historial, asistentesTotal }} />
+      )}
+    </>
+  )
+}
+
+/** Bloque único que sustituye a toda la agenda cuando no hay nada que mostrar. */
+function EstadoAgenda({ titulo, texto, children }) {
+  return (
+    <section className="bg-cream py-24">
+      <Reveal className="mx-auto flex max-w-xl flex-col items-center px-5 text-center">
+        <FrogIcon className="h-16 w-16 text-rainforest" />
+        <h2 className="mt-6 font-display text-3xl font-semibold uppercase tracking-wide text-jungle md:text-4xl">{titulo}</h2>
+        <p className="mt-4 leading-relaxed text-jungle/75">{texto}</p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">{children}</div>
+      </Reveal>
+    </section>
+  )
+}
+
+function ConEventos({ lp, lh, destacado, resto, historial, asistentesTotal }) {
+  return (
+    <>
       {/* Próximo destacado */}
       <section className="bg-cream py-20">
         <div className="mx-auto max-w-6xl px-5">
@@ -72,9 +140,15 @@ export default function Eventos() {
           </Reveal>
 
           {lp ? (
-            <p className="mt-10 text-jungle/50">Cargando…</p>
+            <p className="mt-10 text-jungle/70">Cargando…</p>
           ) : !destacado ? (
-            <p className="mt-10 text-jungle/50">No hay eventos próximos por ahora.</p>
+            <p className="mt-10 max-w-xl leading-relaxed text-jungle/75">
+              No hay una fecha anunciada todavía. Mientras, repasa lo que ya hicimos o{' '}
+              <Link to="/contacto?asunto=Proponer%20un%20evento" className="text-rainforest underline underline-offset-4 hover:text-jungle">
+                propón un evento
+              </Link>
+              .
+            </p>
           ) : (() => {
             const p = parts(destacado.date)
             return (
@@ -94,11 +168,11 @@ export default function Eventos() {
                 <div className="flex flex-col justify-center p-8 md:p-10">
                   <h3 className="font-display text-3xl font-semibold uppercase leading-tight tracking-wide text-cream">{destacado.title}</h3>
                   <ul className="mt-6 space-y-2 text-sm text-tea/85">
-                    <li>🗓️ {p.dow}, {p.hora}</li>
-                    {destacado.location && <li>📍 {destacado.location}</li>}
-                    <li>🎟️ {entrada(destacado.cost)}</li>
+                    <li><span className="mr-2 font-display text-xs uppercase tracking-[0.15em] text-caribbean">Cuándo</span><span className="capitalize">{p.dow}</span>, {p.hora}</li>
+                    {destacado.location && <li><span className="mr-2 font-display text-xs uppercase tracking-[0.15em] text-caribbean">Dónde</span>{destacado.location}</li>}
+                    <li><span className="mr-2 font-display text-xs uppercase tracking-[0.15em] text-caribbean">Entrada</span>{entrada(destacado.cost)}</li>
                   </ul>
-                  <Link to="/contacto" className="mt-8 inline-block w-fit rounded-full bg-caribbean px-7 py-3 font-display text-sm font-semibold uppercase tracking-[0.18em] text-jungle transition hover:-translate-y-0.5">Quiero asistir</Link>
+                  <Link to={`/eventos/${destacado.id}`} className="mt-8 inline-block w-fit rounded-full bg-caribbean px-7 py-3 font-display text-sm font-semibold uppercase tracking-[0.18em] text-jungle transition hover:-translate-y-0.5">Ver detalles</Link>
                 </div>
               </Reveal>
             )
@@ -119,13 +193,14 @@ export default function Eventos() {
                     <DateBlock dia={p.dia} mes={p.mes} className="flex-none sm:w-24" />
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className={`rounded-full px-3 py-0.5 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] ${chip(e.category)}`}>{e.category}</span>
-                        <span className="text-xs uppercase tracking-[0.15em] text-jungle/50">{p.dow} · {p.hora}</span>
+                        <span className={`rounded-full px-3 py-0.5 font-display text-xs font-semibold uppercase tracking-[0.15em] ${chip(e.category)}`}>{e.category}</span>
+                        <span className="text-xs uppercase tracking-[0.15em] text-jungle/70">{p.dow} · {p.hora}</span>
                       </div>
                       <h3 className="mt-2 font-display text-2xl font-semibold uppercase tracking-wide text-jungle">{e.title}</h3>
-                      <p className="mt-3 text-xs uppercase tracking-[0.15em] text-rainforest">{e.location ? `📍 ${e.location} · ` : ''}🎟️ {entrada(e.cost)}</p>
+                      <p className="mt-3 text-xs uppercase tracking-[0.15em] text-rainforest">{[e.location, entrada(e.cost)].filter(Boolean).join(' · ')}</p>
                     </div>
-                    <Link to="/contacto" className="flex-none rounded-full border border-rainforest px-5 py-2.5 text-center font-display text-xs font-semibold uppercase tracking-[0.18em] text-rainforest transition hover:bg-rainforest hover:text-cream">Más info</Link>
+                    {/* Span, no Link: toda la fila ya es el enlace y un <a> dentro de otro es HTML inválido. */}
+                    <span className="flex-none rounded-full border border-rainforest px-5 py-2.5 text-center font-display text-xs font-semibold uppercase tracking-[0.18em] text-rainforest transition group-hover:bg-rainforest group-hover:text-cream">Más info</span>
                   </Reveal>
                 )
               })}
@@ -134,16 +209,21 @@ export default function Eventos() {
         </section>
       )}
 
-      {/* Cifras */}
+      {/* Cifras: solo cuando ya hay un historial que enseñar. */}
+      {historial.length >= MIN_EVENTOS_PARA_CIFRAS && (
       <section className="bg-dorace-pattern relative overflow-hidden bg-jungle py-16">
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-[36rem] w-[36rem] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(closest-side,rgba(0,115,94,0.3),transparent_70%)]" />
-        <div className="relative mx-auto grid max-w-3xl grid-cols-2 gap-8 px-5 text-center">
+        <div className={`relative mx-auto grid max-w-3xl gap-8 px-5 text-center ${asistentesTotal > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
           <Reveal><p className="font-display text-5xl font-semibold text-caribbean">{historial.length}</p><p className="mt-2 text-xs uppercase tracking-[0.2em] text-tea/70">Eventos realizados</p></Reveal>
-          <Reveal delay={100}><p className="font-display text-5xl font-semibold text-caribbean">{asistentesTotal}</p><p className="mt-2 text-xs uppercase tracking-[0.2em] text-tea/70">Asistentes</p></Reveal>
+          {asistentesTotal > 0 && (
+            <Reveal delay={100}><p className="font-display text-5xl font-semibold text-caribbean">{asistentesTotal}</p><p className="mt-2 text-xs uppercase tracking-[0.2em] text-tea/70">Asistentes</p></Reveal>
+          )}
         </div>
       </section>
+      )}
 
-      {/* Historial */}
+      {/* Historial: sin pasados no hay nada que repasar, así que la sección no se pinta. */}
+      {(lh || historial.length > 0) && (
       <section className="bg-cream py-20">
         <div className="mx-auto max-w-6xl px-5">
           <Reveal>
@@ -152,9 +232,7 @@ export default function Eventos() {
           </Reveal>
 
           {lh ? (
-            <p className="mt-10 text-jungle/50">Cargando…</p>
-          ) : historial.length === 0 ? (
-            <p className="mt-10 text-jungle/50">Aún no hay eventos en el historial.</p>
+            <p className="mt-10 text-jungle/70">Cargando…</p>
           ) : (
             <div className="mt-12 grid gap-6 sm:grid-cols-2">
               {historial.map((e, i) => {
@@ -167,11 +245,11 @@ export default function Eventos() {
                     </div>
                     <div className="flex-1 p-6">
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className={`rounded-full px-3 py-0.5 font-display text-[0.65rem] font-semibold uppercase tracking-[0.15em] ${chip(e.category)}`}>{e.category}</span>
-                        <span className="text-xs uppercase tracking-[0.15em] text-jungle/50">{p.fecha}</span>
+                        <span className={`rounded-full px-3 py-0.5 font-display text-xs font-semibold uppercase tracking-[0.15em] ${chip(e.category)}`}>{e.category}</span>
+                        <span className="text-xs uppercase tracking-[0.15em] text-jungle/70">{p.fecha}</span>
                       </div>
                       <h3 className="mt-3 font-display text-xl font-semibold uppercase tracking-wide text-jungle">{e.title}</h3>
-                      <p className="mt-4 text-xs uppercase tracking-[0.15em] text-rainforest">{e.location ? `📍 ${e.location} · ` : ''}👥 {e.attendanceCount} asistentes</p>
+                      <p className="mt-4 text-xs uppercase tracking-[0.15em] text-rainforest">{[e.location, e.attendanceCount > 0 && `${e.attendanceCount} asistentes`].filter(Boolean).join(' · ')}</p>
                     </div>
                   </Reveal>
                 )
@@ -180,6 +258,7 @@ export default function Eventos() {
           )}
         </div>
       </section>
+      )}
     </>
   )
 }

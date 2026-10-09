@@ -81,6 +81,12 @@ export default function Login() {
             />
           </div>
 
+          <p className="-mt-2 text-right">
+            <Link to="/recuperar" className="inline-flex min-h-11 items-center text-sm text-tea/70 underline-offset-4 transition hover:text-caribbean hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
+
           <button
             type="submit"
             disabled={busy}
@@ -110,7 +116,7 @@ export default function Login() {
                 <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-caribbean">
                   Reenviar verificación
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-tea/60">
+                <p className="mt-2 text-sm leading-relaxed text-tea/70">
                   Te mandamos un enlace nuevo para confirmar tu correo.
                 </p>
                 <ReenviarVerificacion email={email} />
@@ -120,7 +126,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setMostrarReenvio(true)}
-                  className="text-sm text-tea/50 underline-offset-4 transition hover:text-caribbean hover:underline"
+                  className="inline-flex min-h-11 items-center text-sm text-tea/70 underline-offset-4 transition hover:text-caribbean hover:underline"
                 >
                   ¿No te llegó el correo de verificación?
                 </button>
@@ -129,14 +135,14 @@ export default function Login() {
           </div>
         )}
 
-        <p className="mt-8 text-center text-sm text-tea/60">
+        <p className="mt-8 text-center text-sm text-tea/70">
           ¿No tienes cuenta?{' '}
           <Link to="/postularme" className="font-semibold text-caribbean underline-offset-4 hover:underline">
             Postúlate aquí
           </Link>
         </p>
-        <p className="mt-2 text-center text-sm text-tea/50">
-          <Link to="/" className="underline-offset-4 hover:underline">Volver al sitio público</Link>
+        <p className="mt-2 text-center text-sm text-tea/70">
+          <Link to="/" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">Volver al sitio público</Link>
         </p>
       </div>
     </section>
