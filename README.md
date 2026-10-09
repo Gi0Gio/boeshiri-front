@@ -66,7 +66,8 @@ Directiva organizan el colectivo.
 
 ```bash
 npm install       # instalar dependencias
-npm run dev       # servidor de desarrollo (Vite)
+npm run dev       # servidor de desarrollo (Vite) → la API que diga .env
+npm run dev:local # servidor de desarrollo → API local (http://localhost:8080)
 npm run build     # build de producción → dist/
 npm run preview   # previsualizar el build
 ```

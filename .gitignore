@@ -10,6 +10,7 @@ dist-ssr/
 .env
 .env.*
 !.env.example
+!.env.localapi
 
 # MCP (puede contener rutas/credenciales locales)
 .mcp.json
