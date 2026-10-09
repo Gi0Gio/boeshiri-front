@@ -30,8 +30,14 @@ import PanelLayout from './panel/PanelLayout'
 import Dashboard from './panel/pages/Dashboard'
 import MiPerfil from './panel/pages/MiPerfil'
 import Publicaciones from './panel/pages/Publicaciones'
+import Publicar from './panel/pages/Publicar'
+import Convocatoria from './pages/Convocatoria'
+import AdminConvocatorias from './panel/pages/AdminConvocatorias'
+import ConvocatoriaEditor from './panel/pages/ConvocatoriaEditor'
+import ConvocatoriaDetalle from './panel/pages/ConvocatoriaDetalle'
 import Grupos from './panel/pages/Grupos'
 import GrupoDetalle from './panel/pages/GrupoDetalle'
+import EquipoDetalle from './panel/pages/EquipoDetalle'
 import Documentos from './panel/pages/Documentos'
 import MiMarketplace from './panel/pages/MiMarketplace'
 import AdminMiembros from './panel/pages/AdminMiembros'
@@ -66,6 +72,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="marketplace" element={<Marketplace />} />
             <Route path="marketplace/:id" element={<MarketplaceDetalle />} />
             <Route path="contacto" element={<Contacto />} />
+            <Route path="convocatorias/:id" element={<Convocatoria />} />
             <Route path="postularme" element={<Postularme />} />
             <Route path="verificar" element={<VerificarCorreo />} />
             <Route path="*" element={<NotFound />} />
@@ -81,8 +88,11 @@ createRoot(document.getElementById('root')).render(
             <Route index element={<Dashboard />} />
             <Route path="perfil" element={<MiPerfil />} />
             <Route path="publicaciones" element={<Publicaciones />} />
+            <Route path="publicar" element={<Publicar />} />
+            <Route path="publicar/:id" element={<Publicar />} />
             <Route path="grupos" element={<Grupos />} />
             <Route path="grupos/:id" element={<GrupoDetalle />} />
+            <Route path="grupos/equipos/:id" element={<EquipoDetalle />} />
             <Route path="documentos" element={<Documentos />} />
             <Route path="marketplace" element={<MiMarketplace />} />
             <Route path="avisos" element={<Avisos />} />
@@ -93,6 +103,10 @@ createRoot(document.getElementById('root')).render(
             <Route path="admin/moderacion" element={<AdminModeracion />} />
             <Route path="admin/finanzas" element={<AdminFinanzas />} />
             <Route path="admin/transparencia" element={<AdminTransparencia />} />
+            <Route path="admin/convocatorias" element={<AdminConvocatorias />} />
+            <Route path="admin/convocatorias/nueva" element={<ConvocatoriaEditor />} />
+            <Route path="admin/convocatorias/:id" element={<ConvocatoriaDetalle />} />
+            <Route path="admin/convocatorias/:id/editar" element={<ConvocatoriaEditor />} />
             {/* «Espacio Junta» repetía el menú y enlazaba a la biblioteca: la ruta vieja lleva a esa biblioteca. */}
             <Route path="admin/junta" element={<Navigate to="/panel/documentos#junta" replace />} />
             <Route path="super/roles" element={<SuperRoles />} />

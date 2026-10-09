@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import FrogIcon from '../components/FrogIcon'
 import Reveal from '../components/Reveal'
 import ReenviarVerificacion from '../components/ReenviarVerificacion'
@@ -10,10 +10,21 @@ const inputBase =
   'w-full rounded-xl border border-tea/15 bg-jungle-deep/50 px-4 py-3 text-cream placeholder:text-tea/40 backdrop-blur transition focus:border-caribbean focus:outline-none focus:ring-2 focus:ring-caribbean/30'
 const labelBase = 'font-display text-xs font-semibold uppercase tracking-[0.2em] text-caribbean'
 
+/**
+ * Adónde volver tras entrar. Solo rutas del panel o una convocatoria: un `volver` que apunte fuera
+ * («//otro-sitio», «https://…») convertiría el login en un redirector para phishing.
+ */
+function destinoSeguro(volver) {
+  return volver && (/^\/panel(\/|\?|$)/.test(volver) || /^\/convocatorias\/[\w-]+$/.test(volver)) ? volver : '/panel'
+}
+
 export default function Login() {
   const { login } = useSession()
   const navigate = useNavigate()
   const toast = useToast()
+  const [params] = useSearchParams()
+  const volver = params.get('volver')
+  const destino = destinoSeguro(volver)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,7 +43,7 @@ export default function Login() {
     try {
       await login(email.trim(), password)
       toast.success('¡Bienvenido de vuelta!')
-      navigate('/panel')
+      navigate(destino, { replace: true })
     } catch (err) {
       toast.error(err.message || 'No se pudo iniciar sesión.')
       if (err.status === 403 && /verificar tu correo/i.test(err.message || '')) setSinVerificar(true)
@@ -53,6 +64,9 @@ export default function Login() {
           <h1 className="mt-3 font-display text-4xl font-semibold uppercase tracking-wide text-cream md:text-5xl">
             Iniciar sesión
           </h1>
+          {destino !== '/panel' && (
+            <p className="mx-auto mt-4 max-w-xs text-tea/80">{destino.startsWith('/convocatorias/') ? 'Entra y respondes la convocatoria sin escribir tus datos.' : 'Entra con tu cuenta para abrir el enlace que te compartieron.'}</p>
+          )}
         </Reveal>
 
         <Reveal delay={120} as="form" onSubmit={submit} className="mt-10 space-y-5">

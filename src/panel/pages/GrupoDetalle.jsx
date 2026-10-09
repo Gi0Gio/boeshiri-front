@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Card, Chip, Btn, PillTabs, Avatar, AvatarStack, inputCls, labelCls } from '../ui'
+import ListaPersonas, { ordenarPersonas } from '../ListaPersonas'
+import { useCargaTareas } from '../tareas'
 import KanbanBoard from '../KanbanBoard'
 import { groupsApi } from '../../api/groups'
 import { communityApi } from '../../api/community'
@@ -10,11 +12,7 @@ import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
 import { useColoresGrupos, varsDeColor } from '../colores'
 import Ico from '../Ico'
-
-const rolLabel = { Coordinator: 'Coordinador', Leader: 'Líder', Member: 'Miembro' }
-const rolTono = { Coordinator: 'caribbean', Leader: 'terracotta', Member: 'gris' }
-/** Quien manda arriba: una lista de gente se lee buscando primero al responsable. */
-const rolOrden = { Coordinator: 0, Leader: 1, Member: 2 }
+import CompartirGrupo from '../CompartirGrupo'
 
 /** «Hace 3 días» dice más que una fecha cuando lo que importa es la espera. */
 function hace(iso) {
@@ -40,7 +38,7 @@ export default function GrupoDetalle() {
   const [nuevoEquipo, setNuevoEquipo] = useState({ name: '', leaderUserId: '' })
   const [coordSel, setCoordSel] = useState('')
   const [tab, setTab] = useState('tablero')
-  const [sumarA, setSumarA] = useState({}) // equipo → persona elegida para sumar
+  const [pedida, setPedida] = useState(false)
   const confirm = useConfirm()
   const navigate = useNavigate()
   const colorDe = useColoresGrupos()
@@ -56,6 +54,8 @@ export default function GrupoDetalle() {
     [id, version, puedeGestionar, !!com],
   )
   const pendientes = solicitudes ?? []
+  const esIntegrante = miembros.some((m) => m.userId === user?.id)
+  const carga = useCargaTareas(id, tab === 'integrantes' && esIntegrante, version)
 
   async function decidir(reqId, decision) {
     try { await groupsApi.decideJoin(reqId, decision); reload() }
@@ -94,15 +94,12 @@ export default function GrupoDetalle() {
     catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo.' }) }
   }
 
-  async function sumarAlEquipo(teamId) {
-    const userId = sumarA[teamId]
-    if (!userId) return
+  async function pedirEntrar() {
     try {
-      await groupsApi.addTeamMember(teamId, userId)
-      setMsg({ ok: true, text: 'Sumado al equipo.' })
-      setSumarA((s) => ({ ...s, [teamId]: '' }))
-      reload()
-    } catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo sumar.' }) }
+      const r = await groupsApi.requestJoin(id)
+      toast.success(r?.mensaje || 'Solicitud enviada. Quien coordina la revisará.')
+      setPedida(true)
+    } catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo enviar la solicitud.' }) }
   }
 
   async function asignarCoordinador() {
@@ -112,7 +109,7 @@ export default function GrupoDetalle() {
   }
 
   const volver = (
-    <Link to="/panel/grupos" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-caribbean hover:underline"><Ico name="atras" className="h-4 w-4" />Tus grupos</Link>
+    <Link to="/panel/grupos" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-caribbean hover:underline"><Ico name="atras" className="h-4 w-4" />Grupos</Link>
   )
   if (loading) return <>{volver}<p className="mt-4 text-tea/70">Cargando…</p></>
   if (error || !com) return (
@@ -127,9 +124,7 @@ export default function GrupoDetalle() {
   const color = colorDe(com.id)
 
   const coordinador = miembros.find((m) => m.role === 'Coordinator')
-  const ordenados = [...miembros].sort(
-    (a, b) => rolOrden[a.role] - rolOrden[b.role] || a.name.localeCompare(b.name, 'es'),
-  )
+  const ordenados = ordenarPersonas(miembros)
 
   const tabs = [
     { id: 'tablero', label: 'Tareas' },
@@ -146,7 +141,10 @@ export default function GrupoDetalle() {
           bloques de etiquetas y cifras. Los avisos accionables van aquí porque
           son la razón por la que alguien que gestiona entra. */}
       <header style={varsDeColor(color)} className="mb-5 mt-1 rounded-3xl bg-[var(--g-tinte)] px-5 py-4 sm:p-6">
-        <h1 className="font-display text-2xl font-semibold uppercase leading-tight tracking-wide text-[var(--g-tinta)] sm:text-3xl md:text-4xl">{com.name}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="font-display text-2xl font-semibold uppercase leading-tight tracking-wide text-[var(--g-tinta)] sm:text-3xl md:text-4xl">{com.name}</h1>
+          <CompartirGrupo nombre={com.name} ruta={`/panel/grupos/${com.id}`} />
+        </div>
         <div className="mt-2 flex items-center gap-3 text-[#002420]">
           {miembros.length > 0 && <AvatarStack personas={miembros} max={3} size="sm" />}
           <p className="min-w-0 text-sm">
@@ -156,6 +154,22 @@ export default function GrupoDetalle() {
             <span className="hidden sm:inline">{' · '}{com.permanent ? 'permanente' : 'temporal'}</span>
           </p>
         </div>
+
+        {/* Quien llega por un enlace compartido y no es de la comisión puede pedir
+            entrar aquí mismo: el enlace hace de invitación. */}
+        {!esIntegrante && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p className="text-sm font-semibold text-[#002420]">No estás en esta comisión.</p>
+            {pedida ? (
+              <span className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[#002420]/80"><Ico name="reloj" className="h-4 w-4" />Pediste entrar</span>
+            ) : (
+              <button type="button" onClick={pedirEntrar}
+                className="min-h-11 rounded-full bg-[#002420] px-4 text-sm font-semibold text-[#f6fbef] transition hover:brightness-125">
+                Pedir entrar
+              </button>
+            )}
+          </div>
+        )}
 
         {puedeGestionar && (pendientes.length > 0 || !coordinador) && (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -186,65 +200,54 @@ export default function GrupoDetalle() {
       {tab === 'integrantes' && (
         <div className="space-y-8">
           <section>
-            <h2 className="mb-3 font-display text-lg font-semibold uppercase tracking-wide text-cream">Integrantes · {miembros.length}</h2>
-            {miembros.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-tea/20 p-5 text-tea/80">Aún no hay nadie en esta comisión.</p>
-            ) : (
-              <ul className="overflow-hidden rounded-2xl border border-tea/10 bg-jungle">
-                {ordenados.map((m) => (
-                  <li key={m.userId} className="flex items-center border-b border-tea/10 last:border-0">
-                    <Link to={`/perfil/${m.userId}`} target="_blank" className="flex min-h-14 min-w-0 flex-1 items-center gap-3 px-4 py-2 transition hover:bg-tea/5">
-                      <Avatar id={m.userId} nombre={m.name} foto={m.photoUrl} size="sm" />
-                      <span className="min-w-0 flex-1 truncate text-tea">{m.userId === user?.id ? `${m.name} (tú)` : m.name}</span>
-                      {m.role !== 'Member' && <Chip tone={rolTono[m.role]}>{rolLabel[m.role] ?? m.role}</Chip>}
-                    </Link>
-                    {/* A quien coordina no se le saca: antes hay que nombrar a otra persona. */}
-                    {puedeGestionar && m.role !== 'Coordinator' && m.userId !== user?.id && (
-                      <button type="button" onClick={() => sacar(m)} aria-label={`Sacar a ${m.name} de la comisión`}
-                        className="mr-2 inline-flex min-h-11 flex-none items-center px-3 text-sm font-semibold text-tea/70 hover:text-candy">
-                        Sacar
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Integrantes · {miembros.length}</h2>
+            <p className="mb-3 mt-1 text-sm text-tea/70">
+              {carga ? (
+                <>
+                  Con sus tareas activas en la comisión, para repartir mejor.
+                  {carga.sinResponsable > 0 && (
+                    <> <button type="button" onClick={() => setTab('tablero')} className="font-semibold text-terracotta underline-offset-4 hover:underline">
+                      {carga.sinResponsable} {carga.sinResponsable === 1 ? 'tarea no tiene' : 'tareas no tienen'} responsable
+                    </button>.</>
+                  )}
+                </>
+              ) : 'Quienes forman la comisión.'}
+            </p>
+            <ListaPersonas
+              miembros={miembros}
+              userId={user?.id}
+              carga={carga}
+              contexto="esta comisión"
+              // A quien coordina no se le saca: antes hay que nombrar a otra persona.
+              puedeSacar={(m) => puedeGestionar && m.role !== 'Coordinator' && m.userId !== user?.id}
+              onSacar={sacar}
+            />
           </section>
 
-          <section>
+          <section style={varsDeColor(color)}>
             <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">Equipos · {com.teams.length}</h2>
-            <p className="mb-3 mt-1 text-sm text-tea/70">Grupos dentro de la comisión para algo concreto, cada uno con quien lo lidera.</p>
+            <p className="mb-3 mt-1 text-sm text-tea/70">Grupos dentro de la comisión para algo concreto. Cada uno tiene su tablero y su gente.</p>
             {com.teams.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-tea/20 p-5 text-tea/80">
                 Sin equipos todavía.{puedeGestionar && ' Se crean desde «Gestión».'}
               </p>
             ) : (
-              <ul className="space-y-2.5">
+              <ul className="overflow-hidden rounded-2xl border border-tea/10 bg-jungle">
                 {com.teams.map((t) => {
-                  const lider = miembros.find((m) => m.name === t.leaderName)
-                  // Suman gente quien lidera el equipo y quien gestiona la comisión.
-                  const puedeSumar = puedeGestionar || (lider && lider.userId === user?.id)
+                  const lider = miembros.find((m) => m.userId === t.leaderUserId)
                   return (
-                    <li key={t.id} style={varsDeColor(color)} className="rounded-2xl border border-tea/10 bg-jungle p-4">
-                      <div className="flex items-center gap-3">
-                        <span className="h-3 w-3 flex-none rounded-full bg-[var(--g-solido)]" aria-hidden="true" />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-cream">{t.name}</p>
-                          <p className="text-sm text-tea/70">Lidera {t.leaderName || 'nadie aún'} · {t.memberCount} {t.memberCount === 1 ? 'persona' : 'personas'}</p>
-                        </div>
-                        <Avatar id={lider?.userId} nombre={t.leaderName || '—'} foto={lider?.photoUrl} size="sm" />
-                      </div>
-                      {puedeSumar && (
-                        <div className="mt-3 flex flex-wrap gap-2 border-t border-tea/10 pt-3">
-                          <label className="sr-only" htmlFor={`sumar-${t.id}`}>Sumar a {t.name}</label>
-                          <select id={`sumar-${t.id}`} value={sumarA[t.id] ?? ''} onChange={(e) => setSumarA((s) => ({ ...s, [t.id]: e.target.value }))}
-                            className={`${inputCls} min-w-0 flex-1`}>
-                            <option value="">Sumar a…</option>
-                            {ordenados.filter((m) => m.userId !== lider?.userId).map((m) => <option key={m.userId} value={m.userId}>{m.name}</option>)}
-                          </select>
-                          <Btn tone="ghost" onClick={() => sumarAlEquipo(t.id)} disabled={!sumarA[t.id]}>Sumar</Btn>
-                        </div>
-                      )}
+                    <li key={t.id} className="border-b border-tea/10 last:border-0">
+                      <Link to={`/panel/grupos/equipos/${t.id}`} className="flex min-h-16 items-center gap-3 px-4 py-2.5 transition hover:bg-tea/5">
+                        <span aria-hidden="true" className="h-3 w-3 flex-none rounded-full bg-[var(--g-solido)]" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-semibold text-cream">{t.name}</span>
+                          <span className="block text-sm text-tea/70">
+                            {t.leaderUserId === user?.id ? 'Lo lideras tú' : `Lidera ${t.leaderName || 'nadie aún'}`} · {t.memberCount} {t.memberCount === 1 ? 'persona' : 'personas'}
+                          </span>
+                        </span>
+                        <Avatar id={t.leaderUserId} nombre={t.leaderName || '—'} foto={lider?.photoUrl} size="sm" />
+                        <Ico name="ir" className="h-4 w-4 flex-none text-tea/70" />
+                      </Link>
                     </li>
                   )
                 })}

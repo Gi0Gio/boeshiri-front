@@ -4,7 +4,7 @@ import { tasksApi, COLUMNAS_KANBAN, COLUMNAS_RESPONSABLE } from '../api/tasks'
 import { useFetch } from '../hooks/useFetch'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
-import { siguientePaso, TEXTO_PASO, ESTADO } from './tareas'
+import { siguientePaso, TEXTO_PASO, ESTADO, sinResponsable } from './tareas'
 import Ico from './Ico'
 
 /**
@@ -15,6 +15,10 @@ import Ico from './Ico'
  * estado con un filtro arriba (activas, mías, hechas) y, en cada tarea, un botón
  * con su siguiente paso. Cambiar a un estado cualquiera sigue disponible para
  * quien coordina o lidera, plegado bajo «Cambiar estado».
+ *
+ * Las tareas activas sin responsable van primero, en su propia sección: son las
+ * que se quedan olvidadas. Quien coordina o lidera asigna tocando el responsable
+ * de la tarea, sin abrir el formulario; cada cara dice cuánto lleva ya esa persona.
  *
  * La autorización real vive en la API; aquí solo se pinta lo que corresponde al
  * rol CONTEXTUAL del usuario dentro de este grupo, no a sus permisos globales.
@@ -45,6 +49,8 @@ export default function KanbanBoard({ groupId, members = [], currentUserId }) {
   const [enlaceEn, setEnlaceEn] = useState(null)
   const [abiertaId, setAbiertaId] = useState(null)
   const [enlace, setEnlace] = useState({ title: '', url: '' })
+  // Tarea cuyo selector de responsables está abierto.
+  const [asignandoId, setAsignandoId] = useState(null)
 
   // El tablero es contextual: quien no pertenece al grupo recibiría 403 de la API.
   if (!esIntegrante) {
@@ -134,6 +140,19 @@ export default function KanbanBoard({ groupId, members = [], currentUserId }) {
     } finally { setBusy(null) }
   }
 
+  /** Pone o quita a alguien de una tarea en el momento: la API reemplaza la lista entera. */
+  async function alternarResponsable(t, userId) {
+    const actuales = (t.assignees ?? []).map((a) => a.userId)
+    const ids = actuales.includes(userId) ? actuales.filter((x) => x !== userId) : [...actuales, userId]
+    setBusy(`asignar-${t.id}`)
+    try {
+      await tasksApi.update(t.id, { title: t.title, description: t.description ?? null, assigneeIds: ids })
+      reload()
+    } catch (e) {
+      toast.error(e.message || 'No se pudo cambiar el responsable.')
+    } finally { setBusy(null) }
+  }
+
   /** Estados a los que esta persona puede llevar una tarea concreta. */
   function destinos(tarea) {
     const esResponsable = (tarea.assignees ?? []).some((a) => a.userId === currentUserId)
@@ -148,6 +167,8 @@ export default function KanbanBoard({ groupId, members = [], currentUserId }) {
   const conteo = { activas: activas.length, mias: activas.filter(esMia).length, hechas: lista.length - activas.length }
   const visibles = filtro === 'hechas' ? lista.filter((t) => t.status === 'Done') : filtro === 'mias' ? activas.filter(esMia) : activas
   const fotos = new Map(members.map((m) => [m.userId, m.photoUrl]))
+  // Tareas activas por persona: se enseñan al asignar para repartir sin adivinar.
+  const cargaDe = (userId) => activas.filter((t) => (t.assignees ?? []).some((a) => a.userId === userId)).length
 
   // Función de render, no componente: un componente definido aquí dentro se
   // remontaría en cada render y el campo del enlace perdería el foco al teclear.
@@ -156,9 +177,17 @@ export default function KanbanBoard({ groupId, members = [], currentUserId }) {
     const otros = destinos(t).filter((c) => c.id !== paso)
     const puedeEnlazar = esGestor || esMia(t)
     const abierta = abiertaId === t.id
+    const asignando = asignandoId === t.id
+    const libre = (t.assignees ?? []).length === 0
+    const responsables = (t.assignees ?? []).map((a) => (
+      <span key={a.userId} className="inline-flex items-center gap-1.5">
+        <Avatar id={a.userId} nombre={a.name} foto={fotos.get(a.userId)} size="xs" />
+        {a.userId === currentUserId ? 'Tú' : a.name.split(' ')[0]}
+      </span>
+    ))
     const tieneMas = Boolean(t.description) || (t.links ?? []).length > 0 || esGestor || puedeEnlazar
     return (
-      <li key={t.id} className="rounded-2xl border border-tea/10 bg-jungle">
+      <li key={t.id} className={`rounded-2xl border bg-jungle ${libre && t.status !== 'Done' ? 'border-terracotta/35' : 'border-tea/10'}`}>
         {/* Cerrada, una tarea dice qué es, de quién y su siguiente paso. Los
             detalles (descripción, enlaces, cambiar estado) se abren al tocarla:
             así caben varias en la pantalla del celular. */}
@@ -173,15 +202,21 @@ export default function KanbanBoard({ groupId, members = [], currentUserId }) {
             ) : (
               <p className={`font-medium leading-snug ${t.status === 'Done' ? 'text-tea/70 line-through decoration-tea/40' : 'text-cream'}`}>{t.title}</p>
             )}
-            {(t.assignees ?? []).length > 0 && (
-              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-tea/80">
-                {t.assignees.map((a) => (
-                  <span key={a.userId} className="inline-flex items-center gap-1.5">
-                    <Avatar id={a.userId} nombre={a.name} foto={fotos.get(a.userId)} size="xs" />
-                    {a.userId === currentUserId ? 'Tú' : a.name.split(' ')[0]}
-                  </span>
-                ))}
-              </p>
+            {esGestor && t.status !== 'Done' ? (
+              // Para quien gestiona, el responsable es un botón: asignar está en la tarea.
+              <button type="button" onClick={() => setAsignandoId(asignando ? null : t.id)} aria-expanded={asignando}
+                className={`-ml-1.5 mt-1 inline-flex min-h-11 max-w-full items-center gap-x-2 gap-y-1 rounded-full px-1.5 text-sm transition-colors hover:bg-tea/5 ${libre ? 'font-semibold text-terracotta' : 'text-tea/80'}`}>
+                {libre ? (
+                  <><Ico name="user" className="h-4 w-4" />Asignar</>
+                ) : (
+                  <>{responsables}<span className="sr-only">. Cambiar responsables</span></>
+                )}
+                <Ico name="abajo" className={`h-3.5 w-3.5 flex-none text-tea/60 transition-transform ${asignando ? 'rotate-180' : ''}`} />
+              </button>
+            ) : libre ? (
+              t.status !== 'Done' && <p className="mt-1.5 text-sm font-semibold text-terracotta">Sin responsable</p>
+            ) : (
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-tea/80">{responsables}</p>
             )}
           </div>
           {paso && (
@@ -195,6 +230,31 @@ export default function KanbanBoard({ groupId, members = [], currentUserId }) {
             </button>
           )}
         </div>
+
+        {asignando && (
+          <div className="border-t border-tea/10 px-3.5 pb-3.5 pt-3 sm:px-4">
+            <p className="text-sm font-semibold text-cream">¿Quién se encarga?</p>
+            <p className="mt-0.5 text-xs text-tea/70">Toca para poner o quitar. El número es cuántas tareas activas lleva ya.</p>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {members.map((m) => {
+                const activo = (t.assignees ?? []).some((a) => a.userId === m.userId)
+                return (
+                  <button key={m.userId} type="button" onClick={() => alternarResponsable(t, m.userId)} aria-pressed={activo}
+                    disabled={busy === `asignar-${t.id}`}
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full py-1 pl-1 pr-3 text-sm transition disabled:opacity-60 ${activo ? 'bg-caribbean font-semibold text-jungle' : 'bg-tea/5 text-tea/85 hover:bg-tea/10'}`}>
+                    <Avatar id={m.userId} nombre={m.name} foto={m.photoUrl} size="xs" />
+                    {m.userId === currentUserId ? 'Tú' : m.name.split(' ')[0]}
+                    <span className={`font-mono text-xs ${activo ? 'text-jungle/75' : 'text-tea/60'}`}>{cargaDe(m.userId)}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <button type="button" onClick={() => setAsignandoId(null)}
+              className="mt-2 inline-flex min-h-11 items-center px-1 text-sm font-semibold text-caribbean hover:underline">
+              Listo
+            </button>
+          </div>
+        )}
 
         {abierta && (
           <div className="border-t border-tea/10 px-3.5 pb-3.5 pt-3 sm:px-4">
@@ -337,8 +397,17 @@ export default function KanbanBoard({ groupId, members = [], currentUserId }) {
         <ul className="space-y-2.5">{visibles.map(tarea)}</ul>
       ) : (
         <div className="space-y-5">
+          {filtro === 'activas' && visibles.some(sinResponsable) && (
+            <section>
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-terracotta">
+                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-terracotta" />
+                Sin responsable · {visibles.filter(sinResponsable).length}
+              </h3>
+              <ul className="space-y-2.5">{visibles.filter(sinResponsable).map(tarea)}</ul>
+            </section>
+          )}
           {SECCIONES.map((estado) => {
-            const enEstado = visibles.filter((t) => t.status === estado)
+            const enEstado = visibles.filter((t) => t.status === estado && !(filtro === 'activas' && sinResponsable(t)))
             if (enEstado.length === 0) return null
             return (
               <section key={estado}>

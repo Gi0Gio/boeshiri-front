@@ -5,6 +5,7 @@ import { publicationsApi } from '../api/publications'
 import { useFetch } from '../hooks/useFetch'
 import { useSession } from '../auth/SessionContext'
 import CompartirBoton from '../components/CompartirBoton'
+import { detectarMedio } from '../utils/medios'
 import { gradientFor } from '../utils/gradient'
 import { useSeo } from '../hooks/useSeo'
 
@@ -12,13 +13,6 @@ const TIPO_LABEL = { News: 'Noticia', Article: 'Artículo', Photo: 'Foto', Video
 
 const fmtFecha = (iso) =>
   new Date(iso).toLocaleDateString('es-PA', { day: 'numeric', month: 'long', year: 'numeric' })
-
-/* Convierte un enlace de YouTube en su URL de embed, o null si no aplica. */
-function youtubeEmbed(url) {
-  if (!url) return null
-  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/)
-  return m ? `https://www.youtube.com/embed/${m[1]}` : null
-}
 
 export default function PublicacionDetalle() {
   const { id } = useParams()
@@ -73,7 +67,10 @@ export default function PublicacionDetalle() {
     )
   }
 
-  const embed = p.type === 'Video' ? youtubeEmbed(p.externalUrl) : null
+  // YouTube se incrusta como video; Spotify y SoundCloud, como reproductor de audio.
+  const medio = p.type === 'Video' || p.type === 'Music' ? detectarMedio(p.externalUrl) : null
+  const embed = medio && !medio.alto ? medio.embed : null
+  const audio = medio?.alto ? medio : null
 
   return (
     <article className="min-h-screen bg-cream pt-16">
@@ -115,8 +112,14 @@ export default function PublicacionDetalle() {
           </Reveal>
         )}
 
-        {!embed && !p.images?.length && p.type !== 'Article' && p.type !== 'News' && (
+        {!embed && !audio && !p.images?.length && p.type !== 'Article' && p.type !== 'News' && (
           <div className="mt-8 aspect-video rounded-2xl" style={{ background: gradientFor(p.id) }} />
+        )}
+
+        {audio && (
+          <Reveal className="mt-6 overflow-hidden rounded-2xl">
+            <iframe src={audio.embed} title={`${p.title} en ${audio.proveedor}`} height={audio.alto} className="w-full" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" />
+          </Reveal>
         )}
 
         {/* Cuerpo */}
@@ -127,7 +130,7 @@ export default function PublicacionDetalle() {
         )}
 
         {/* Enlace externo (música / video sin embed) */}
-        {p.externalUrl && !embed && (
+        {p.externalUrl && !medio && (
           <a href={p.externalUrl} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-2 rounded-full bg-jungle px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tea transition hover:bg-jungle-deep">
             Abrir enlace ↗
           </a>

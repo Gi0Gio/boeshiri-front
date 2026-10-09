@@ -27,6 +27,35 @@ export function siguientePaso(tarea, { esGestor, userId }) {
   return null
 }
 
+/** Una tarea activa sin nadie a cargo: el tablero la sube y la marca para que no se olvide. */
+export const sinResponsable = (t) => t.status !== 'Done' && (t.assignees ?? []).length === 0
+
+/**
+ * Cuántas tareas activas lleva cada integrante de un grupo, para repartir mejor.
+ * Devuelve `{ porPersona: Map(userId → n), sinResponsable: n }`. Solo pide el
+ * tablero si quien mira forma parte del grupo (la API responde 403 si no).
+ */
+export function useCargaTareas(groupId, activo, version = 0) {
+  const [carga, setCarga] = useState(null)
+  useEffect(() => {
+    if (!activo) { setCarga(null); return }
+    let vivo = true
+    tasksApi.board(groupId)
+      .then((ts) => {
+        if (!vivo) return
+        const porPersona = new Map()
+        for (const t of ts) {
+          if (t.status === 'Done') continue
+          for (const a of t.assignees ?? []) porPersona.set(a.userId, (porPersona.get(a.userId) ?? 0) + 1)
+        }
+        setCarga({ porPersona, sinResponsable: ts.filter(sinResponsable).length })
+      })
+      .catch(() => { if (vivo) setCarga(null) })
+    return () => { vivo = false }
+  }, [groupId, activo, version])
+  return carga
+}
+
 export const TEXTO_PASO = {
   InProgress: 'Empezar',
   InReview: 'Entregar',

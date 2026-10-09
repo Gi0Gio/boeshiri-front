@@ -52,10 +52,31 @@
   --color-candy: #c8002e;
 }
 
+/* Un trozo del sitio público dentro del panel (la vista previa del Mural en el
+ * compositor): devuelve los nombres de la paleta a sus colores reales, que el
+ * sombrero «Lo mío» reasigna. Sin esto, una pieza sobre «jungle-deep» se pintaba
+ * crema sobre crema y no se veía. */
+.colores-sitio {
+  --color-jungle-deep: #00110e;
+  --color-jungle: #002420;
+  --color-tea: #d9f2c2;
+  --color-cream: #f6fbef;
+  --color-caribbean: #00e6bc;
+  --color-rainforest: #00735e;
+  --color-terracotta: #d67a63;
+  --color-candy: #e60035;
+}
+
 /* El cambio de sombrero se nota: el fondo de la casa cambia de color en vez de
  * saltar. Solo el fondo; el contenido cambia al instante. */
 .panel-casa {
   transition: background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Riel del panel en escritorio: se despliega sobre el contenido. Ancho y sombra a la
+ * vez, con la misma salida rápida que la hoja inferior. */
+.riel-panel {
+  transition: width 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease-out;
 }
 
 /* Hoja inferior del panel (Más, tu cuenta): sube desde el borde, rápida y sin rebote. */
@@ -74,6 +95,9 @@
   }
   .hoja-sube {
     animation: none;
+  }
+  .riel-panel {
+    transition: none;
   }
 }
 

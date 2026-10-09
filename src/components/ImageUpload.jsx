@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { uploadFile } from '../api/uploads'
 import { compressImage } from '../utils/image'
+import Ico from '../panel/Ico'
 
 /**
  * Campo de imagen reutilizable (panel): muestra vista previa, sube al API con
@@ -33,7 +34,7 @@ export default function ImageUpload({ value, onChange, folder = 'misc', label = 
         <div className={`h-20 w-20 flex-none overflow-hidden border border-tea/15 bg-jungle-deep/60 ${shape}`}>
           {value
             ? <img src={value} alt="" className="h-full w-full object-cover" />
-            : <span className="flex h-full w-full items-center justify-center text-tea/25">🖼️</span>}
+            : <span className="flex h-full w-full items-center justify-center text-tea/40"><Ico name="imagen" className="h-7 w-7" /></span>}
         </div>
         <div className="flex-1">
           <div className="flex flex-wrap gap-2">

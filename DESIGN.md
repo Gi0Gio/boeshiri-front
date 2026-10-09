@@ -83,7 +83,8 @@ spacing:
   section-gap: "40px"
   page-x-desktop: "40px"
   touch-min: "44px"
-  rail-width: "256px"
+  rail-width: "72px"
+  rail-width-open: "256px"
 components:
   button-primary-mio:
     backgroundColor: "{colors.rainforest}"
@@ -155,7 +156,7 @@ components:
   rail-desktop:
     backgroundColor: "{colors.junta-surface}"
     textColor: "{colors.tea}"
-    width: "256px"
+    width: "72px"
 ---
 
 # Design System: Boesh Irí
@@ -237,7 +238,7 @@ Five fixed triples (solid, tint, ink) in `src/panel/colores.js`, assigned by alp
 
 Phone first, one reading column. Panel content sits in a single centred column (max-w-3xl, 768px) in both hats and at every width. Page padding is 16px on phones, 24px from 640px, 40px from 1024px; content clears a 112px bottom pad on phones for the tab bar. Sections are separated by 40px; list rows stack with a 10px gap; cards pad 20px (24px from 640px).
 
-Navigation changes form at 1024px. Below it: a sticky top bar (frog link, the «Lo mío | Junta» switch for board members or the house name for others, avatar opening «Tu cuenta») and a fixed bottom tab bar of 64px-tall items with icon over label: Inicio, Grupos, Publicar, Avisos in «Lo mío»; Pendientes, Personas, Comisiones, Agenda plus «Más» in «Junta». Occasional destinations live in a bottom sheet, not the bar. From 1024px the bars become a fixed 256px left rail with the same items, then «Lo tuyo» or «Más» and «Sistema» groups, and the account at the foot.
+Navigation changes form at 1024px. Below it: a sticky top bar (frog link, the «Lo mío | Junta» switch for board members or the house name for others, avatar opening «Tu cuenta») and a fixed bottom tab bar of 64px-tall items with icon over label: Inicio, Grupos, Publicar, Avisos in «Lo mío»; Pendientes, Personas, Comisiones, Agenda plus «Más» in «Junta». Occasional destinations live in a bottom sheet, not the bar. From 1024px the bars become a fixed left rail with the same items, then «Lo tuyo» or «Más» and «Sistema» groups, and the account at the foot. The rail rests compact at 72px (icons only) and opens to 256px over the content on hover or keyboard focus; the content never moves.
 
 **The Thumb Rule.** Every interactive target is at least 44px tall (bottom-bar items 64px, sheet rows 48px). Wide tables keep their first column sticky so a row's name stays visible while scrolling to its actions.
 
@@ -288,11 +289,29 @@ Confident Oswald pills.
 ### Navigation
 - **Hat switch:** two links (not a toggle) in a pill track with a 15% hairline; the active hat is a filled caribbean pill, the other is 70% ink. Each hat has its own landing page and back works.
 - **Bottom tab bar (phone):** fixed, 95% surface with blur, top hairline, safe-area padding; items 64px tall, icon 22px over a 0.75rem semibold label; active is action green, inactive 70% ink. The Avisos tab carries the only unread badge: a candy circle with mono white count, «9+» above nine.
-- **Rail (desktop):** 256px surface with a right hairline; links 44px, 12px radius, 20px icons; active has a 12% action-green wash and green semibold text.
+- **Rail (desktop):** 72px surface with a right hairline, icons centred; opens to 256px over the content after a 150ms hover pause (or on keyboard focus; Escape folds it), width eased in 0.22s with a soft shadow as state, labels fading in. Links 44px, 12px radius, 20px icons; active has a 12% action-green wash and green semibold text. Folded, group titles become a hairline, the Avisos count becomes a candy dot, the account becomes its avatar, and the hat switch becomes a vertical capsule of two icon pills: leaf («Lo mío») and sun («Junta»).
 - **Bottom sheet:** rises from the edge in 0.28s with no bounce, 24px top radius, a 40px grab handle, max 80vh; Escape and scrim tap close it; it holds «Más», «Sistema» and «Tu cuenta».
 
 ### Task row (signature)
 A rounded row on the surface: the task title in body weight, then the group tag and the state name, with the next-step pill at the right. Ordered in progress, pending, in review. In a group's board the same rows are grouped by state under a filter pill track (Activas, Mías, Hechas) with mono counts.
+
+### Groups map
+«Grupos» lists every commission of the collective, not only yours. Yours come first as full-tint group cards (role pill, your task count, who coordinates) with ALL their teams hanging inside: your teams on a white wash with a solid dot and a «Tu equipo» tag, the others flush on the tint with a hollow ring. Commissions you are not in follow under «Otras comisiones» as quiet surface cards with a solid dot, their teams named in one line, and an outlined «Pedir entrar» pill (it turns into «Pedida» with a clock after sending). Each team has its own page under its commission (back link names the commission), with its own task board and people.
+
+### Sharing a group
+Commission and team headers carry a «Compartir» pill (white at 60% on the group tint, group ink, share icon) that opens the phone's native share tray, or copies the panel link where there is none. The link is the panel URL itself with the site's generic preview, so the group name is not exposed. Opening it without a session goes through the login («Entra con tu cuenta para abrir el enlace que te compartieron») and returns to the group; the login only returns to /panel routes. A visitor who is not in the group sees, inside the header, why and what to do: «Pedir entrar» (jungle pill) for the commission, or the leader to ask for a team.
+
+### Assigning tasks
+Active tasks with nobody in charge open the board in their own «Sin responsable» section (terracotta dot and title; the row gets a terracotta hairline at 35%). For whoever coordinates or leads, a task's assignees are a button: tapping it opens an inline face picker under the row (pills with avatar, first name and a mono count of that person's active tasks); each tap saves. «Personas» shows each member's active-task count in mono under their name, and links to the unassigned tasks.
+
+### Composer (Publicar)
+The «Publicar» tab opens the composer directly (/panel/publicar; editing is /panel/publicar/:id); «Mis publicaciones» is a separate list under «Lo tuyo». A row of type pills with icons (Escrito, Fotos, Video, Música, Noticia when allowed) sits on top; Video and Música start with the link field, which recognises YouTube, Spotify and SoundCloud, switches the type if needed with a one-line caribbean note, and plays the embed inline. Photos go in a dashed drop zone (several at once, drag and drop), shown as a 3-column grid where the first carries a «Portada» tag and round icon buttons reorder or remove. Tags are chips with suggestions from the tags the collective already uses (case- and accent-insensitive); the first chip is filled in action green and the line below spells out «Tipo · etiqueta». Visibility is a two-option segmented pill («Todo el mundo | Solo miembros»). The live preview is the Mural piece itself (same component) on a jungle wall with the Dorace pattern, wrapped in .colores-sitio so it keeps the public palette inside «Lo mío»; it sits in a 224px sticky column from 1024px and just above the Publicar button on phones. Drafts autosave to the device and come back through a caribbean-tinted notice («Seguir con él | Descartar»). After publishing, a centred success view shows the piece with «Ver en el Mural», «Compartir» (public posts only), «Publicar otra» and «Mis publicaciones».
+
+**The Other World Rule.** A piece of the public site shown inside the panel (the composer preview) wears .colores-sitio, which restores the real palette that the «Lo mío» hat remaps.
+
+### Open calls (Convocatorias)
+Junta: «Convocatorias» under «Más» (permission convocatorias.gestionar). The list puts open calls and unreviewed responses first, with the response count in mono and a candy count pill for the new ones. The editor builds questions as numbered cards: a label, optional help, a pill row for the type (Texto corto, Texto largo, Enlace, Monto, each with its icon), an «Obligatoria» checkbox and round icon buttons to reorder or remove. An empty call offers the «tallerista» template. Once responses exist, a question can't change type or be removed (both locked, with a reason in the title). The call page carries its state chip, a primary state action («Abrir convocatoria», «Cerrar», «Reabrir»), «Compartir», «Ver como el público» and «Editar». Responses are collapsible cards (new ones with a candy hairline, the compared amount in mono at the right), filterable by state, sortable «Por llegada» or by the amount question. Inside each card are all answers, mail and WhatsApp links, and a «Evaluación de la Junta» box with a four-state radio row and a private note.
+Public page (/convocatorias/:id, light site world): a tea strip under the navbar invites outsiders to join («Quiero unirme», «Ya soy miembro: entrar», which returns to the call) or tells a logged-in person that their profile data is used. Then a jungle Dorace hero, the description, and a white form card. Name, mail and WhatsApp are asked only without a session. Amount fields carry a «$» prefix and mono digits; a hidden honeypot catches bots; the candy «Enviar propuesta» button follows the public site's CTA convention. The confirmation replaces the form and is scrolled into view.
 
 ### Gritos card (signature)
 A surface card with a megaphone in a quiet circle, the author line, the title in Oswald, date, time and place, then slot dots: filled cream dots for taken places, hairline rings for free ones, followed by «N de M van».

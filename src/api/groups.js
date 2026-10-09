@@ -4,6 +4,8 @@ import { apiFetch } from './client'
 export const groupsApi = {
   commissions: () => apiFetch('/grupos/comisiones'),
   commission: (id) => apiFetch(`/grupos/comisiones/${id}`),
+  /** Equipo: su comisión e integrantes. */
+  team: (id) => apiFetch(`/grupos/equipos/${id}`),
   mine: () => apiFetch('/grupos/mias'),
   requestJoin: (id) => apiFetch(`/grupos/comisiones/${id}/solicitar`, { method: 'POST' }),
   joinRequests: (id) => apiFetch(`/grupos/comisiones/${id}/solicitudes`),

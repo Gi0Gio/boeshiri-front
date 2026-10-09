@@ -202,6 +202,16 @@ function PiezaNoticia({ p }) {
   )
 }
 
+/**
+ * Una publicación tal como sale en el Mural. La exporta también para la vista
+ * previa del compositor: así lo que ves al publicar es exactamente lo que saldrá.
+ */
+export function PiezaPublicacion({ p }) {
+  if (p.type === 'Article') return <PiezaArticulo p={p} />
+  if (p.type === 'News') return <PiezaNoticia p={p} />
+  return <PiezaVisual p={p} conPlay={p.type === 'Video' || p.type === 'Music'} />
+}
+
 function PiezaMercado({ p }) {
   const precio = p.priceMax != null ? `$${p.price}–${p.priceMax}` : `$${p.price}`
   return (

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useSession, alcanza } from '../../auth/SessionContext'
+import { useSession } from '../../auth/SessionContext'
+import { puedeVer } from '../acceso'
+import { rutaGrupo } from '../rutas'
 import { useFetch } from '../../hooks/useFetch'
 import { useToast } from '../../components/Toast'
 import { groupsApi } from '../../api/groups'
@@ -32,10 +34,9 @@ const enlaceSec = 'inline-flex min-h-11 items-center text-sm font-semibold text-
 
 /** Una tarea tuya: el color de su grupo a la izquierda y el siguiente paso a mano. */
 function FilaTarea({ t, color, paso, ocupado, onPaso }) {
-  const destino = t.grupo.type === 'Team' ? t.grupo.parentCommissionId : t.grupo.id
   return (
     <li className="flex items-stretch overflow-hidden rounded-2xl border border-tea/10 bg-jungle" style={varsDeColor(color)}>
-      <Link to={`/panel/grupos/${destino}`} className="min-w-0 flex-1 px-4 py-3.5">
+      <Link to={rutaGrupo(t.grupo)} className="min-w-0 flex-1 px-4 py-3.5">
         <p className="font-medium leading-snug text-cream">{t.title}</p>
         <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
           <span className="rounded-full bg-[var(--g-tinte)] px-2.5 py-0.5 text-xs font-semibold text-[var(--g-tinta)]">{t.grupo.name}</span>
@@ -59,7 +60,7 @@ function FilaTarea({ t, color, paso, ocupado, onPaso }) {
 }
 
 export default function Dashboard() {
-  const { user, rol, hasPermission } = useSession()
+  const { user, hasPermission } = useSession()
   const toast = useToast()
   const colorDe = useColoresGrupos()
   const [version, setVersion] = useState(0)
@@ -69,7 +70,7 @@ export default function Dashboard() {
   const { tareas, cargando, error } = useMisTareas(grupos, user.id, version)
   const { data: gritos } = useFetch(() => gritosApi.list().catch(() => []), [])
   const { data: pubs } = useFetch(() => publicationsApi.mine().catch(() => []), [])
-  const puedeJunta = alcanza(rol, 'junta')
+  const puedeJunta = puedeVer('/panel/admin', hasPermission)
   const pendientes = usePendientesJunta(hasPermission, puedeJunta)
 
   const nombre = user.fullName.split(' ')[0]
@@ -195,7 +196,7 @@ export default function Dashboard() {
           ) : (
             <p className="text-tea/80">Aún no has publicado en el Mural.</p>
           )}
-          <Link to="/panel/publicaciones" className="inline-flex min-h-11 items-center rounded-full bg-caribbean px-5 font-display text-sm font-semibold uppercase tracking-[0.14em] text-jungle transition hover:-translate-y-0.5">
+          <Link to="/panel/publicar" className="inline-flex min-h-11 items-center rounded-full bg-caribbean px-5 font-display text-sm font-semibold uppercase tracking-[0.14em] text-jungle transition hover:-translate-y-0.5">
             Publicar algo
           </Link>
         </div>
