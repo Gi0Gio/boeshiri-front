@@ -33,6 +33,7 @@ import Publicaciones from './panel/pages/Publicaciones'
 import Publicar from './panel/pages/Publicar'
 import Convocatoria from './pages/Convocatoria'
 import AdminConvocatorias from './panel/pages/AdminConvocatorias'
+import EventoEditor from './panel/pages/EventoEditor'
 import ConvocatoriaEditor from './panel/pages/ConvocatoriaEditor'
 import ConvocatoriaDetalle from './panel/pages/ConvocatoriaDetalle'
 import Grupos from './panel/pages/Grupos'
@@ -100,6 +101,8 @@ createRoot(document.getElementById('root')).render(
             <Route path="admin/miembros" element={<AdminMiembros />} />
             <Route path="admin/comisiones" element={<AdminComisiones />} />
             <Route path="admin/eventos" element={<AdminEventos />} />
+            <Route path="admin/eventos/nuevo" element={<EventoEditor />} />
+            <Route path="admin/eventos/:id/editar" element={<EventoEditor />} />
             <Route path="admin/moderacion" element={<AdminModeracion />} />
             <Route path="admin/finanzas" element={<AdminFinanzas />} />
             <Route path="admin/transparencia" element={<AdminTransparencia />} />

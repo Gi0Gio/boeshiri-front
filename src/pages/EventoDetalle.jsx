@@ -8,10 +8,7 @@ import { useSession } from '../auth/SessionContext'
 import { gradientFor } from '../utils/gradient'
 import { useSeo } from '../hooks/useSeo'
 
-const fmtFecha = (iso) =>
-  new Date(iso).toLocaleDateString('es-PA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-const fmtHora = (iso) =>
-  new Date(iso).toLocaleTimeString('es-PA', { hour: 'numeric', minute: '2-digit' })
+import { partesFecha, franja, duracion, entrada } from '../utils/eventos'
 
 export default function EventoDetalle() {
   const { id } = useParams()
@@ -25,25 +22,27 @@ export default function EventoDetalle() {
   useSeo({
     titulo: e ? e.title : 'Evento',
     descripcion: e
-      ? `${e.description?.slice(0, 140) || e.category} · ${fmtFecha(e.date)}${e.location ? `, ${e.location}` : ''}.`
+      ? `${e.description?.slice(0, 140) || e.category} · ${e.date ? partesFecha(e.date).larga : 'fecha por confirmar'}${e.location ? `, ${e.location}` : ''}.`
       : 'Evento del colectivo Boesh Irí.',
     imagen: e?.images?.[0],
-    datos: e && {
+    // Sin fecha no hay schema Event: Google lo exige y uno a medias se marca como error.
+    datos: e?.date && {
       '@context': 'https://schema.org',
       '@type': 'Event',
       name: e.title,
       description: e.description || undefined,
       image: e.images?.length ? e.images : undefined,
       startDate: e.date,
+      endDate: e.endsAt || undefined,
       eventStatus: 'https://schema.org/EventScheduled',
       eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
       location: e.location
         ? { '@type': 'Place', name: e.location, address: { '@type': 'PostalAddress', addressRegion: 'Chiriquí', addressCountry: 'PA' } }
         : undefined,
       organizer: { '@id': 'https://boeshiri.grupogeshk.com/#organizacion' },
-      offers: {
+      offers: e.cost == null ? undefined : {
         '@type': 'Offer',
-        price: e.cost ?? 0,
+        price: e.cost,
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
       },
@@ -78,7 +77,8 @@ export default function EventoDetalle() {
   }
 
   const imagenes = e.images ?? []
-  const pasado = new Date(e.date) < new Date()
+  const pasado = Boolean(e.date) && new Date(e.date) < new Date()
+  const p = partesFecha(e.date)
 
   return (
     <article className="min-h-screen bg-cream pt-16">
@@ -90,6 +90,7 @@ export default function EventoDetalle() {
             <span className="rounded-full bg-jungle px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.18em] text-tea">{e.category}</span>
             {e.visibility === 'Members' && <span className="rounded-full bg-terracotta px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.18em] text-jungle">Solo miembros</span>}
             {pasado && <span className="rounded-full bg-rainforest/15 px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.18em] text-rainforest">Ya ocurrió</span>}
+            {e.planning && <span className="rounded-full border border-dashed border-rainforest/50 px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.18em] text-rainforest">En planeación</span>}
           </div>
           <h1 className="mt-4 font-display text-4xl font-semibold uppercase leading-tight tracking-tight text-jungle md:text-5xl">{e.title}</h1>
         </Reveal>
@@ -117,8 +118,14 @@ export default function EventoDetalle() {
         <Reveal className="mt-8 grid gap-4 rounded-2xl border border-rainforest/15 bg-white p-6 sm:grid-cols-3">
           <div>
             <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-rainforest">Cuándo</p>
-            <p className="mt-1 text-sm capitalize text-jungle">{fmtFecha(e.date)}</p>
-            <p className="text-sm text-jungle/70">{fmtHora(e.date)}</p>
+            {p ? (
+              <>
+                <p className="mt-1 text-sm capitalize text-jungle">{p.larga}</p>
+                <p className="text-sm text-jungle/70">{franja(e.date, e.endsAt)}{duracion(e.date, e.endsAt) && ` · ${duracion(e.date, e.endsAt)}`}</p>
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-jungle">Fecha por confirmar</p>
+            )}
           </div>
           <div>
             <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-rainforest">Dónde</p>
@@ -126,7 +133,7 @@ export default function EventoDetalle() {
           </div>
           <div>
             <p className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-rainforest">Costo</p>
-            <p className="mt-1 text-sm text-jungle">{e.cost > 0 ? `$${e.cost}` : 'Entrada libre'}</p>
+            <p className="mt-1 text-sm text-jungle">{entrada(e.cost)}</p>
           </div>
         </Reveal>
 

@@ -41,7 +41,7 @@ export default function ConvocatoriaEditor() {
 
   useEffect(() => {
     eventsApi.listManage().catch(() => eventsApi.list()).then((es) => {
-      setEventos([...(es ?? [])].sort((a, b) => new Date(b.date) - new Date(a.date)))
+      setEventos([...(es ?? [])].sort((a, b) => (b.date ? new Date(b.date) : Infinity) - (a.date ? new Date(a.date) : Infinity)))
     }).catch(() => {})
   }, [])
 
@@ -127,7 +127,7 @@ export default function ConvocatoriaEditor() {
             <Etiqueta htmlFor="c-evento" extra="(opcional)">Evento</Etiqueta>
             <select id="c-evento" className={`${inputCls} mt-1.5`} value={form.eventId} onChange={(e) => set({ eventId: e.target.value })}>
               <option value="">Ninguno</option>
-              {eventos.map((ev) => <option key={ev.id} value={ev.id}>{ev.title} · {new Date(ev.date).toLocaleDateString('es-PA')}</option>)}
+              {eventos.map((ev) => <option key={ev.id} value={ev.id}>{ev.title} · {ev.date ? new Date(ev.date).toLocaleDateString('es-PA') : 'fecha por confirmar'}</option>)}
             </select>
           </div>
           <div>

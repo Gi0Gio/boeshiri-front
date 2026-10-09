@@ -6,26 +6,13 @@ import { eventsApi } from '../api/events'
 import { useFetch } from '../hooks/useFetch'
 import { gradientFor } from '../utils/gradient'
 import { useSeo } from '../hooks/useSeo'
+import { partesFecha as parts, franja, entrada } from '../utils/eventos'
 
-const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-function parts(iso) {
-  const d = new Date(iso)
-  return {
-    dia: String(d.getDate()).padStart(2, '0'),
-    mes: MESES[d.getMonth()],
-    anio: d.getFullYear(),
-    dow: d.toLocaleDateString('es-PA', { weekday: 'long' }),
-    hora: d.toLocaleTimeString('es-PA', { hour: 'numeric', minute: '2-digit' }),
-    fecha: d.toLocaleDateString('es-PA', { day: '2-digit', month: 'short', year: 'numeric' }),
-  }
-}
 /**
  * Las cifras se celebran a partir de aquí. Con uno o dos eventos, una banda
  * con «1 eventos realizados» en grande resta en vez de sumar.
  */
 const MIN_EVENTOS_PARA_CIFRAS = 3
-
-const entrada = (cost) => (cost > 0 ? `$${cost}` : 'Entrada libre')
 
 const chipCategoria = {
   Música: 'bg-terracotta text-jungle',
@@ -36,11 +23,20 @@ const chipCategoria = {
 }
 const chip = (cat) => chipCategoria[cat] || 'bg-tea text-jungle'
 
-function DateBlock({ dia, mes, className = '' }) {
+function DateBlock({ p, className = '' }) {
+  // En planeación todavía no hay día: el bloque lo dice en vez de quedar vacío.
+  if (!p) {
+    return (
+      <div className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-rainforest/30 px-5 py-3 text-center ${className}`}>
+        <span className="font-display text-lg font-semibold uppercase leading-none text-rainforest">Pronto</span>
+        <span className="mt-1 text-xs text-jungle/70">fecha por confirmar</span>
+      </div>
+    )
+  }
   return (
     <div className={`flex flex-col items-center justify-center rounded-2xl bg-jungle px-5 py-3 text-tea ${className}`}>
-      <span className="font-display text-4xl font-semibold leading-none text-caribbean">{dia}</span>
-      <span className="mt-1 font-display text-xs font-semibold uppercase tracking-[0.25em]">{mes}</span>
+      <span className="font-display text-4xl font-semibold leading-none text-caribbean">{p.dia}</span>
+      <span className="mt-1 font-display text-xs font-semibold uppercase tracking-[0.25em]">{p.mes}</span>
     </div>
   )
 }
@@ -158,17 +154,23 @@ function ConEventos({ lp, lh, destacado, resto, historial, asistentesTotal }) {
                   <FrogIcon className="pointer-events-none absolute -bottom-10 -right-8 h-64 w-64 text-white/10" />
                   <div className="relative flex items-start justify-between">
                     <span className={`rounded-full px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] ${chip(destacado.category)}`}>{destacado.category}</span>
-                    <span className="rounded-full bg-white/85 px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] text-jungle">Próximo</span>
+                    <span className="rounded-full bg-white/85 px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-[0.15em] text-jungle">{destacado.planning ? 'Próximamente' : 'Próximo'}</span>
                   </div>
                   <div className="relative">
-                    <p className="font-display text-6xl font-semibold leading-none text-white">{p.dia}</p>
-                    <p className="mt-1 font-display text-lg font-semibold uppercase tracking-[0.2em] text-white/90">{p.mes} · {p.anio}</p>
+                    {p ? (
+                      <>
+                        <p className="font-display text-6xl font-semibold leading-none text-white">{p.dia}</p>
+                        <p className="mt-1 font-display text-lg font-semibold uppercase tracking-[0.2em] text-white/90">{p.mes} · {p.anio}</p>
+                      </>
+                    ) : (
+                      <p className="font-display text-3xl font-semibold uppercase leading-tight text-white">Fecha por<br />confirmar</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col justify-center p-8 md:p-10">
                   <h3 className="font-display text-3xl font-semibold uppercase leading-tight tracking-wide text-cream">{destacado.title}</h3>
                   <ul className="mt-6 space-y-2 text-sm text-tea/85">
-                    <li><span className="mr-2 font-display text-xs uppercase tracking-[0.15em] text-caribbean">Cuándo</span><span className="capitalize">{p.dow}</span>, {p.hora}</li>
+                    <li><span className="mr-2 font-display text-xs uppercase tracking-[0.15em] text-caribbean">Cuándo</span>{p ? <><span className="capitalize">{p.dow}</span>, {franja(destacado.date, destacado.endsAt)}</> : 'Fecha por confirmar'}</li>
                     {destacado.location && <li><span className="mr-2 font-display text-xs uppercase tracking-[0.15em] text-caribbean">Dónde</span>{destacado.location}</li>}
                     <li><span className="mr-2 font-display text-xs uppercase tracking-[0.15em] text-caribbean">Entrada</span>{entrada(destacado.cost)}</li>
                   </ul>
@@ -190,11 +192,11 @@ function ConEventos({ lp, lh, destacado, resto, historial, asistentesTotal }) {
                 const p = parts(e.date)
                 return (
                   <Reveal as={Link} to={`/eventos/${e.id}`} key={e.id} delay={i * 110} className="group flex flex-col gap-5 rounded-2xl bg-white p-5 shadow-[0_4px_20px_rgba(0,37,32,0.06)] transition duration-300 hover:-translate-y-1 sm:flex-row sm:items-center">
-                    <DateBlock dia={p.dia} mes={p.mes} className="flex-none sm:w-24" />
+                    <DateBlock p={p} className="flex-none sm:w-24" />
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3">
                         <span className={`rounded-full px-3 py-0.5 font-display text-xs font-semibold uppercase tracking-[0.15em] ${chip(e.category)}`}>{e.category}</span>
-                        <span className="text-xs uppercase tracking-[0.15em] text-jungle/70">{p.dow} · {p.hora}</span>
+                        <span className="text-xs uppercase tracking-[0.15em] text-jungle/70">{p ? `${p.dow} · ${franja(e.date, e.endsAt)}` : e.planning ? 'En planeación' : ''}</span>
                       </div>
                       <h3 className="mt-2 font-display text-2xl font-semibold uppercase tracking-wide text-jungle">{e.title}</h3>
                       <p className="mt-3 text-xs uppercase tracking-[0.15em] text-rainforest">{[e.location, entrada(e.cost)].filter(Boolean).join(' · ')}</p>

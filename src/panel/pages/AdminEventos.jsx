@@ -1,199 +1,137 @@
 import { useState } from 'react'
-import { PageHeader, Card, Chip, Btn, Reveal, PillTabs, Table, Th, Td, Tr, inputCls, labelCls } from '../ui'
+import { Link } from 'react-router-dom'
+import { PageHeader, Chip, Btn, PillTabs } from '../ui'
 import { eventsApi } from '../../api/events'
 import { useFetch } from '../../hooks/useFetch'
-import ImageUpload from '../../components/ImageUpload'
 import { useToast } from '../../components/Toast'
 import { useConfirm } from '../../components/ConfirmDialog'
+import { partesFecha, franja, entrada, faltaParaConfirmar } from '../../utils/eventos'
 import Ico from '../Ico'
 
 const TABS = [{ id: 'All', label: 'Todos' }, { id: 'Upcoming', label: 'Próximos' }, { id: 'Past', label: 'Pasados' }]
-const BLANK = { category: '', title: '', description: '', date: '', location: '', cost: '', visibility: 'Public', images: [] }
 
-const fmtFecha = (iso) => new Date(iso).toLocaleString('es-PA', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-// ISO → valor para <input type="datetime-local"> (local, sin zona)
-const toLocalInput = (iso) => {
-  const d = new Date(iso)
-  const off = d.getTimezoneOffset()
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16)
-}
-
+/**
+ * La Agenda de la Junta: un evento por fila, con su punto (en planeación,
+ * próximo o pasado) y lo que le falta. Crear y editar abren su propia página.
+ * La asistencia se anota en la fila de un evento que ya ocurrió.
+ */
 export default function AdminEventos() {
   const [tab, setTab] = useState('All')
   const [version, setVersion] = useState(0)
   const { data, loading, error } = useFetch(() => eventsApi.listManage(tab), [tab, version])
   const reload = () => setVersion((v) => v + 1)
-
-  const [abierto, setAbierto] = useState(false)
-  const [editId, setEditId] = useState(null)
-  const [form, setForm] = useState(BLANK)
-  const [saving, setSaving] = useState(false)
   const toast = useToast()
   const confirm = useConfirm()
-  const setMsg = (m) => { if (m) m.ok ? toast.success(m.text) : toast.error(m.text) }
   const [asistId, setAsistId] = useState(null)
   const [asistCount, setAsistCount] = useState('')
 
-  const set = (patch) => setForm((f) => ({ ...f, ...patch }))
-  const nuevo = () => { setEditId(null); setForm(BLANK); setMsg(null); setAbierto(true) }
-  const cerrar = () => { setAbierto(false); setEditId(null); setForm(BLANK) }
-
-  async function editar(id) {
-    setMsg(null)
-    try {
-      const e = await eventsApi.getManage(id)
-      setForm({ category: e.category ?? '', title: e.title ?? '', description: e.description ?? '', date: e.date ? toLocalInput(e.date) : '', location: e.location ?? '', cost: String(e.cost ?? ''), visibility: e.visibility ?? 'Public', images: e.images ?? [] })
-      setEditId(id); setAbierto(true)
-    } catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo abrir el evento.' }) }
-  }
-
-  async function guardar() {
-    if (!form.title.trim() || !form.category.trim() || !form.date) { setMsg({ ok: false, text: 'Categoría, título y fecha son obligatorios.' }); return }
-    setSaving(true); setMsg(null)
-    const base = {
-      category: form.category.trim(), title: form.title.trim(), description: form.description || null,
-      date: new Date(form.date).toISOString(), location: form.location || null,
-      cost: Number(form.cost) || 0, visibility: form.visibility,
-    }
-    try {
-      if (editId) await eventsApi.update(editId, base)
-      else await eventsApi.create({ ...base, images: form.images.filter(Boolean) })
-      setMsg({ ok: true, text: editId ? 'Evento actualizado.' : 'Evento creado.' })
-      cerrar(); reload()
-    } catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo guardar.' }) }
-    finally { setSaving(false) }
-  }
-
-  async function cambiarEstado(id, action) {
-    if (action === 'Delete' && !(await confirm({ message: '¿Eliminar este evento? No se puede deshacer.', danger: true, confirmLabel: 'Eliminar' }))) return
-    try { await eventsApi.changeStatus(id, action); reload() }
-    catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo cambiar el estado.' }) }
+  async function cambiarEstado(e, action) {
+    if (action === 'Delete' && !(await confirm({ title: '¿Eliminar el evento?', message: `«${e.title}» desaparece de la agenda. No se puede deshacer.`, danger: true, confirmLabel: 'Eliminar' }))) return
+    try { await eventsApi.changeStatus(e.id, action); reload() }
+    catch (err) { toast.error(err.message || 'No se pudo cambiar el estado.') }
   }
 
   async function guardarAsistencia(id) {
     const count = Number(asistCount)
-    if (!Number.isFinite(count) || count < 0) { setMsg({ ok: false, text: 'Ingresa un número válido.' }); return }
+    if (!Number.isInteger(count) || count < 0) { toast.error('Escribe cuántas personas vinieron.'); return }
     try {
       await eventsApi.recordAttendance(id, count, [])
-      setMsg({ ok: true, text: 'Asistencia registrada.' })
+      toast.success('Asistencia guardada.')
       setAsistId(null); setAsistCount(''); reload()
-    } catch (e) { setMsg({ ok: false, text: e.message || 'No se pudo registrar la asistencia.' }) }
+    } catch (err) { toast.error(err.message || 'No se pudo guardar la asistencia.') }
   }
 
   const eventos = data ?? []
-  const esFuturo = (iso) => new Date(iso) >= new Date()
+  const pasado = (e) => Boolean(e.date) && new Date(e.date) < new Date()
 
   return (
     <>
       <PageHeader
-        eyebrow="Administración"
         title="Agenda"
-        description="Crea, oculta y elimina eventos. Un evento tiene lugar, costo, imágenes, visibilidad y registro de asistencia."
-        actions={<Btn onClick={() => (abierto ? cerrar() : nuevo())}>{abierto ? 'Cerrar' : <><Ico name="mas" className="h-4 w-4" />Nuevo evento</>}</Btn>}
+        description="Los eventos del colectivo. Uno en planeación ya se anuncia como «Próximamente», aunque falten la fecha o el costo."
+        actions={<Btn as={Link} to="/panel/admin/eventos/nuevo"><Ico name="mas" className="h-4 w-4" />Nuevo evento</Btn>}
       />
-
-
-      {abierto && (
-        <Reveal className="mb-8">
-          <Card>
-            <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-cream">{editId ? 'Editar evento' : 'Nuevo evento'}</h2>
-            <div className="mt-5 space-y-4">
-              <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-                <div>
-                  <label className={labelCls}>Título</label>
-                  <input className={`${inputCls} mt-1.5`} value={form.title} onChange={(e) => set({ title: e.target.value })} placeholder="Nombre del evento" />
-                </div>
-                <div>
-                  <label className={labelCls}>Categoría</label>
-                  <input className={`${inputCls} mt-1.5`} value={form.category} onChange={(e) => set({ category: e.target.value })} placeholder="Taller, Concierto…" />
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <label className={labelCls}>Fecha y hora</label>
-                  <input type="datetime-local" className={`${inputCls} mt-1.5`} value={form.date} onChange={(e) => set({ date: e.target.value })} />
-                </div>
-                <div>
-                  <label className={labelCls}>Lugar</label>
-                  <input className={`${inputCls} mt-1.5`} value={form.location} onChange={(e) => set({ location: e.target.value })} placeholder="David, en línea…" />
-                </div>
-                <div>
-                  <label className={labelCls}>Costo (USD)</label>
-                  <input type="number" min="0" step="0.01" className={`${inputCls} mt-1.5`} value={form.cost} onChange={(e) => set({ cost: e.target.value })} placeholder="0 = gratis" />
-                </div>
-              </div>
-              <div>
-                <label className={labelCls}>Descripción</label>
-                <textarea rows={4} className={`${inputCls} mt-1.5 resize-none`} value={form.description} onChange={(e) => set({ description: e.target.value })} placeholder="De qué trata el evento…" />
-              </div>
-              {!editId && form.images.map((url, i) => (
-                <ImageUpload key={i} value={url} onChange={(u) => set({ images: u ? form.images.map((x, j) => (j === i ? u : x)) : form.images.filter((_, j) => j !== i) })} folder="publicaciones" label={`Imagen ${i + 1}`} />
-              ))}
-              {!editId && form.images.length < 4 && (
-                <ImageUpload key={`new-${form.images.length}`} value="" onChange={(u) => u && set({ images: [...form.images, u] })} folder="publicaciones" label="Añadir imagen (hasta 4)" />
-              )}
-            </div>
-            <div className="mt-6 flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-tea/70">
-                <input type="checkbox" checked={form.visibility === 'Public'} onChange={(e) => set({ visibility: e.target.checked ? 'Public' : 'Members' })} className="h-4 w-4 accent-[#00e6bc]" />
-                Público (si lo desmarcas, solo lo ven miembros)
-              </label>
-              <Btn onClick={guardar} disabled={saving}>{saving ? 'Guardando…' : editId ? 'Guardar cambios' : 'Crear evento'}</Btn>
-            </div>
-          </Card>
-        </Reveal>
-      )}
 
       <PillTabs tabs={TABS} active={tab} onChange={setTab} />
 
-      {loading && <p className="text-tea/70">Cargando eventos…</p>}
-      {error && <p className="text-candy">No se pudieron cargar los eventos.</p>}
-      {!loading && !error && eventos.length === 0 && <Card><p className="text-sm text-tea/70">No hay eventos en esta vista.</p></Card>}
-
-      {!loading && !error && eventos.length > 0 && (
-        <Reveal>
-          <Table minW="720px">
-            <thead>
-              <Tr className="hover:bg-transparent"><Th>Evento</Th><Th className="hidden sm:table-cell">Categoría</Th><Th>Fecha</Th><Th>Estado</Th><Th className="hidden lg:table-cell">Asist.</Th><Th> </Th></Tr>
-            </thead>
-            <tbody>
-              {eventos.map((e) => (
-                <Tr key={e.id}>
-                  <Td className="font-medium text-tea">{e.title}</Td>
-                  <Td className="hidden sm:table-cell text-tea/70">{e.category}</Td>
-                  <Td className="font-mono text-xs text-tea/70">{fmtFecha(e.date)}</Td>
-                  <Td>
-                    <div className="flex flex-wrap gap-1">
-                      <Chip tone={e.status === 'Published' ? 'caribbean' : 'gris'}>{e.status === 'Published' ? 'Visible' : 'Oculto'}</Chip>
-                      <Chip tone={esFuturo(e.date) ? 'tea' : 'gris'}>{esFuturo(e.date) ? 'Próximo' : 'Pasado'}</Chip>
-                      {e.visibility === 'Members' && <Chip tone="terracotta">Miembros</Chip>}
-                    </div>
-                  </Td>
-                  <Td className="hidden lg:table-cell font-mono text-xs text-tea/70">
-                    {asistId === e.id ? (
-                      <span className="flex items-center gap-1">
-                        <input type="number" min="0" value={asistCount} onChange={(ev) => setAsistCount(ev.target.value)} className="w-16 rounded border border-tea/20 bg-jungle-deep/60 px-2 py-1 text-tea" autoFocus />
-                        <button onClick={() => guardarAsistencia(e.id)} className="text-caribbean hover:underline">✓</button>
-                        <button onClick={() => setAsistId(null)} className="text-tea/70 hover:text-candy">✕</button>
-                      </span>
+      {loading ? (
+        <p className="text-tea/70">Cargando eventos…</p>
+      ) : error ? (
+        <p className="rounded-2xl border border-candy/30 bg-jungle p-5 text-tea">No se pudieron cargar los eventos.</p>
+      ) : eventos.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-tea/20 p-6">
+          <p className="text-tea/85">{tab === 'Past' ? 'Todavía no hay eventos realizados.' : 'No hay eventos en esta vista.'}</p>
+          {tab !== 'Past' && <Btn as={Link} to="/panel/admin/eventos/nuevo" className="mt-4"><Ico name="mas" className="h-4 w-4" />Crear el primero</Btn>}
+        </div>
+      ) : (
+        <ul className="space-y-2.5">
+          {eventos.map((e) => {
+            const p = partesFecha(e.date)
+            const falta = e.planning ? faltaParaConfirmar(e) : []
+            const yaPaso = pasado(e)
+            return (
+              <li key={e.id} className={`rounded-2xl border bg-jungle ${e.planning ? 'border-dashed border-tea/25' : 'border-tea/10'}`}>
+                <div className="flex gap-4 p-4 sm:p-5">
+                  {/* Bloque de fecha: el día, o «pronto» si aún no lo hay. */}
+                  <div className={`flex h-16 w-16 flex-none flex-col items-center justify-center self-start rounded-xl text-center ${p ? 'bg-jungle-deep/60' : 'border border-dashed border-tea/25'}`}>
+                    {p ? (
+                      <>
+                        <span className="font-display text-2xl font-semibold leading-none text-cream">{p.dia}</span>
+                        <span className="mt-1 font-mono text-xs uppercase tracking-[0.12em] text-tea/70">{p.mes}</span>
+                      </>
                     ) : (
-                      <button onClick={() => { setAsistId(e.id); setAsistCount(String(e.attendanceCount || '')) }} className="hover:text-caribbean">{e.attendanceCount || 0} ✎</button>
+                      <span className="text-xs font-semibold leading-tight text-tea/70">Sin<br />fecha</span>
                     )}
-                  </Td>
-                  <Td className="text-right">
-                    <div className="flex justify-end gap-3 text-xs font-semibold uppercase tracking-wide">
-                      <button onClick={() => editar(e.id)} className="text-caribbean/80 hover:text-caribbean">Editar</button>
-                      {e.status === 'Published'
-                        ? <button onClick={() => cambiarEstado(e.id, 'Hide')} className="text-caribbean/80 hover:text-caribbean">Ocultar</button>
-                        : <button onClick={() => cambiarEstado(e.id, 'Show')} className="text-caribbean/80 hover:text-caribbean">Mostrar</button>}
-                      <button onClick={() => cambiarEstado(e.id, 'Delete')} className="text-candy hover:underline">Eliminar</button>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="mr-1 font-semibold text-cream">{e.title}</span>
+                      {e.planning ? <Chip tone="terracotta">En planeación</Chip> : yaPaso ? <Chip tone="gris">Realizado</Chip> : <Chip tone="caribbean">Confirmado</Chip>}
+                      {e.status !== 'Published' && <Chip tone="gris">Oculto</Chip>}
+                      {e.visibility === 'Members' && <Chip tone="tea">Solo miembros</Chip>}
                     </div>
-                  </Td>
-                </Tr>
-              ))}
-            </tbody>
-          </Table>
-        </Reveal>
+                    <p className="mt-1 text-sm text-tea/75">
+                      {[e.category, p ? `${p.dow} ${p.fecha} · ${franja(e.date, e.endsAt)}` : 'Fecha por confirmar', e.location, entrada(e.cost)].filter(Boolean).join(' · ')}
+                    </p>
+                    {falta.length > 0 && <p className="mt-1 text-sm font-semibold text-terracotta">Falta para confirmarlo: {falta.join(' y ')}</p>}
+
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-semibold">
+                      <Link to={`/panel/admin/eventos/${e.id}/editar`} className="inline-flex min-h-11 items-center gap-1.5 text-caribbean hover:underline"><Ico name="pluma" className="h-4 w-4" />Editar</Link>
+                      <a href={`/eventos/${e.id}`} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center gap-1.5 text-caribbean hover:underline"><Ico name="enlace" className="h-4 w-4" />Ver</a>
+                      {e.status === 'Published'
+                        ? <button type="button" onClick={() => cambiarEstado(e, 'Hide')} className="inline-flex min-h-11 items-center text-tea/80 hover:text-tea hover:underline">Ocultar</button>
+                        : <button type="button" onClick={() => cambiarEstado(e, 'Show')} className="inline-flex min-h-11 items-center text-tea/80 hover:text-tea hover:underline">Mostrar</button>}
+                      <button type="button" onClick={() => cambiarEstado(e, 'Delete')} className="inline-flex min-h-11 items-center text-tea/70 hover:text-candy hover:underline">Eliminar</button>
+                    </div>
+
+                    {/* Asistencia: solo tiene sentido cuando el evento ya pasó. */}
+                    {yaPaso && (
+                      asistId === e.id ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <label htmlFor={`asist-${e.id}`} className="text-sm text-tea/85">¿Cuántas personas vinieron?</label>
+                          <input id={`asist-${e.id}`} type="number" min="0" inputMode="numeric" value={asistCount} autoFocus
+                            onChange={(ev) => setAsistCount(ev.target.value)}
+                            className="w-24 rounded-xl border border-tea/15 bg-jungle-deep/60 px-3 py-2 font-mono text-cream" />
+                          <button type="button" onClick={() => guardarAsistencia(e.id)} aria-label="Guardar asistencia"
+                            className="grid h-11 w-11 place-items-center rounded-full bg-caribbean text-jungle"><Ico name="check" className="h-4 w-4" /></button>
+                          <button type="button" onClick={() => setAsistId(null)} aria-label="Cancelar"
+                            className="grid h-11 w-11 place-items-center rounded-full text-tea/70 hover:bg-tea/5 hover:text-tea"><Ico name="cerrar" className="h-4 w-4" /></button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => { setAsistId(e.id); setAsistCount(String(e.attendanceCount || '')) }}
+                          className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm text-tea/80 hover:text-caribbean">
+                          <Ico name="users" className="h-4 w-4" />
+                          {e.attendanceCount > 0 ? <><span className="font-mono">{e.attendanceCount}</span> asistentes · cambiar</> : 'Anotar la asistencia'}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
       )}
     </>
   )

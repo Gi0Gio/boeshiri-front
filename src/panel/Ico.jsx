@@ -29,6 +29,7 @@ export default function Ico({ name, className = 'h-[22px] w-[22px]' }) {
     imagen: (<><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="M21 16l-5-5-8 8" /></>),
     play: (<><circle cx="12" cy="12" r="9" /><path d="M10 8.5v7l6-3.5z" /></>),
     nota: (<><path d="M9 18V6l11-2v12" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="17.5" cy="16" r="2.5" /></>),
+    check: (<path d="M5 12.5l4.5 4.5L19 7.5" />),
     cerrar: (<path d="M6 6l12 12M18 6L6 18" />),
     formulario: (<><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1" /><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4" /></>),
     reloj: (<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
